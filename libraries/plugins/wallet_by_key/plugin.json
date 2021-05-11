@@ -1,0 +1,5 @@
+{
+   "plugin_name": "wallet_by_key",
+   "plugin_namespace": "wallet_by_key",
+   "plugin_project": "wallet_by_key_plugin"
+}

@@ -1,0 +1,14 @@
+#include <stdint.h>
+#include <xgt/utilities/git_revision.hpp>
+
+#define XGT_GIT_REVISION_SHA "@XGT_GIT_REVISION_SHA@"
+#define XGT_GIT_REVISION_UNIX_TIMESTAMP @XGT_GIT_REVISION_UNIX_TIMESTAMP@
+#define XGT_GIT_REVISION_DESCRIPTION "@XGT_GIT_REVISION_DESCRIPTION@"
+
+namespace xgt { namespace utilities {
+
+const char* const git_revision_sha = XGT_GIT_REVISION_SHA;
+const uint32_t git_revision_unix_timestamp = XGT_GIT_REVISION_UNIX_TIMESTAMP;
+const char* const git_revision_description = XGT_GIT_REVISION_DESCRIPTION;
+
+} } // end namespace xgt::utilities
