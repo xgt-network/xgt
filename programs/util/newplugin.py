@@ -230,7 +230,7 @@ import sys
 
 def main(argv):
     parser = argparse.ArgumentParser()
-    parser.add_argument("provider", help="Name of plugin provider (xgt for plugins developed by Steemit)")
+    parser.add_argument("provider", help="Name of plugin provider (xgt for plugins developed by Gather.com, Inc)")
     parser.add_argument("name", help="Name of plugin to create")
     args = parser.parse_args(argv[1:])
     ctx = {

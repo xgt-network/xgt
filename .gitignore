@@ -41,7 +41,7 @@ build_version.cc
 
 libraries/appbase/examples/appbase_example
 libraries/chainbase/test/chainbase_test
-libraries/protocol/include/steem/protocol/hardfork.hpp
+libraries/protocol/include/xgt/protocol/hardfork.hpp
 libraries/fc/git_revision.cpp
 libraries/fc/tests/all_tests
 libraries/fc/tests/api
@@ -73,8 +73,8 @@ libraries/wallet/Doxyfile
 libraries/wallet/api_documentation.cpp
 libraries/wallet/doxygen
 
-programs/build_helpers/steem_build_helpers/__pycache__/
-programs/util/dump_steem_schema
+programs/build_helpers/xgt_build_helpers/__pycache__/
+programs/util/dump_xgt_schema
 programs/util/schema_test
 programs/util/serialize_set_properties
 programs/util/sign_digest

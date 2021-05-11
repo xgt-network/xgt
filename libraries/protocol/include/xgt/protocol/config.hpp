@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2021 Gather.com, Inc., and contributors.
  * Copyright (c) 2016 Steemit, Inc., and contributors.
  */
 #pragma once
