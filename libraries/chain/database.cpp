@@ -1627,7 +1627,7 @@ void database::_apply_block( const signed_block& next_block )
          dgp.mining_target = initial_target;
       });*/
    }
-   else if( next_block_num % frequency == 1 )
+   else if( (XGT_STARTING_OFFSET + next_block_num) % frequency == 1 )
    {
       wlog("!!!!!! Updating mining difficulty...");
       const auto& gprops = get_dynamic_global_properties();

@@ -911,7 +911,7 @@ void pow_evaluator::do_apply( const pow_operation& o )
    });
 
    // TODO: Check for 0
-   int halvings = dgp.head_block_number / XGT_MINING_REWARD_HALVING_INTERVAL;
+   int halvings = (XGT_STARTING_OFFSET + dgp.head_block_number) / XGT_MINING_REWARD_HALVING_INTERVAL;
    // TODO: Assert no overflow
    long divisor = 1L << halvings;
    asset base_reward = XGT_MINING_REWARD;
