@@ -1955,7 +1955,8 @@ void database::_apply_transaction(const signed_transaction& trx)
                }
                if (public_key == fc::optional<public_key_type>())
                {
-                  // TODO: Throw error
+                  wlog("!!!!!! Wallet no public key");
+                  throw operation_validate_exception();
                }
             }
             else if ( is_wallet_update_operation(op) )
@@ -1968,17 +1969,18 @@ void database::_apply_transaction(const signed_transaction& trx)
                vector<public_key_type> keys;
                keys.reserve(key_set.size());
                for (const public_key_type& key : key_set) {
-                  wlog("!!!!!! WALLET UPDATE KEY ${w}", ("w",key));
+                  wlog("!!!!!! Wallet update key ${w}", ("w",key));
                   keys.push_back(key);
                }
                string wallet_name = wallet_create_operation::get_wallet_name(keys);
-               wlog("!!!!!! WALLET UPDATE WALLET NAME ${w}", ("w",wallet_name));
+               wlog("!!!!!! Wallet update wallet name ${w}", ("w",wallet_name));
                if (o.wallet == wallet_name) {
                   // Valid, don't throw error
-                  wlog("!!!!!! WALLET UPDATE VALID");
+                  wlog("!!!!!! Wallet update valid");
                } else {
                   // TODO: Invalid, throw error
-                  wlog("!!!!!! WALLET UPDATE INVALID");
+                  wlog("!!!!!! Wallet update invalid");
+                  throw operation_validate_exception();
                }
             }
          }

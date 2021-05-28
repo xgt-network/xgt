@@ -63,6 +63,14 @@ end
 
 desc 'Runs CMake to prepare the project'
 task :configure do
+  addr_prefix = 'XGT' # TODO: Config variable
+  recovery_public_key = Xgt::Ruby::Auth.wif_to_public_key(recovery_private_key, addr_prefix)
+  xgt_compile_args = []
+  xgt_compile_args << %(-DXGT_ADDRESS_PREFIX=#{addr_prefix})
+  if recovery_private_key
+    xgt_compile_args << %(-DXGT_INIT_PRIVATE_KEY=#{recovery_private_key})
+    xgt_compile_args << %(-DXGT_INIT_PUBLIC_KEY_STR=#{recovery_public_key})
+  end
   sh %(
     mkdir -p ../xgt-build \
       && cd ../xgt-build \
@@ -71,7 +79,7 @@ task :configure do
                -D CMAKE_CXX_COMPILER_ARG1="g++" \
                -D CMAKE_C_COMPILER="ccache" \
                -D CMAKE_C_COMPILER_ARG1="gcc" \
-               -DXGT_ADDRESS_PREFIX=XGT \
+               #{ xgt_compile_args.join(' ') } \
                --target xgtd \
                ../xgt
   )

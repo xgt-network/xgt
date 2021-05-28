@@ -910,6 +910,16 @@ void pow_evaluator::do_apply( const pow_operation& o )
       p.num_pow_witnesses++;
    });
 
+   // TODO: Check for 0
+   int halvings = dgp.head_block_number / XGT_MINING_REWARD_HALVING_INTERVAL;
+   // TODO: Assert no overflow
+   long divisor = 1L << halvings;
+   asset base_reward = XGT_MINING_REWARD;
+   double value = base_reward.amount.value * (1.0 / static_cast<double>(divisor));
+   long price = static_cast<long>(floor(value));
+   asset reward = asset(price, base_reward.symbol);
+   wlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
+
    const auto& accounts_by_name = db.get_index<wallet_index>().indices().get<by_name>();
    auto itr = accounts_by_name.find( worker_account );
    if(itr == accounts_by_name.end())
@@ -949,6 +959,8 @@ void pow_evaluator::do_apply( const pow_operation& o )
           w.pow_worker        = dgp.total_pow;
       });
    }
+
+   db.adjust_balance(worker_account, reward);
 }
 
 // TODO: Remove this
