@@ -54,7 +54,7 @@
 
 #endif
 
-#define XGT_INIT_SUPPLY                     (int64_t( 250 ) * int64_t( 1000000 ) * int64_t( 1000 ))
+#define XGT_INIT_SUPPLY                     (int64_t( 1872324375000000 )) // 18,723,243.75, but with precision 8
 
 /// Version format string.  The Xgt binary will refuse to load a state file where this does not match the built-in version.
 #define XGT_DB_FORMAT_VERSION               "1"
