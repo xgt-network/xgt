@@ -16,6 +16,7 @@ namespace xgt { namespace protocol {
       void get_required_recovery_authorities( flat_set<wallet_name_type>& )const {}
 
       bool is_virtual()const { return false; }
+      bool is_wallet_create()const { return false; }
       bool is_wallet_update()const { return false; }
       bool is_contract_create()const { return false; }
       bool is_contract_invoke()const { return false; }

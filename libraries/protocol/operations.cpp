@@ -17,6 +17,14 @@ bool is_virtual_operation( const operation& op )
    return op.visit( is_vop_visitor() );
 }
 
+struct is_wallet_create_visitor
+{
+   typedef bool result_type;
+
+   template< typename T >
+   bool operator()( const T& v )const { return v.is_wallet_create(); }
+};
+
 struct is_wallet_update_visitor
 {
    typedef bool result_type;
@@ -32,6 +40,11 @@ struct is_pow_visitor
    template< typename T >
    bool operator()( const T& v )const { return v.is_pow(); }
 };
+
+bool is_wallet_create_operation( const operation& op )
+{
+   return op.visit( is_wallet_create_visitor() );
+}
 
 bool is_wallet_update_operation( const operation& op )
 {

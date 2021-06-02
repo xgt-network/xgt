@@ -1959,6 +1959,28 @@ void database::_apply_transaction(const signed_transaction& trx)
                   throw operation_validate_exception();
                }
             }
+            else if ( is_wallet_create_operation(op) )
+            {
+               wlog("!!!!!! Wallet create");
+               break;
+               /*
+               const wallet_create_operation& o = op.template get< wallet_create_operation >();
+               shared_authority recovery = get< account_authority_object, by_account >( o.creator ).recovery;
+               vector<public_key_type> recovery_key_set = recovery.get_keys();
+               flat_set<public_key_type> key_set = trx.get_signature_keys(get_chain_id(), fc::ecc::fc_canonical);
+               vector<public_key_type> keys;
+               keys.reserve(key_set.size());
+               for (const public_key_type& key : key_set) {
+                  wlog("!!!!!! Wallet create key ${w}", ("w",key));
+                  //keys.push_back(key);
+               }
+               if (keys.size() < 0) {
+                  // TODO: Invalid, throw error
+                  wlog("!!!!!! Wallet create invalid");
+                  throw operation_validate_exception();
+               }
+               */
+            }
             else if ( is_wallet_update_operation(op) )
             {
                // TODO: DRY this out

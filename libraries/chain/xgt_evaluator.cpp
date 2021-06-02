@@ -137,27 +137,34 @@ void verify_authority_accounts_exist(
 void initialize_wallet_object( wallet_object& acc, const wallet_name_type& name, const public_key_type& key,
    const dynamic_global_property_object& props, bool mined, const wallet_name_type& recovery_account, uint32_t hardfork )
 {
+   wlog("?????? initialize_wallet_object name ${n}", ("n", name));
+   wlog("?????? initialize_wallet_object key ${n}", ("n", key));
+   wlog("?????? initialize_wallet_object created ${n}", ("n", props.time));
    acc.name = name;
    acc.memo_key = key;
    acc.created = props.time;
-   acc.energybar.last_update_time = props.time.sec_since_epoch();
-   acc.mined = mined;
+   //acc.energybar.last_update_time = props.time.sec_since_epoch();
+   //acc.mined = mined;
 
-   FC_TODO( "If after HF 20, there are no temp account creations, the HF check can be removed." )
-   if( recovery_account != XGT_TEMP_WALLET )
-   {
-       acc.recovery_account = recovery_account;
-   }
-   else
-   {
-      acc.recovery_account = "xgt";
-   }
+   //FC_TODO( "If after HF 20, there are no temp account creations, the HF check can be removed." )
+   //if( recovery_account != XGT_TEMP_WALLET )
+   //{
+   //    acc.recovery_account = recovery_account;
+   //}
+   //else
+   //{
+   //   acc.recovery_account = "xgt";
+   //}
 }
 
 void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
 {
+   wlog("?????? wallet_create_evaluator");
    const auto& props = _db.get_dynamic_global_properties();
    const string wallet_name = o.get_wallet_name();
+   wlog("?????? wallet_create_evaluator wallet_name ${w}", ("w",wallet_name));
+   wlog("?????? wallet_create_evaluator creator ${w}", ("w",o.creator));
+   wlog("?????? wallet_create_evaluator new_wallet_name ${w}", ("w",o.new_wallet_name));
 
    //const auto& creator = _db.get_account( o.creator );
 
@@ -171,14 +178,14 @@ void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
                ("p", o.fee)
                ("f", wso.median_props.account_creation_fee) ); */
 
-   FC_TODO( "Check and move to validate post HF20" );
-   validate_auth_size( o.recovery );
-   validate_auth_size( o.money );
-   validate_auth_size( o.social );
+   //FC_TODO( "Check and move to validate post HF20" );
+   //validate_auth_size( o.recovery );
+   //validate_auth_size( o.money );
+   //validate_auth_size( o.social );
 
-   verify_authority_accounts_exist( _db, o.recovery, wallet_name, authority::recovery );
-   verify_authority_accounts_exist( _db, o.money, wallet_name, authority::money );
-   verify_authority_accounts_exist( _db, o.social, wallet_name, authority::social );
+   //verify_authority_accounts_exist( _db, o.recovery, wallet_name, authority::recovery );
+   //verify_authority_accounts_exist( _db, o.money, wallet_name, authority::money );
+   //verify_authority_accounts_exist( _db, o.social, wallet_name, authority::social );
 
    //_db.adjust_balance( creator, -o.fee );
    //_db.adjust_balance( _db.get< wallet_object, by_name >( XGT_NULL_WALLET ), o.fee );
@@ -188,6 +195,7 @@ void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
       initialize_wallet_object( acc, wallet_name, o.memo_key, props, false /*mined*/, o.creator, _db.get_hardfork() );
    });
 
+/*
    _db.create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = wallet_name;
@@ -196,6 +204,7 @@ void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
       auth.social = o.social;
       auth.last_recovery_update = fc::time_point_sec::min();
    });
+*/
 }
 
 

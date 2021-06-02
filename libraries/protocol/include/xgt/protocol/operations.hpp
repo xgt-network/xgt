@@ -66,6 +66,7 @@ namespace xgt { namespace protocol {
    void operation_validate( const operation& op );*/
 
    bool is_virtual_operation( const operation& op );
+   bool is_wallet_create_operation( const operation& op );
    bool is_wallet_update_operation( const operation& op );
    bool is_pow_operation( const operation& op );
 

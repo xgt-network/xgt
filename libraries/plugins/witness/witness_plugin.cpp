@@ -108,6 +108,7 @@ namespace detail {
       try
       {
          // Check if memo is a private key
+         wlog("?????? libraries/plugins/witness/witness_plugin.cpp:111");
          keys.push_back( fc::ecc::extended_private_key::from_base58( memo ).get_public_key() );
       }
       catch( fc::parse_error_exception& ) {}
