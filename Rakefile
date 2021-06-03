@@ -103,7 +103,6 @@ task :run do
   plugins = %w(
     chain p2p webserver witness database_api transaction_api block_api
     wallet_by_key wallet_history wallet_history_api wallet_by_key_api
-    contract_api
   )
 
   sh 'rm -rf ../xgt-build/testnet-data'
@@ -354,26 +353,28 @@ namespace :catalyst do
         'type' => 'witness_update_operation',
         'value' => {
           'owner' => name,
-          'url' => 'witness-category/my-witness',
+          'url' => 'http://witness-category/my-witness',
+          'block_signing_key' => keys.call['recovery_public'],
           'block_signing_key' => keys.call['witness_public'],
-          #'props' => {
+          'props' => {
             # 'account_creation_fee' => fee,
             # 'account_creation_fee' => '1 XGT',
-            #'account_creation_fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
-          #},
+            'account_creation_fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
+          },
           # 'fee' => final_fee,
           # 'fee' => '1 XGT',
-          #'fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
+          'fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
         }
       }]
     }
 
-    p txn
-    p [keys.call['recovery_private']]
-    signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [keys.call['recovery_private']], chain_id)
+
+    signing_keys = keys.call['recovery_private']
+    signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [signing_keys], chain_id)
     $stderr.puts(%(Registering witness with recovery private WIF "#{keys.call['recovery_private']}"...))
     $stderr.puts(%(Signing keypair is #{keys.call['witness_private']} (private) and #{keys.call['witness_public']} (public)...))
     response = rpc.call('transaction_api.broadcast_transaction', [signed])
+    $stderr.puts(%(Registered witness #{name}))
   end
 
   desc 'Assuming keys were generated, do everything else'

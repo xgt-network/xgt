@@ -214,16 +214,16 @@ DEFINE_API_IMPL( database_api_impl, list_witnesses )
 
 DEFINE_API_IMPL( database_api_impl, find_witnesses )
 {
-   FC_ASSERT( args.recoveries.size() <= DATABASE_API_SINGLE_QUERY_LIMIT );
+   FC_ASSERT( args.miners.size() <= DATABASE_API_SINGLE_QUERY_LIMIT );
 
    find_witnesses_return result;
 
-   for( auto& o : args.recoveries )
+   for( auto& o : args.miners )
    {
       auto witness = _db.find< chain::witness_object, chain::by_name >( o );
 
       if( witness != nullptr )
-         result.witnesses.push_back( api_witness_object( *witness ) );
+         result.miners.push_back( api_witness_object( *witness ) );
    }
 
    return result;

@@ -122,10 +122,13 @@ struct list_witnesses_return
 
 struct find_witnesses_args
 {
-   vector< wallet_name_type > recoveries;
+   vector< wallet_name_type > miners;
 };
 
-typedef list_witnesses_return find_witnesses_return;
+struct find_witnesses_return
+{
+   vector< api_witness_object > miners;
+};
 
 
 /* Account */
@@ -404,7 +407,10 @@ FC_REFLECT( xgt::plugins::database_api::list_witnesses_return,
    (witnesses) )
 
 FC_REFLECT( xgt::plugins::database_api::find_witnesses_args,
-   (recoveries) )
+   (miners) )
+
+FC_REFLECT( xgt::plugins::database_api::find_witnesses_return,
+   (miners) )
 
 FC_REFLECT( xgt::plugins::database_api::list_wallets_return,
    (wallets) )

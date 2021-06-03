@@ -195,7 +195,6 @@ void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
       initialize_wallet_object( acc, wallet_name, o.memo_key, props, false /*mined*/, o.creator, _db.get_hardfork() );
    });
 
-/*
    _db.create< account_authority_object >( [&]( account_authority_object& auth )
    {
       auth.account = wallet_name;
@@ -204,7 +203,6 @@ void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
       auth.social = o.social;
       auth.last_recovery_update = fc::time_point_sec::min();
    });
-*/
 }
 
 
