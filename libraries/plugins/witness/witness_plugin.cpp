@@ -108,7 +108,6 @@ namespace detail {
       try
       {
          // Check if memo is a private key
-         wlog("?????? libraries/plugins/witness/witness_plugin.cpp:111");
          keys.push_back( fc::ecc::extended_private_key::from_base58( memo ).get_public_key() );
       }
       catch( fc::parse_error_exception& ) {}
@@ -507,18 +506,14 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
          my->_miner_prop_vote.maximum_block_size = maximum_block_size;
    }
 
-   wlog("!!!!!! Checking config for private key ${a}", ("a", options.count("mining-reward-key")));
-   wlog("!!!!!! Checking config for miners ${a}", ("a", options.count("miner")));
    if( options.count("mining-reward-key") )
    {
       const std::vector<std::string> keys = options["mining-reward-key"].as<std::vector<std::string>>();
-      wlog("!!!!!! Keys ${a}", ("a",keys));
       for (const std::string& wif_key : keys )
       {
          fc::optional<fc::ecc::private_key> private_key = xgt::utilities::wif_to_key(wif_key);
          FC_ASSERT( private_key.valid(), "unable to parse private key" );
          my->_private_keys[private_key->get_public_key()] = *private_key;
-         wlog("!!!!!! Checking config for private key ${a}", ("a", *private_key));
       }
    }
 

@@ -100,7 +100,6 @@ fc::sha256 bigint_to_hash(boost::multiprecision::uint256_t b)
    std::ostringstream os;
    os << std::hex << std::setw(64) << std::setfill('0') << b;
    std::string string_hash = os.str();
-   wlog("!!! bigint_to_hash() ${i}", ("i",string_hash));
    return fc::sha256(string_hash);
 }
 
@@ -109,7 +108,6 @@ boost::multiprecision::uint256_t hash_to_bigint(fc::sha256 h)
    std::string prefix = "0x";
    std::string string_hash = h.str();
    std::string prepended_string_hash = prefix.append(string_hash);
-   wlog("!!! hash_to_bigint(${h}) ${i}", ("h",h)("i",string_hash));
    return boost::multiprecision::uint256_t(prepended_string_hash);
 }
 
@@ -792,7 +790,7 @@ bool database::_push_block(const signed_block& new_block)
             // push all blocks on the new fork
             for( auto ritr = branches.first.rbegin(); ritr != branches.first.rend(); ++ritr )
             {
-                ilog( "pushing blocks from fork ${n} ${id}", ("n",(*ritr)->data.block_num())("id",(*ritr)->data.id()) );
+                ilog( "Pushing blocks from fork ${n} ${id}", ("n",(*ritr)->data.block_num())("id",(*ritr)->data.id()) );
                 optional<fc::exception> except;
                 try
                 {
@@ -804,7 +802,7 @@ bool database::_push_block(const signed_block& new_block)
                 catch ( const fc::exception& e ) { except = e; }
                 if( except )
                 {
-                   wlog( "exception thrown while switching forks ${e}", ("e",except->to_detail_string() ) );
+                   wlog( "Exception thrown while switching forks ${e}", ("e",except->to_detail_string() ) );
                    // remove the rest of branches.first from the fork_db, those blocks are invalid
                    while( ritr != branches.first.rend() )
                    {
@@ -1093,17 +1091,18 @@ void database::notify_post_apply_custom_operation( const custom_operation_notifi
 fc::sha256 database::get_pow_target()const
 {
    const auto& dgp = get_dynamic_global_properties();
-   wlog("!!! checking mining target ${t}", ("t",dgp.mining_target));
+   wlog("database::get_pow_target ${t}", ("t",dgp.mining_target));
    return dgp.mining_target;
 }
 
 uint32_t database::get_pow_summary_target()const
 {
    const auto& dgp = get_dynamic_global_properties();
-   boost::multiprecision::uint256_t bigint = hash_to_bigint(dgp.mining_target);
-   uint32_t summary = static_cast<uint32_t>( bigint >> 224 );
-   wlog("!!! checking mining summary ${s} ${t}", ("s",summary)("t",dgp.mining_target));
-   return dgp.mining_target.approx_log_32();
+   //boost::multiprecision::uint256_t bigint = hash_to_bigint(dgp.mining_target);
+   //uint32_t summary = static_cast<uint32_t>( bigint >> 224 );
+   uint32_t summary = dgp.mining_target.approx_log_32();
+   wlog("database::get_pow_summary_target ${s}", ("s",summary));
+   return summary;
 }
 
 void database::clear_null_wallet_balance()
@@ -1615,8 +1614,6 @@ void database::_apply_block( const signed_block& next_block )
       }
    }
 
-   // TODO: Make a constant
-   wlog("Checking if time to update mining difficulty...");
    const uint32_t frequency = XGT_MINING_RECALC_EVERY_N_BLOCKS;
    if( next_block_num == 1)
    {
@@ -1635,7 +1632,6 @@ void database::_apply_block( const signed_block& next_block )
       fc::microseconds interval = now - gprops.last_mining_recalc_time;
       float actual = (float)interval.to_seconds();
       float expected = XGT_MINING_RECALC_EVERY_N_BLOCKS * XGT_MINING_BLOCKS_PER_SECOND;
-      wlog("!!!!!! Actual / Expected... ${w} ${x}", ("w",actual)("x", expected));
       float ratio = actual / expected;
 
       // Limit the adjustment by a factor of 4 (to prevent massive changes from one target to the next)
@@ -1645,8 +1641,7 @@ void database::_apply_block( const signed_block& next_block )
       else if (adjusted_ratio > 4.0f)
          adjusted_ratio = 4.0f;
 
-      wlog("!!!!!! Ratio... ${w}", ("w",ratio));
-      wlog("!!!!!! Adjusted ratio... ${w}", ("w",adjusted_ratio));
+      wlog("Updating mining difficulty ratio ${w} adjusted_ratio ${x}", ("w",ratio)("x",adjusted_ratio));
 
       const fc::sha256 max_target_h = fc::sha256(XGT_MINING_TARGET_MAX);
       boost::multiprecision::uint256_t max_target = hash_to_bigint(max_target_h);
@@ -1659,73 +1654,10 @@ void database::_apply_block( const signed_block& next_block )
       boost::multiprecision::cpp_dec_float_50 next_target_f = previous_target_f * adjusted_ratio;
       boost::multiprecision::uint256_t next_target(next_target_f);
       fc::sha256 next_target_h = bigint_to_hash(next_target);
-      wlog("!!!!!! Next target... ${w}", ("w",next_target_h));
+      wlog("Updating mining difficulty next target... ${w}", ("w",next_target_h));
       /*
       modify( gprops, [&]( dynamic_global_property_object& dgp ) {
          dgp.mining_target = now;
-      });
-      */
-
-        /*
-      fc::sha256 current_target_s = gprops.mining_target;
-      boost::multiprecision::uint256_t current_target = fc::to_string();
-      boost::multiprecision::cpp_dec_float_50 current_target_f(current_target);
-
-      uint32_t expected = floor( every_n_blocks * blocks_per_second );
-      boost::multiprecision::cpp_dec_float_50 ratio( (float)actual / (float)expected );
-
-      // Limit the adjustment by a factor of 4 (to prevent massive changes from one target to the next)
-      boost::multiprecision::cpp_dec_float_50 adjusted_ratio = ratio;
-      if (adjusted_ratio < 0.25f)
-         adjusted_ratio = 0.25f;
-      else if (adjusted_ratio > 4.0f)
-         adjusted_ratio = 4.0f;
-
-      boost::multiprecision::cpp_dec_float_50 new_target = current_target_f * adjusted_ratio;
-      boost::multiprecision::cpp_dec_float_50 max_target_f(max_target);
-      if (new_target > max_target_f)
-         new_target = max_target_f;
-
-      boost::multiprecision::cpp_dec_float_50 new_target = current_target_f * adjusted_ratio;
-      boost::multiprecision::cpp_dec_float_50 max_target_f(max_target);
-      if (new_target > max_target_f)
-         new_target = max_target_f;
-
-      boost::multiprecision::uint256_t target = new_target.convert_to<boost::multiprecision::uint256_t>();
-
-      std::cout << "seed" << " " << seed << std::endl;
-      std::cout << "first" << " " << first << std::endl;
-      std::cout << "last" << " " << last << std::endl;
-      std::cout << "actual" << " " << actual << std::endl;
-      std::cout << "expected" << " " << expected << std::endl;
-      std::cout << "ratio" << " " << ratio << std::endl;
-      std::cout << "adjusted_ratio" << " " << adjusted_ratio << std::endl;
-      std::cout << "target" << " " << std::hex << std::setw(64) << std::setfill('0') << target << std::endl;
-      */
-
-
-
-      //const auto& gprops = get_dynamic_global_properties();
-      //uint32_t initial = 0x00ffff;
-      //uint32_t current = gprops.mining_target._hash[0];
-      //float ratio = (double)initial / (double)current;
-      //fc::sha256 target = fc::sha256("0000000000000000000000000000000000000000000000000000000000000000");
-      ////fc::sha256 initial_target = fc::sha256("0000000000000000000001000000000000000000000000000000000000000000");
-      ////fc::sha256 initial_target = fc::sha256("00000000ffff0000000000000000000000000000000000000000000000000000");
-      ////fc::sha256 next = initial_target * ( float_to_uint32_t(ratio) & 0x00ffffff );
-      //wlog("current ratio new_target ${a} ${b} ${c}", ("a",current)("b",ratio)("c",target));
-      //fc::sha256 initial_target = fc::sha256("00000000ffff0000000000000000000000000000000000000000000000000000");
-      /*
-      const auto& gprops = get_dynamic_global_properties();
-      uint32_t initial = 0x00ffff;
-      uint32_t current = gprops.mining_difficulty._hash[0];
-      float ratio = (double)initial / (double)current;
-      fc::sha256 initial_target = fc::sha256("0000000000000000000001000000000000000000000000000000000000000000");
-      fc::sha256 next = initial_target * ( (ratio & 0xffffffff) & 0x00ffffff );
-      wlog("current ratio new_target ${a} ${b} ${c}", ("a",current)("b",ratio)("c",next));
-
-      modify( gprops, [&]( dynamic_global_property_object& dgp )
-         dgp.mining_difficulty = next;
       });
       */
    }
@@ -1923,7 +1855,6 @@ void database::_apply_transaction(const signed_transaction& trx)
       auto get_recovery = [&]( const string& name ) { return authority( get< account_authority_object, by_account >( name ).recovery ); };
       auto get_social   = [&]( const string& name ) { return authority( get< account_authority_object, by_account >( name ).social ); };
 
-      wlog("!!!!!! Verifying a transaction...");
       const auto& operations = trx.operations;
       try
       {
@@ -1963,23 +1894,6 @@ void database::_apply_transaction(const signed_transaction& trx)
             {
                wlog("!!!!!! Wallet create");
                break;
-               /*
-               const wallet_create_operation& o = op.template get< wallet_create_operation >();
-               shared_authority recovery = get< account_authority_object, by_account >( o.creator ).recovery;
-               vector<public_key_type> recovery_key_set = recovery.get_keys();
-               flat_set<public_key_type> key_set = trx.get_signature_keys(get_chain_id(), fc::ecc::fc_canonical);
-               vector<public_key_type> keys;
-               keys.reserve(key_set.size());
-               for (const public_key_type& key : key_set) {
-                  wlog("!!!!!! Wallet create key ${w}", ("w",key));
-                  //keys.push_back(key);
-               }
-               if (keys.size() < 0) {
-                  // TODO: Invalid, throw error
-                  wlog("!!!!!! Wallet create invalid");
-                  throw operation_validate_exception();
-               }
-               */
             }
             else if ( is_wallet_update_operation(op) )
             {
@@ -1991,7 +1905,6 @@ void database::_apply_transaction(const signed_transaction& trx)
                vector<public_key_type> keys;
                keys.reserve(key_set.size());
                for (const public_key_type& key : key_set) {
-                  wlog("!!!!!! Wallet update key ${w}", ("w",key));
                   keys.push_back(key);
                }
                string wallet_name = wallet_create_operation::get_wallet_name(keys);
@@ -2053,26 +1966,20 @@ void database::_apply_transaction(const signed_transaction& trx)
 
    notify_pre_apply_transaction( note );
 
-   wlog("!!!!!! PRE-APPLY");
-
    //Finally process the operations
    _current_op_in_trx = 0;
    for( const operation& op : trx.operations )
    { try {
-      wlog("!!!!!! PRE");
       try {
         apply_operation(op);
       } catch ( const fc::exception& e ) {
-        wlog("!!!!!! ERROR ${w}", ("w",e));
+        wlog("!!!!!! Error applying operation ${w}", ("w",e));
         throw e;
       }
-      wlog("!!!!!! POST");
       ++_current_op_in_trx;
      } FC_CAPTURE_AND_RETHROW( (op) );
    }
    _current_trx_id = transaction_id_type();
-
-   wlog("!!!!!! POST-APPLY");
 
    notify_post_apply_transaction( note );
 } FC_CAPTURE_AND_RETHROW( (trx) ) }
@@ -2802,11 +2709,6 @@ void database::init_hardforks()
    _hardfork_versions.versions[ 0 ] = hardfork_version( 0, 0 );
 
    const auto& hardforks = get_hardfork_property_object();
-   wlog( "XGT_NUM_HARDFORKS ${a}", ("a", XGT_NUM_HARDFORKS) );
-   wlog( "XGT_BLOCKCHAIN_VERSION ${a}", ("a", XGT_BLOCKCHAIN_VERSION) );
-   wlog( "XGT_BLOCKCHAIN_HARDFORK_VERSION ${a}", ("a", XGT_BLOCKCHAIN_HARDFORK_VERSION) );
-   wlog( "hardforks.last_hardfork ${a}", ("a", hardforks.last_hardfork) );
-   wlog( "_hardfork_versions.versions[ hardforks.last_hardfork ] ${a}", ("a", _hardfork_versions.versions[ hardforks.last_hardfork ]) );
    FC_ASSERT( hardforks.last_hardfork <= XGT_NUM_HARDFORKS, "Chain knows of more hardforks than configuration", ("hardforks.last_hardfork",hardforks.last_hardfork)("XGT_NUM_HARDFORKS",XGT_NUM_HARDFORKS) );
    FC_ASSERT( _hardfork_versions.versions[ hardforks.last_hardfork ] <= XGT_BLOCKCHAIN_VERSION, "Blockchain version is older than last applied hardfork" );
    FC_ASSERT( XGT_BLOCKCHAIN_HARDFORK_VERSION >= XGT_BLOCKCHAIN_VERSION );
