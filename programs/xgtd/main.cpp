@@ -50,9 +50,7 @@ void info()
    std::cerr << "network type: " << XGT_NETWORK_TYPE << "\n";
    std::cerr << "address prefix: " << XGT_ADDRESS_PREFIX << "\n";
    std::cerr << "genesis wallet name: " << XGT_INIT_MINER_NAME << "\n";
-   auto initminer_private_key = xgt::utilities::key_to_wif( XGT_INIT_PRIVATE_KEY );
    std::cerr << "genesis public key: " << XGT_INIT_PUBLIC_KEY_STR << "\n";
-   std::cerr << "genesis private key: " << initminer_private_key << "\n";
    std::cerr << "chain id: " << std::string( XGT_CHAIN_ID ) << "\n";
    std::cerr << "blockchain version: " << fc::string( XGT_BLOCKCHAIN_VERSION ) << "\n";
    std::cerr << "genesis_time: " << fc::string( XGT_GENESIS_TIME ) << "\n";

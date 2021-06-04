@@ -7,6 +7,10 @@ require 'shellwords'
 require 'rake/testtask'
 require'xgt/ruby'
 
+def flush_testnet?
+  ENV['FLUSH_TESTNET'] == 'TRUE'
+end
+
 def wallet
   ENV['XGT_WALLET'] || 'XGT0000000000000000000000000000000000000000'
 end
@@ -69,14 +73,6 @@ end
 
 desc 'Runs CMake to prepare the project'
 task :configure do
-  addr_prefix = 'XGT' # TODO: Config variable
-  recovery_public_key = Xgt::Ruby::Auth.wif_to_public_key(recovery_private_key, addr_prefix)
-  xgt_compile_args = []
-  xgt_compile_args << %(-DXGT_ADDRESS_PREFIX=#{addr_prefix})
-  if recovery_private_key
-    xgt_compile_args << %(-DXGT_INIT_PRIVATE_KEY=#{recovery_private_key})
-    xgt_compile_args << %(-DXGT_INIT_PUBLIC_KEY_STR=#{recovery_public_key})
-  end
   sh %(
     mkdir -p ../xgt-build \
       && cd ../xgt-build \
@@ -85,7 +81,6 @@ task :configure do
                -D CMAKE_CXX_COMPILER_ARG1="g++" \
                -D CMAKE_C_COMPILER="ccache" \
                -D CMAKE_C_COMPILER_ARG1="gcc" \
-               #{ xgt_compile_args.join(' ') } \
                --target xgtd \
                ../xgt
   )
@@ -105,8 +100,10 @@ task :run do
     wallet_by_key wallet_history wallet_history_api wallet_by_key_api
   )
 
-  sh 'rm -rf ../xgt-build/testnet-data'
-  sh 'mkdir -p ../xgt-build/testnet-data'
+  if flush_testnet?
+    sh 'rm -rf ../xgt-build/testnet-data'
+    sh 'mkdir -p ../xgt-build/testnet-data'
+  end
 
   # TODO: Needs revisiting
   their_host = if host
@@ -185,14 +182,11 @@ namespace :lazy_wallets do
     master = Xgt::Ruby::Auth.random_wif
     private_key = Xgt::Ruby::Auth.generate_wif(wallet, master, 'recovery')
     public_key = Xgt::Ruby::Auth.wif_to_public_key(private_key, address_prefix)
-    p ['private_key', private_key]
-    p ['public_key', public_key]
 
     response = rpc.call('wallet_by_key_api.generate_wallet_name', {
       'recovery_keys' => [public_key]
     })
     wallet_name = response['wallet_name']
-    p wallet_name
 
     txn = {
       'extensions' => [],
@@ -213,10 +207,9 @@ namespace :lazy_wallets do
         }
       ]
     }
-  
+
     id = rpc.broadcast_transaction(txn, [wif], chain_id)
     (puts 'Waiting...' or sleep 1) until rpc.transaction_ready?(id)
-    #p rpc.call('wallet_history_api.get_wallet_history', { 'wallet' => wallet_name })
 
     keys = generate_keys.call
     txn = {
