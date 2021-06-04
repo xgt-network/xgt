@@ -21,8 +21,7 @@
 #define XGT_NETWORK_TYPE                    "mainnet"
 #endif
 
-#define XGT_INIT_PRIVATE_KEY                (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))
-#define XGT_INIT_PUBLIC_KEY_STR             (std::string( xgt::protocol::public_key_type(XGT_INIT_PRIVATE_KEY.get_public_key()) ))
+#define XGT_INIT_PUBLIC_KEY_STR             "XGT5TZAdGDg8TAyWBgMuiZATzp4oeFfi7qk1NtZP2sh8U7mDDsdLf"
 
 #ifdef IS_TEST_NET
 
@@ -54,7 +53,7 @@
 
 #endif
 
-#define XGT_INIT_SUPPLY                     (int64_t( 250 ) * int64_t( 1000000 ) * int64_t( 1000 ))
+#define XGT_INIT_SUPPLY                     (int64_t( 1872324375000000 )) // 18,723,243.75, but with precision 8
 
 /// Version format string.  The Xgt binary will refuse to load a state file where this does not match the built-in version.
 #define XGT_DB_FORMAT_VERSION               "1"

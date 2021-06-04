@@ -62,7 +62,7 @@ EXPOSE 8751
 EXPOSE 8090
 EXPOSE 2001
 
-CMD cd xgt && rake run
+CMD ["/bin/bash", "-c", "source /home/root/.bashrc && cd xgt && rake run"]
 
 # sudo docker run \
 #   --interactive \
@@ -70,9 +70,12 @@ CMD cd xgt && rake run
 #   --publish 8751:8751 \
 #   --publish 8090:8090 \
 #   --publish 2001:2001 \
-#   --env XGT_HOST=http://demo-superproducers-lb-1807013199.us-east-1.elb.amazonaws.com:8751 \
-#   --env XGT_NAME=XGT32P19NiqGKhTj \
-#   --env XGT_WITNESS_PRIVATE_KEY=5KQ3CekviHBZPPSm7Hh7QrSxueQ13kQbmmUmc4Mf5xbc9LBejyr \
+#   --env XGT_HOST=http://some-server.some-host.com:8751 \
+#   --env XGT_WALLET=XGT32P19NiqGKhTj \
 #   --env XGT_RECOVERY_PRIVATE_KEY=5J8rMsuzs5S1cGXyQCbEnfqzoMXpYyyhiJ7evJVDBe7ffNX7h5x \
-#   --rm \
+#   xgt:0.0.1
+
+# sudo docker run -it
+#   --env XGT_WALLET=XGT0000000000000000000000000000000000000000 \
+#   --env XGT_RECOVERY_PRIVATE_KEY=5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n \
 #   xgt:0.0.1

@@ -52,16 +52,11 @@ struct energybar
          dt = (dt > params.regen_time) ? params.regen_time : dt;
 
       fc::uint128_t max_energy_dt = uint64_t( params.max_energy >= 0 ? params.max_energy : 0 );
-      ilog("??? max_energy_dt ${i}", ("i",max_energy_dt));
       max_energy_dt *= dt;
-      ilog("??? max_energy_dt ${i}", ("i",max_energy_dt));
       uint64_t u_regen = (max_energy_dt / params.regen_time).to_uint64();
-      ilog("??? u_regen ${i}", ("i",u_regen));
       FC_ASSERT( u_regen <= std::numeric_limits< int64_t >::max() );
       int64_t new_current_energy = fc::signed_sat_add( current_energy, int64_t( u_regen ) );
-      ilog("??? new_current_energy ${i}", ("i",new_current_energy));
       current_energy = (new_current_energy > params.max_energy) ? params.max_energy : new_current_energy;
-      ilog("??? current_energy ${i}", ("i",current_energy));
 
       last_update_time = now;
    }
@@ -79,7 +74,8 @@ struct energybar
 
    bool has_energy( uint64_t energy_needed )const
    {
-      FC_ASSERT( energy_needed <= std::numeric_limits< int64_t >::max() );
+      // TODO: Add this check back in
+      //FC_ASSERT( energy_needed <= std::numeric_limits< int64_t >::max() );
       return has_energy( (int64_t) energy_needed );
    }
 
@@ -95,7 +91,8 @@ struct energybar
 
    void use_energy( uint64_t energy_used, int64_t min_energy = std::numeric_limits< uint64_t >::min() )
    {
-      FC_ASSERT( energy_used <= std::numeric_limits< int64_t >::max() );
+      // TODO: Add this check back in
+      //FC_ASSERT( energy_used <= std::numeric_limits< int64_t >::max() );
       use_energy( (int64_t) energy_used, min_energy );
    }
 };

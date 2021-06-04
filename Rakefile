@@ -7,6 +7,10 @@ require 'shellwords'
 require 'rake/testtask'
 require'xgt/ruby'
 
+def flush_testnet?
+  ENV['FLUSH_TESTNET'] == 'TRUE'
+end
+
 def wallet
   ENV['XGT_WALLET'] || 'XGT0000000000000000000000000000000000000000'
 end
@@ -19,8 +23,16 @@ def recovery_private_key
   ENV['XGT_RECOVERY_PRIVATE_KEY'] || '5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n'
 end
 
+def witness_private_key
+  ENV['XGT_WITNESS_PRIVATE_KEY'] || '5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n'
+end
+
 def host
   ENV['XGT_HOST'] || 'http://localhost:8751'
+end
+
+def seed_host
+  ENV['XGT_SEED_HOST']
 end
 
 def instance_index
@@ -61,14 +73,6 @@ end
 
 desc 'Runs CMake to prepare the project'
 task :configure do
-  addr_prefix = 'XGT' # TODO: Config variable
-  recovery_public_key = Xgt::Ruby::Auth.wif_to_public_key(recovery_private_key, addr_prefix)
-  xgt_compile_args = []
-  xgt_compile_args << %(-DXGT_ADDRESS_PREFIX=#{addr_prefix})
-  if recovery_private_key
-    xgt_compile_args << %(-DXGT_INIT_PRIVATE_KEY=#{recovery_private_key})
-    xgt_compile_args << %(-DXGT_INIT_PUBLIC_KEY_STR=#{recovery_public_key})
-  end
   sh %(
     mkdir -p ../xgt-build \
       && cd ../xgt-build \
@@ -77,7 +81,6 @@ task :configure do
                -D CMAKE_CXX_COMPILER_ARG1="g++" \
                -D CMAKE_C_COMPILER="ccache" \
                -D CMAKE_C_COMPILER_ARG1="gcc" \
-               #{ xgt_compile_args.join(' ') } \
                --target xgtd \
                ../xgt
   )
@@ -95,11 +98,12 @@ task :run do
   plugins = %w(
     chain p2p webserver witness database_api transaction_api block_api
     wallet_by_key wallet_history wallet_history_api wallet_by_key_api
-    contract_api
   )
 
-  sh 'rm -rf ../xgt-build/testnet-data'
-  sh 'mkdir -p ../xgt-build/testnet-data'
+  if flush_testnet?
+    sh 'rm -rf ../xgt-build/testnet-data'
+    sh 'mkdir -p ../xgt-build/testnet-data'
+  end
 
   # TODO: Needs revisiting
   their_host = if host
@@ -124,14 +128,14 @@ task :run do
       shared-file-dir = "blockchain"
       shared-file-size = 12G
       p2p-endpoint = #{my_host}:#{2001 + instance_index}
-      #{their_host ? %(p2p-seed-node = #{their_host}) : %(p2p-seed-node =)}
+      #{seed_host ? %(p2p-seed-node = #{seed_host}) : %(p2p-seed-node =)}
       webserver-http-endpoint = #{my_host}:#{8751 + instance_index * 2}
 
       miner = ["#{wallet}","#{wif}"]
       mining-threads = 1
       witness = "#{wallet}"
       private-key = #{recovery_private_key}
-      mining-reward-key = #{recovery_private_key}
+      mining-reward-key = #{witness_private_key}
 
       enable-stale-production = true
       required-participation = 0
@@ -178,14 +182,11 @@ namespace :lazy_wallets do
     master = Xgt::Ruby::Auth.random_wif
     private_key = Xgt::Ruby::Auth.generate_wif(wallet, master, 'recovery')
     public_key = Xgt::Ruby::Auth.wif_to_public_key(private_key, address_prefix)
-    p ['private_key', private_key]
-    p ['public_key', public_key]
 
     response = rpc.call('wallet_by_key_api.generate_wallet_name', {
       'recovery_keys' => [public_key]
     })
     wallet_name = response['wallet_name']
-    p wallet_name
 
     txn = {
       'extensions' => [],
@@ -195,7 +196,7 @@ namespace :lazy_wallets do
            'value' => {
              'amount' => {
                'amount' => '1',
-               'precision' =>  3,
+               'precision' =>  8,
                'nai' => '@@000000021'
              },
              'from' => 'XGT0000000000000000000000000000000000000000',
@@ -206,10 +207,9 @@ namespace :lazy_wallets do
         }
       ]
     }
-  
+
     id = rpc.broadcast_transaction(txn, [wif], chain_id)
     (puts 'Waiting...' or sleep 1) until rpc.transaction_ready?(id)
-    #p rpc.call('wallet_history_api.get_wallet_history', { 'wallet' => wallet_name })
 
     keys = generate_keys.call
     txn = {
@@ -254,25 +254,22 @@ namespace :catalyst do
     File.open('out/keys.json', 'w') do |f|
       master = Xgt::Ruby::Auth.random_wif
       ks = { 'master' => master }
-      %w(recovery money social memo).each do |role|
-        private_key = Xgt::Ruby::Auth.generate_wif(wallet, master, 'recovery')
+      %w(recovery money social memo witness).each do |role|
+        private_key = Xgt::Ruby::Auth.generate_wif(wallet, master, role)
         public_key = Xgt::Ruby::Auth.wif_to_public_key(private_key, address_prefix)
         ks["#{role}_private"] = private_key
         ks["#{role}_public"] = public_key
       end
+      response = rpc.call('wallet_by_key_api.generate_wallet_name', {
+        'recovery_keys' => [ks['recovery_public']]
+      })
+      ks['wallet_name'] = response['wallet_name']
       f.puts(JSON.pretty_generate(ks))
     end
   }
 
   keys = ->() {
     JSON.load(File.open('out/keys.json'))
-  }
-
-  wallet_name = ->() {
-    key = keys.call['recovery_public']
-    p key
-    result = rpc.call('wallet_by_key_api.get_key_references', { 'keys' => [key] })
-    result['wallets'].first.first
   }
 
   does_witness_exist = ->() {
@@ -290,8 +287,7 @@ namespace :catalyst do
 
   desc 'Create a wallet for the witness'
   task :create_wallet do
-    name = wallet_name.call
-    raise %(Matching wallet named "#{name}" already exists!) if name
+    name = keys.call['wallet_name']
 
     txn = {
       'extensions' => [],
@@ -301,7 +297,7 @@ namespace :catalyst do
           'value' => {
             'fee' => {
               'amount' => '0',
-              'precision' =>  3,
+              'precision' =>  8,
               'nai' => '@@000000021'
             },
             'creator' => wallet,
@@ -336,34 +332,42 @@ namespace :catalyst do
 
   desc 'Register the witness'
   task :register do
-    name = wallet_name.call
-    raise %(Matching wallet named "#{name}" doesn't already exist!) unless name
+    name = keys.call['wallet_name']
 
     components = fee.split(' ')
     decimal = BigDecimal(components.first) * 1
     final_fee = decimal.truncate.to_s + '.' + sprintf('%03d', (decimal.frac * 1000).truncate) + ' ' + components.last
 
-    raise 'Witness already registered!' if does_witness_exist.call
+    # raise 'Witness already registered!' if does_witness_exist.call
 
     txn = {
       'extensions' => [],
       'operations' => [{
-        'type' => 'witness_update',
+        'type' => 'witness_update_operation',
         'value' => {
           'owner' => name,
-          'url' => 'http://test.host',
+          'url' => 'http://witness-category/my-witness',
           'block_signing_key' => keys.call['recovery_public'],
+          'block_signing_key' => keys.call['witness_public'],
           'props' => {
-            'account_creation_fee' => fee,
+            # 'account_creation_fee' => fee,
+            # 'account_creation_fee' => '1 XGT',
+            'account_creation_fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
           },
-          'fee' => final_fee,
+          # 'fee' => final_fee,
+          # 'fee' => '1 XGT',
+          'fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
         }
       }]
     }
-    signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [keys.call['recovery_private']], chain_id)
+
+
+    signing_keys = keys.call['recovery_private']
+    signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [signing_keys], chain_id)
     $stderr.puts(%(Registering witness with recovery private WIF "#{keys.call['recovery_private']}"...))
     $stderr.puts(%(Signing keypair is #{keys.call['witness_private']} (private) and #{keys.call['witness_public']} (public)...))
     response = rpc.call('transaction_api.broadcast_transaction', [signed])
+    $stderr.puts(%(Registered witness #{name}))
   end
 
   desc 'Assuming keys were generated, do everything else'

@@ -226,23 +226,8 @@ void wallet_by_key_plugin_impl::on_pre_apply_transaction( const transaction_noti
    for( const operation& op : note.transaction.operations )
    {
       uint64_t cost = op.visit( energy_cost_visitor(_db) );
-      wlog("!!!!!! ENERGY COST ${c}", ("c",cost));
       energy_cost += cost;
    }
-   wlog("!!!!!! TOTAL ENERGY COST ${c}", ("c",energy_cost));
-
-
-
-   /*
-   manabar rca_manabar = wallet.energybar;
-   rca_manabar.regenerate_mana< true >( mbparams, now );
-   int64_t consumed_rc = std::min( rca_manabar.current_mana, rc - total_mana_available );
-   int64_t total_mana_delegated = total_mana_available;
-   total_mana_available += consumed_rc;
-   bool has_mana = total_mana_available >= rc;
-   */
-
-
 
    flat_set<public_key_type> key_set = note.transaction.get_signature_keys(_db.get_chain_id(), fc::ecc::fc_canonical);
    vector<wallet_name_type> wallets = get_key_references(key_set);
@@ -250,29 +235,19 @@ void wallet_by_key_plugin_impl::on_pre_apply_transaction( const transaction_noti
    //uint64_t energy_share = energy_cost;
    for (wallet_name_type wallet_name : wallets)
    {
-      wlog("!!!!!! ENERGY WALLET NAME ${w}", ("w",wallet_name));
       const auto& wallet = _db.get_account(wallet_name);
-      wlog("!!!!!! ENERGY FOUND WALLET");
       _db.modify( wallet, [&]( xgt::chain::wallet_object& _wallet ) {
          int64_t value = _wallet.balance.amount.value;
-         wlog("!!!!!! value ${v}", ("v",value));
-         wlog("!!!!!! current_energy ${v}", ("v",_wallet.energybar.current_energy));
          // TODO: Fail if not enough energy
-         // XGT_ASSERT
          util::energybar_params params(value, XGT_VOTING_ENERGY_REGENERATION_SECONDS);
          util::energybar bar = _wallet.energybar;
          if (bar.last_update_time == 0) {
             bar.last_update_time = now;
          }
-         ilog("!!!!!! energybar.last_update_time ${v}", ("v",bar.last_update_time));
          bar.regenerate_energy(params, now);
          bar.use_energy(energy_cost);
          _wallet.energybar = bar;
       } );
-      wlog("!!!!!! MODIFIED WALLET");
-      const auto& wallet2 = _db.get_account(wallet_name);
-      wlog("!!!!!! current_energy ${v}", ("v",wallet2.energybar.current_energy));
-      //wlog("!!!!!! MODIFIED WALLET ${w}", ("w",energy_share));
    }
 }
 
@@ -285,7 +260,6 @@ vector<wallet_name_type> wallet_by_key_plugin_impl::get_key_references( const fl
       auto lookup_itr = key_idx.lower_bound( key_itr.key );
       while( lookup_itr != key_idx.end() && lookup_itr->key == key_itr.key )
       {
-         wlog("!!!!!! ENERGY WALLET REFERENCE NAME ${w}", ("w",key_itr.account));
          wallets.push_back( lookup_itr->account );
          ++lookup_itr;
       }

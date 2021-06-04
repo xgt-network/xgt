@@ -22,6 +22,7 @@ namespace xgt { namespace protocol {
       public_key_type   memo_key;
       string            json_metadata;
 
+      bool is_wallet_create()const { return true; }
       void validate()const;
       uint64_t energy_cost()const { return 0; }
       void get_required_money_authorities( flat_set<wallet_name_type>& a )const{ a.insert(creator); }
