@@ -5,8 +5,6 @@ require 'json'
 require 'bigdecimal'
 require 'shellwords'
 require 'rake/testtask'
-
-$LOAD_PATH.unshift( Dir.glob(File.join(File.dirname(__FILE__), '..', 'xgt-ruby', 'lib')).first )
 require'xgt/ruby'
 
 def wallet
