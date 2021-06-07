@@ -1636,10 +1636,11 @@ void database::_apply_block( const signed_block& next_block )
 
       // Limit the adjustment by a factor of 4 (to prevent massive changes from one target to the next)
       float adjusted_ratio = ratio;
-      if (adjusted_ratio < 0.25f)
-         adjusted_ratio = 0.25f;
-      else if (adjusted_ratio > 4.0f)
-         adjusted_ratio = 4.0f;
+      float reciprocal = 1.0f / XGT_MINING_ADJUSTMENT_MAX_FACTOR;
+      if (adjusted_ratio < reciprocal)
+         adjusted_ratio = reciprocal;
+      else if (adjusted_ratio > XGT_MINING_ADJUSTMENT_MAX_FACTOR)
+         adjusted_ratio = XGT_MINING_ADJUSTMENT_MAX_FACTOR;
 
       wlog("Updating mining difficulty ratio ${w} adjusted_ratio ${x}", ("w",ratio)("x",adjusted_ratio));
 
@@ -1655,11 +1656,10 @@ void database::_apply_block( const signed_block& next_block )
       boost::multiprecision::uint256_t next_target(next_target_f);
       fc::sha256 next_target_h = bigint_to_hash(next_target);
       wlog("Updating mining difficulty next target... ${w}", ("w",next_target_h));
-      /*
+
       modify( gprops, [&]( dynamic_global_property_object& dgp ) {
-         dgp.mining_target = now;
+         dgp.mining_target = next_target_h;
       });
-      */
    }
 
    if( !( skip & skip_merkle_check ) )

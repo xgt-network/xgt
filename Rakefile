@@ -347,15 +347,10 @@ namespace :catalyst do
         'value' => {
           'owner' => name,
           'url' => 'http://witness-category/my-witness',
-          'block_signing_key' => keys.call['recovery_public'],
           'block_signing_key' => keys.call['witness_public'],
           'props' => {
-            # 'account_creation_fee' => fee,
-            # 'account_creation_fee' => '1 XGT',
             'account_creation_fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
           },
-          # 'fee' => final_fee,
-          # 'fee' => '1 XGT',
           'fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
         }
       }]
