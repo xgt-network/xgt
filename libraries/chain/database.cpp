@@ -1648,13 +1648,17 @@ void database::_apply_block( const signed_block& next_block )
       boost::multiprecision::uint256_t max_target = hash_to_bigint(max_target_h);
       const fc::sha256 previous_target_h = gprops.mining_target;
       boost::multiprecision::uint256_t previous_target = hash_to_bigint(previous_target_h);
-      // TODO: Check before setting
-      FC_ASSERT( previous_target <= max_target, "Previous target must be lower than max target",
-         ("previous_target",previous_target_h)("max_target",max_target_h) );
       boost::multiprecision::cpp_dec_float_50 previous_target_f(previous_target);
       boost::multiprecision::cpp_dec_float_50 next_target_f = previous_target_f * adjusted_ratio;
       boost::multiprecision::uint256_t next_target(next_target_f);
       fc::sha256 next_target_h = bigint_to_hash(next_target);
+      if (next_target >= max_target)
+      {
+         wlog( "Capping next target ${a} to be lower than ${b}",
+               ("a",next_target_h)("b",max_target_h) );
+         next_target = max_target;
+         next_target_h = bigint_to_hash(next_target);
+      }
       wlog("Updating mining difficulty next target... ${w}", ("w",next_target_h));
 
       modify( gprops, [&]( dynamic_global_property_object& dgp ) {
