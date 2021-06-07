@@ -21,7 +21,7 @@
 #define XGT_NETWORK_TYPE                    "mainnet"
 #endif
 
-#define XGT_INIT_PUBLIC_KEY_STR             "XGT5TZAdGDg8TAyWBgMuiZATzp4oeFfi7qk1NtZP2sh8U7mDDsdLf"
+#define XGT_INIT_PUBLIC_KEY_STR             "XGT7dDoJbrmueAw431pPbjLDoRhqFCC5Xs5o6f1cZLepWEpkcy3Tc"
 
 #ifdef IS_TEST_NET
 
