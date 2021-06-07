@@ -49,6 +49,7 @@ RUN ["/bin/bash", "-c", "source /home/root/.bashrc && gem install --no-document 
 RUN ["/bin/bash", "-c", "source /home/root/.bashrc && rbenv rehash"]
 
 COPY . /home/root/xgt
+RUN cd xgt && rm c_gen.sh c_cre.sh c_reg.sh start-1.sh start-2.sh test.sh xgtw.sh
 
 RUN ["/bin/bash", "-c", "source /home/root/.bashrc && cd xgt && rake clean"]
 RUN ["/bin/bash", "-c", "source /home/root/.bashrc && cd xgt && rake configure"]

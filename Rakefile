@@ -102,8 +102,8 @@ task :run do
 
   if flush_testnet?
     sh 'rm -rf ../xgt-build/testnet-data'
-    sh 'mkdir -p ../xgt-build/testnet-data'
   end
+  sh 'mkdir -p ../xgt-build/testnet-data'
 
   # TODO: Needs revisiting
   their_host = if host
@@ -347,15 +347,10 @@ namespace :catalyst do
         'value' => {
           'owner' => name,
           'url' => 'http://witness-category/my-witness',
-          'block_signing_key' => keys.call['recovery_public'],
           'block_signing_key' => keys.call['witness_public'],
           'props' => {
-            # 'account_creation_fee' => fee,
-            # 'account_creation_fee' => '1 XGT',
             'account_creation_fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
           },
-          # 'fee' => final_fee,
-          # 'fee' => '1 XGT',
           'fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
         }
       }]

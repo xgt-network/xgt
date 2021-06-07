@@ -1636,10 +1636,11 @@ void database::_apply_block( const signed_block& next_block )
 
       // Limit the adjustment by a factor of 4 (to prevent massive changes from one target to the next)
       float adjusted_ratio = ratio;
-      if (adjusted_ratio < 0.25f)
-         adjusted_ratio = 0.25f;
-      else if (adjusted_ratio > 4.0f)
-         adjusted_ratio = 4.0f;
+      float reciprocal = 1.0f / XGT_MINING_ADJUSTMENT_MAX_FACTOR;
+      if (adjusted_ratio < reciprocal)
+         adjusted_ratio = reciprocal;
+      else if (adjusted_ratio > XGT_MINING_ADJUSTMENT_MAX_FACTOR)
+         adjusted_ratio = XGT_MINING_ADJUSTMENT_MAX_FACTOR;
 
       wlog("Updating mining difficulty ratio ${w} adjusted_ratio ${x}", ("w",ratio)("x",adjusted_ratio));
 
@@ -1647,19 +1648,22 @@ void database::_apply_block( const signed_block& next_block )
       boost::multiprecision::uint256_t max_target = hash_to_bigint(max_target_h);
       const fc::sha256 previous_target_h = gprops.mining_target;
       boost::multiprecision::uint256_t previous_target = hash_to_bigint(previous_target_h);
-      // TODO: Check before setting
-      FC_ASSERT( previous_target <= max_target, "Previous target must be lower than max target",
-         ("previous_target",previous_target_h)("max_target",max_target_h) );
       boost::multiprecision::cpp_dec_float_50 previous_target_f(previous_target);
       boost::multiprecision::cpp_dec_float_50 next_target_f = previous_target_f * adjusted_ratio;
       boost::multiprecision::uint256_t next_target(next_target_f);
       fc::sha256 next_target_h = bigint_to_hash(next_target);
+      if (next_target >= max_target)
+      {
+         wlog( "Capping next target ${a} to be lower than ${b}",
+               ("a",next_target_h)("b",max_target_h) );
+         next_target = max_target;
+         next_target_h = bigint_to_hash(next_target);
+      }
       wlog("Updating mining difficulty next target... ${w}", ("w",next_target_h));
-      /*
+
       modify( gprops, [&]( dynamic_global_property_object& dgp ) {
-         dgp.mining_target = now;
+         dgp.mining_target = next_target_h;
       });
-      */
    }
 
    if( !( skip & skip_merkle_check ) )
