@@ -102,8 +102,8 @@ task :run do
 
   if flush_testnet?
     sh 'rm -rf ../xgt-build/testnet-data'
-    sh 'mkdir -p ../xgt-build/testnet-data'
   end
+  sh 'mkdir -p ../xgt-build/testnet-data'
 
   # TODO: Needs revisiting
   their_host = if host
