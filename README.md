@@ -38,7 +38,7 @@ Getting started with XGT is fairly simple. You can either choose to use docker-i
 
 ## Quickstart
 
-Just want to get up and running quickly? We have pre-built Docker images for your convenience. More details are in our [Quickstart Guide](https://github.com/xgt-network/xgt/blob/master/doc/exchangequickstart.md).
+Just want to get up and running quickly? We have pre-built Docker images for your convenience. More details are in our [Mining XGT](https://github.com/xgt-network/xgt/wiki/Mining-XGT) Guide.
 
 ## Building
 
