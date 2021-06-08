@@ -62,7 +62,7 @@ See [Mining XGT](https://github.com/xgt-network/xgt/wiki/Mining-XGT)
 
 ## CLI Wallet
 
-We provide a basic cli wallet for interfacing with `xgtd`. The wallet is self-documented via command line help. The node you connect to via the cli wallet needs to be running the `account_by_key_api`, `condenser_api`, and needs to be configured to accept WebSocket connections via `webserver-ws-endpoint`.
+We provide a basic cli wallet for interfacing with `xgtd`. The wallet is self-documented via command line help. See [xgt-ruby](https://github.com/xgt-network/xgt-ruby)
 
 ## Testing
 
