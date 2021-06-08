@@ -42,9 +42,9 @@ Just want to get up and running quickly? We have pre-built Docker images for you
 
 ## Building
 
-We **strongly** recommend using one of our pre-built Docker images or using Docker to build XGT. Both of these processes are described in the [Quickstart Guide](https://github.com/xgt-network/xgt/blob/master/doc/exchangequickstart.md).
+We **strongly** recommend using one of our pre-built Docker images or using Docker to build XGT. Both of these processes are described in the [Mining XGT](https://github.com/xgt-network/xgt/wiki/Mining-XGT).
 
-But if you would still like to build from source, we also have [build instructions](https://github.com/xgt-network/xgt/blob/master/doc/building.md) for Linux (Ubuntu LTS) and macOS.
+To build from source, we also have [build instructions](https://github.com/xgt-network/xgt/wiki/Compiling-XGT) for Linux (Ubuntu 20.04 LTS) and macOS.
 
 ## Dockerized P2P Node
 
@@ -58,15 +58,7 @@ To run a p2p node (ca. 2GB of memory is required at the moment):
 
 ## Dockerized Full Node
 
-To run a node with *all* the data (e.g. for supporting a content website)
-ca. 14GB of memory, and growing, is required:
-
-    docker run \
-        --env USE_FULL_WEB_NODE=1 \
-        -d -p 2001:2001 -p 8090:8090 --name xgtd-full \
-        xgt-network/xgt
-
-    docker logs -f xgtd-full
+See [Mining XGT](https://github.com/xgt-network/xgt/wiki/Mining-XGT)
 
 ## CLI Wallet
 
