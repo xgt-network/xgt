@@ -930,7 +930,33 @@ void pow_evaluator::do_apply( const pow_operation& o )
    if (w == nullptr)
    {
       wlog( "Wallet does not exist for worker account ${w}", ("w",worker_account) );
-      return;
+      if ( !o.new_recovery_key.valid() )
+      {
+         wlog( "Wallet new recovery key is not valid for wallet ${w}", ("w",worker_account) );
+         return;
+      }
+
+      db.create< wallet_object >( [&]( wallet_object& acc )
+      {
+         initialize_wallet_object( acc, worker_account, *o.new_recovery_key, dgp, true /*mined*/, wallet_name_type(), _db.get_hardfork() );
+         // ^ empty recovery account parameter means highest voted witness at time of recovery
+      });
+
+      db.create< account_authority_object >( [&]( account_authority_object& auth )
+      {
+         auth.account = worker_account;
+         auth.recovery = authority( 1, *o.new_recovery_key, 1);
+         auth.money = auth.recovery;
+         auth.social = auth.recovery;
+      });
+
+      db.create< witness_object >( [&]( witness_object& w )
+      {
+          w.owner             = worker_account;
+          copy_legacy_chain_properties< true >( w.props, o.props );
+          w.signing_key       = *o.new_recovery_key;
+          w.pow_worker        = dgp.total_pow;
+      });
    }
 
    const witness_object* cur_witness = db.find_witness( worker_account );

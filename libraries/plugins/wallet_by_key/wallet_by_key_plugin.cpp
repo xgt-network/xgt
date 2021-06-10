@@ -243,10 +243,10 @@ void wallet_by_key_plugin_impl::on_pre_apply_transaction( const transaction_noti
       }
       else
       {
-         try
-         {
-            _db.modify( *w, [&]( xgt::chain::wallet_object& _wallet ) {
-               int64_t value = _wallet.balance.amount.value;
+         _db.modify( *w, [&]( xgt::chain::wallet_object& _wallet ) {
+            int64_t value = _wallet.balance.amount.value;
+            try
+            {
                // TODO: Fail if not enough energy
                util::energybar_params params(value, XGT_VOTING_ENERGY_REGENERATION_SECONDS);
                util::energybar bar = _wallet.energybar;
@@ -255,13 +255,13 @@ void wallet_by_key_plugin_impl::on_pre_apply_transaction( const transaction_noti
                }
                bar.regenerate_energy(params, now);
                bar.use_energy(energy_cost);
-               _wallet.energybar = bar;
-            } );
-         }
-         catch (fc::assert_exception &e)
-         {
-            ilog("Could not update energy bar for ${w}", ("w",wallet_name));
-         }
+            }
+            catch (fc::assert_exception &e)
+            {
+               ilog("Could not update energy bar for ${w}", ("w",wallet_name));
+            }
+            _wallet.energybar = bar;
+         } );
       }
    }
 }
