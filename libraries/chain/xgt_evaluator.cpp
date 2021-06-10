@@ -897,7 +897,6 @@ void pow_evaluator::do_apply( const pow_operation& o )
 
    const auto& dgp = db.get_dynamic_global_properties();
    uint32_t target_pow = db.get_pow_summary_target();
-   wallet_name_type worker_account;
 
    const auto& work = o.work.get< sha2_pow >();
    fc::optional<block_id_type> previous_block_id = db.previous_block_id();
@@ -907,7 +906,7 @@ void pow_evaluator::do_apply( const pow_operation& o )
    FC_ASSERT( recent_block_num > dgp.last_irreversible_block_num,
       "POW done for block older than last irreversible block num" );
    FC_ASSERT( work.pow_summary < target_pow, "Insufficient work difficulty. Work: ${w}, Target: ${t}", ("w",work.pow_summary)("t", target_pow) );
-   worker_account = work.input.worker_account;
+   wallet_name_type worker_account = work.input.worker_account;
 
    FC_ASSERT( o.props.maximum_block_size >= XGT_MIN_BLOCK_SIZE_LIMIT * 2, "Voted maximum block size is too small." );
 
@@ -927,45 +926,25 @@ void pow_evaluator::do_apply( const pow_operation& o )
    asset reward = asset(price, base_reward.symbol);
    wlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
 
-   const auto& accounts_by_name = db.get_index<wallet_index>().indices().get<by_name>();
-   auto itr = accounts_by_name.find( worker_account );
-   if(itr == accounts_by_name.end())
+   const wallet_object* w = db.find_account( worker_account );
+   if (w == nullptr)
    {
-      FC_ASSERT( o.new_recovery_key.valid(), "New recovery key is not valid." );
-      db.create< wallet_object >( [&]( wallet_object& acc )
-      {
-         initialize_wallet_object( acc, worker_account, *o.new_recovery_key, dgp, true /*mined*/, wallet_name_type(), _db.get_hardfork() );
-         // ^ empty recovery account parameter means highest voted witness at time of recovery
-      });
-
-      db.create< account_authority_object >( [&]( account_authority_object& auth )
-      {
-         auth.account = worker_account;
-         auth.recovery = authority( 1, *o.new_recovery_key, 1);
-         auth.money = auth.recovery;
-         auth.social = auth.recovery;
-      });
-
-      db.create<witness_object>( [&]( witness_object& w )
-      {
-          w.owner             = worker_account;
-          copy_legacy_chain_properties< true >( w.props, o.props );
-          w.signing_key       = *o.new_recovery_key;
-          w.pow_worker        = dgp.total_pow;
-      });
+      wlog( "Wallet does not exist for worker account ${w}", ("w",worker_account) );
+      return;
    }
-   else
+
+   const witness_object* cur_witness = db.find_witness( worker_account );
+   if (cur_witness == nullptr)
    {
-      FC_ASSERT( !o.new_recovery_key.valid(), "Cannot specify an recovery key unless creating account." );
-      const witness_object* cur_witness = db.find_witness( worker_account );
-      FC_ASSERT( cur_witness, "Witness must be created for existing account before mining.");
-      //FC_ASSERT( cur_witness->pow_worker == 0, "This account is already scheduled for pow block production." );
-      db.modify(*cur_witness, [&]( witness_object& w )
-      {
-          copy_legacy_chain_properties< true >( w.props, o.props );
-          w.pow_worker        = dgp.total_pow;
-      });
+      wlog( "Witness does not exist for worker account ${w}", ("w",worker_account) );
+      return;
    }
+
+   db.modify(*cur_witness, [&]( witness_object& w )
+   {
+       copy_legacy_chain_properties< true >( w.props, o.props );
+       w.pow_worker        = dgp.total_pow;
+   });
 
    db.adjust_balance(worker_account, reward);
 }

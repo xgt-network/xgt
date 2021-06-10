@@ -235,19 +235,34 @@ void wallet_by_key_plugin_impl::on_pre_apply_transaction( const transaction_noti
    //uint64_t energy_share = energy_cost;
    for (wallet_name_type wallet_name : wallets)
    {
-      const auto& wallet = _db.get_account(wallet_name);
-      _db.modify( wallet, [&]( xgt::chain::wallet_object& _wallet ) {
-         int64_t value = _wallet.balance.amount.value;
-         // TODO: Fail if not enough energy
-         util::energybar_params params(value, XGT_VOTING_ENERGY_REGENERATION_SECONDS);
-         util::energybar bar = _wallet.energybar;
-         if (bar.last_update_time == 0) {
-            bar.last_update_time = now;
+      const wallet_object* w = _db.find_account( wallet_name );
+      if (w == nullptr)
+      {
+         // TODO: Keep an eye on this
+         //ilog("Could not find wallet for whom to calculate energy costs for ${w}", ("w",wallet_name));
+      }
+      else
+      {
+         try
+         {
+            _db.modify( *w, [&]( xgt::chain::wallet_object& _wallet ) {
+               int64_t value = _wallet.balance.amount.value;
+               // TODO: Fail if not enough energy
+               util::energybar_params params(value, XGT_VOTING_ENERGY_REGENERATION_SECONDS);
+               util::energybar bar = _wallet.energybar;
+               if (bar.last_update_time == 0) {
+                  bar.last_update_time = now;
+               }
+               bar.regenerate_energy(params, now);
+               bar.use_energy(energy_cost);
+               _wallet.energybar = bar;
+            } );
          }
-         bar.regenerate_energy(params, now);
-         bar.use_energy(energy_cost);
-         _wallet.energybar = bar;
-      } );
+         catch (fc::assert_exception &e)
+         {
+            ilog("Could not update energy bar for ${w}", ("w",wallet_name));
+         }
+      }
    }
 }
 
