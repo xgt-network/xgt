@@ -2681,23 +2681,23 @@ namespace graphene { namespace net {
           // at any given time, there's a maximum number of blocks that can possibly be out there
           // [(now - genesis time) / block interval].  If they offer us more blocks than that,
           // they must be an attacker or have a buggy client.
-          fc::time_point_sec minimum_time_of_last_offered_block =
-              originating_peer->last_block_time_delegate_has_seen + // timestamp of the block immediately before the first unfetched block
-              originating_peer->number_of_unfetched_item_ids * XGT_BLOCK_INTERVAL;
-          if (minimum_time_of_last_offered_block > _delegate->get_blockchain_now() + GRAPHENE_NET_FUTURE_SYNC_BLOCKS_GRACE_PERIOD_SEC)
-          {
-            wlog("Disconnecting from peer ${peer} who offered us an implausible number of blocks, their last block would be in the future (${timestamp})",
-                 ("peer", originating_peer->get_remote_endpoint())
-                 ("timestamp", minimum_time_of_last_offered_block));
-            fc::exception error_for_peer(FC_LOG_MESSAGE(error, "You offered me a list of more sync blocks than could possibly exist.  Total blocks offered: ${blocks}, Minimum time of the last block you offered: ${minimum_time_of_last_offered_block}, Now: ${now}",
-                                                        ("blocks", originating_peer->number_of_unfetched_item_ids)
-                                                        ("minimum_time_of_last_offered_block", minimum_time_of_last_offered_block)
-                                                        ("now", _delegate->get_blockchain_now())));
-            disconnect_from_peer(originating_peer,
-                                 "You offered me a list of more sync blocks than could possibly exist",
-                                 true, error_for_peer);
-            return;
-          }
+          //fc::time_point_sec minimum_time_of_last_offered_block =
+          //    originating_peer->last_block_time_delegate_has_seen + // timestamp of the block immediately before the first unfetched block
+          //    originating_peer->number_of_unfetched_item_ids * XGT_BLOCK_INTERVAL;
+          //if (minimum_time_of_last_offered_block > _delegate->get_blockchain_now() + GRAPHENE_NET_FUTURE_SYNC_BLOCKS_GRACE_PERIOD_SEC)
+          //{
+          //  wlog("Disconnecting from peer ${peer} who offered us an implausible number of blocks, their last block would be in the future (${timestamp})",
+          //       ("peer", originating_peer->get_remote_endpoint())
+          //       ("timestamp", minimum_time_of_last_offered_block));
+          //  fc::exception error_for_peer(FC_LOG_MESSAGE(error, "You offered me a list of more sync blocks than could possibly exist.  Total blocks offered: ${blocks}, Minimum time of the last block you offered: ${minimum_time_of_last_offered_block}, Now: ${now}",
+          //                                              ("blocks", originating_peer->number_of_unfetched_item_ids)
+          //                                              ("minimum_time_of_last_offered_block", minimum_time_of_last_offered_block)
+          //                                              ("now", _delegate->get_blockchain_now())));
+          //  disconnect_from_peer(originating_peer,
+          //                       "You offered me a list of more sync blocks than could possibly exist",
+          //                       true, error_for_peer);
+          //  return;
+          //}
 
           uint32_t new_number_of_unfetched_items = calculate_unsynced_block_count_from_all_peers();
           if (new_number_of_unfetched_items != _total_number_of_unfetched_items)
