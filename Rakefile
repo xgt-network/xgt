@@ -7,8 +7,8 @@ require 'shellwords'
 require 'rake/testtask'
 require'xgt/ruby'
 
-def mining_enabled?
-  ENV['MINING_ENABLED'] == 'TRUE'
+def mining_disabled?
+  ENV['MINING_DISABLED'] == 'TRUE'
 end
 
 def flush_testnet?
@@ -145,7 +145,7 @@ task :run do
       private-key = #{recovery_private_key}
       mining-reward-key = #{witness_private_key}
 
-      enable-stale-production = #{mining_enabled ? 'true' : 'false'}
+      enable-stale-production = #{mining_disabled? ? 'false' : 'true'}
       required-participation = 0
     )))
   end
