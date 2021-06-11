@@ -143,7 +143,7 @@ void set_index_helper( database& db, mira::index_type type, const boost::filesys
 
 void database::open( const open_args& args )
 {
-   ilog("database::open 1");
+   ilog("database::open");
 
    try
    {
@@ -152,7 +152,7 @@ void database::open( const open_args& args )
       initialize_indexes();
       initialize_evaluators();
 
-      ilog("database::open 2");
+      ilog("database::open setting up global property object...");
 
       if( !find< dynamic_global_property_object >() )
       {
@@ -168,7 +168,7 @@ void database::open( const open_args& args )
          });
       }
 
-      ilog("database::open 3");
+      ilog("database::open setting up block log...");
 
       _benchmark_dumper.set_enabled( args.benchmark_is_enabled );
 
@@ -176,7 +176,7 @@ void database::open( const open_args& args )
 
       auto log_head = _block_log.head();
 
-      ilog("database::open 4");
+      ilog("database::open setting up database...");
 
       // Rewind all undo state. This should return us to the state at the last irreversible block.
       with_write_lock( [&]()
@@ -198,7 +198,7 @@ void database::open( const open_args& args )
          }
       });
 
-      ilog("database::open 5");
+      ilog("database::open check for reindex...");
 
       if( head_block_num() )
       {
@@ -209,14 +209,14 @@ void database::open( const open_args& args )
          _fork_db.start_block( *head_block );
       }
 
-      ilog("database::open 6");
+      ilog("database::open initialize versioning...");
 
       with_read_lock( [&]()
       {
          init_hardforks(); // Writes to local state, but reads from db
       });
 
-      ilog("database::open 7");
+      ilog("database::open initialize benchmarking...");
 
       if (args.benchmark.first)
       {
@@ -225,7 +225,7 @@ void database::open( const open_args& args )
          args.benchmark.second(last_block_num, get_abstract_index_cntr());
       }
 
-      ilog("database::open 8");
+      ilog("database::open finish opening...");
 
       _shared_file_full_threshold = args.shared_file_full_threshold;
       _shared_file_scale_rate = args.shared_file_scale_rate;
@@ -1091,7 +1091,7 @@ void database::notify_post_apply_custom_operation( const custom_operation_notifi
 fc::sha256 database::get_pow_target()const
 {
    const auto& dgp = get_dynamic_global_properties();
-   wlog("database::get_pow_target ${t}", ("t",dgp.mining_target));
+   //wlog("database::get_pow_target ${t}", ("t",dgp.mining_target));
    return dgp.mining_target;
 }
 
@@ -1101,7 +1101,7 @@ uint32_t database::get_pow_summary_target()const
    //boost::multiprecision::uint256_t bigint = hash_to_bigint(dgp.mining_target);
    //uint32_t summary = static_cast<uint32_t>( bigint >> 224 );
    uint32_t summary = dgp.mining_target.approx_log_32();
-   wlog("database::get_pow_summary_target ${s}", ("s",summary));
+   //wlog("database::get_pow_summary_target ${s}", ("s",summary));
    return summary;
 }
 
@@ -1563,8 +1563,6 @@ void database::check_free_memory( bool force_print, uint32_t current_block_num )
 
 void database::_apply_block( const signed_block& next_block )
 { try {
-   ilog("database::apply_block witness ${a}", ("a", next_block.witness));
-
    block_notification note( next_block );
 
    notify_pre_apply_block( note );
@@ -1939,17 +1937,17 @@ void database::_apply_transaction(const signed_transaction& trx)
    //expired, and TaPoS makes no sense as no blocks exist.
    if( BOOST_LIKELY(head_block_num() > 0) )
    {
-      if( !(skip & skip_tapos_check) )
-      {
+      //if( !(skip & skip_tapos_check) )
+      //{
          // const auto& tapos_block_summary = get< block_summary_object >( trx.ref_block_num );
          //Verify TaPoS block summary has correct ID prefix, and that this block's time is not past the expiration
-         ilog( "trx.ref_block_prefix == ${h}", ("h", trx.ref_block_prefix) );
+         //ilog( "trx.ref_block_prefix == ${h}", ("h", trx.ref_block_prefix) );
          // TODO: XXX: Add these back in
          // ilog( "tapos_block_summary.block_id._hash[1] == ${h}", ("h", tapos_block_summary.block_id._hash[1]) );
          // XGT_ASSERT( trx.ref_block_prefix == tapos_block_summary.block_id._hash[1], transaction_tapos_exception,
          //            "", ("trx.ref_block_prefix", trx.ref_block_prefix)
          //            ("tapos_block_summary",tapos_block_summary.block_id._hash[1]));
-      }
+      //}
 
       fc::time_point_sec now = head_block_time();
 

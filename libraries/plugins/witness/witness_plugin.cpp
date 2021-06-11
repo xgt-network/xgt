@@ -344,7 +344,7 @@ namespace detail {
       // std::default_random_engine generator(_db.head_block_num());
       // std::uniform_real_distribution< double > distribution(2000.0, 10000.0);
       // int64_t sleep_time = static_cast<int64_t>( distribution(generator) );
-      int64_t sleep_time = 100;
+      int64_t sleep_time = 1000;
       _timer.expires_from_now( boost::posix_time::milliseconds( sleep_time ) );
       _timer.async_wait( boost::bind( &witness_plugin_impl::block_production_loop, this ) );
    }
@@ -364,7 +364,7 @@ namespace detail {
 
       if( _witnesses.size() == 0 || _private_keys.size() == 0)
       {
-         wlog( "Either no witness set, no private key set, or both" );
+         //wlog( "Either no witness set, no private key set, or both" );
          return;
       }
 
@@ -395,7 +395,7 @@ namespace detail {
          schedule_production_loop();
          return;
       }
-      
+
       try
       {
          _db.get< chain::witness_object, chain::by_name >(*name_ptr);
@@ -538,21 +538,23 @@ void witness_plugin::plugin_startup()
    ilog("witness plugin:  plugin_startup() begin" );
    chain::database& d = appbase::app().get_plugin< xgt::plugins::chain::chain_plugin >().db();
 
-   if( !my->_witnesses.empty() )
+   if( my->_production_enabled )
    {
-      ilog( "Launching block production for ${n} witnesses.", ("n", my->_witnesses.size()) );
-      appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().set_block_production( true );
-      if( my->_production_enabled )
+      if( !my->_witnesses.empty() )
       {
+         ilog( "Launching block production for ${n} witnesses.", ("n", my->_witnesses.size()) );
+         appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().set_block_production( true );
+
          ilog( "Block production is enabled" );
          if( d.head_block_num() == 0 )
             new_chain_banner( d );
          my->_production_skip_flags |= chain::database::skip_undo_history_check;
+
+         my->schedule_production_loop();
+      } else
+         elog("No witnesses configured! Please add witness IDs and private keys to configuration.");
       }
-      my->schedule_production_loop();
-   } else
-      elog("No witnesses configured! Please add witness IDs and private keys to configuration.");
-   ilog("witness plugin:  plugin_startup() end");
+      ilog("witness plugin:  plugin_startup() end");
    } FC_CAPTURE_AND_RETHROW() }
 
 void witness_plugin::plugin_shutdown()

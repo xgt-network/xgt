@@ -7,6 +7,10 @@ require 'shellwords'
 require 'rake/testtask'
 require'xgt/ruby'
 
+def mining_disabled?
+  ENV['MINING_DISABLED'] == 'TRUE'
+end
+
 def flush_testnet?
   ENV['FLUSH_TESTNET'] == 'TRUE'
 end
@@ -121,6 +125,10 @@ task :run do
       log-file-appender = {"appender":"logfile","file":"logfile.log"}
       log-logger = {"name":"default","level":"debug","appender":"stderr"}
       log-logger = {"name":"default","level":"debug","appender":"logfile"}
+      #log-logger = {"name":"sync","level":"debug","appender":"stderr"}
+      #log-logger = {"name":"sync","level":"debug","appender":"logfile"}
+      #log-logger = {"name":"p2p","level":"debug","appender":"stderr"}
+      #log-logger = {"name":"p2p","level":"debug","appender":"logfile"}
 
       backtrace = yes
       plugin = #{plugins.join(' ')}
@@ -137,7 +145,7 @@ task :run do
       private-key = #{recovery_private_key}
       mining-reward-key = #{witness_private_key}
 
-      enable-stale-production = true
+      enable-stale-production = #{mining_disabled? ? 'false' : 'true'}
       required-participation = 0
     )))
   end

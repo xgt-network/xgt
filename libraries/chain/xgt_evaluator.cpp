@@ -90,11 +90,10 @@ void witness_update_evaluator::do_apply( const witness_update_operation& o )
       wlog( "NOTIFYALERT! max block size exceeds soft limit in replay" );
    FC_ASSERT( o.props.maximum_block_size <= XGT_SOFT_MAX_BLOCK_SIZE, "Max block size cannot be more than 2MiB" );
 
-   const auto& by_witness_name_idx = _db.get_index< witness_index >().indices().get< by_name >();
-   auto wit_itr = by_witness_name_idx.find( o.owner );
-   if( wit_itr != by_witness_name_idx.end() )
+   const auto* witness = _db.find_witness(o.owner);
+   if( witness != nullptr )
    {
-      _db.modify( *wit_itr, [&]( witness_object& w ) {
+      _db.modify( *witness, [&]( witness_object& w ) {
          from_string( w.url, o.url );
          w.signing_key        = o.block_signing_key;
          copy_legacy_chain_properties< false >( w.props, o.props );
@@ -216,70 +215,94 @@ void wallet_update_evaluator::do_apply( const wallet_update_operation& o )
 
    wlog("!!!!!! WALLET UPDATE 2");
 
-   const auto& wallet = _db.get_account( o.wallet );
-   const auto& wallet_auth = _db.get< account_authority_object, by_account >( o.wallet );
-
-   if( o.recovery )
-      validate_auth_size( *o.recovery );
-   if( o.money )
-      validate_auth_size( *o.money );
-   if( o.social )
-      validate_auth_size( *o.social );
-
-   wlog("!!!!!! WALLET UPDATE 3");
-
-   if( o.recovery )
+   // Upsert
+   // TODO: VALIDATE
    {
+      const auto* wallet = _db.find_account( o.wallet );
+      if (wallet == nullptr)
+      {
+         const auto& props = _db.get_dynamic_global_properties();
+         _db.create< wallet_object >( [&]( wallet_object& acc )
+         {
+            initialize_wallet_object( acc, o.wallet, *o.memo_key, props, false /*mined*/, XGT_INIT_MINER_NAME, _db.get_hardfork() );
+         });
+
+         _db.create< account_authority_object >( [&]( account_authority_object& auth )
+         {
+            auth.account = o.wallet;
+            auth.recovery = *o.recovery;
+            auth.money = *o.money;
+            auth.social = *o.social;
+            auth.last_recovery_update = fc::time_point_sec::min();
+         });
+      }
+   }
+
+   {
+      const auto& wallet = _db.get_account( o.wallet );
+      const auto& wallet_auth = _db.get< account_authority_object, by_account >( o.wallet );
+
+      if( o.recovery )
+         validate_auth_size( *o.recovery );
+      if( o.money )
+         validate_auth_size( *o.money );
+      if( o.social )
+         validate_auth_size( *o.social );
+
+      wlog("!!!!!! WALLET UPDATE 3");
+
+      if( o.recovery )
+      {
 #ifndef IS_TEST_NET
-      FC_ASSERT( _db.head_block_time() - wallet_auth.last_recovery_update > XGT_RECOVERY_UPDATE_LIMIT, "Recovery authority can only be updated once an hour." );
+         FC_ASSERT( _db.head_block_time() - wallet_auth.last_recovery_update > XGT_RECOVERY_UPDATE_LIMIT, "Recovery authority can only be updated once an hour." );
 #endif
 
-      verify_authority_accounts_exist( _db, *o.recovery, o.wallet, authority::recovery );
+         verify_authority_accounts_exist( _db, *o.recovery, o.wallet, authority::recovery );
 
-      _db.update_recovery_authority( wallet, *o.recovery );
-   }
-   if( o.money )
-      verify_authority_accounts_exist( _db, *o.money, o.wallet, authority::money );
-   if( o.social )
-      verify_authority_accounts_exist( _db, *o.social, o.wallet, authority::social );
+         _db.update_recovery_authority( wallet, *o.recovery );
+      }
+      if( o.money )
+         verify_authority_accounts_exist( _db, *o.money, o.wallet, authority::money );
+      if( o.social )
+         verify_authority_accounts_exist( _db, *o.social, o.wallet, authority::social );
 
-   wlog("!!!!!! WALLET UPDATE 4");
+      wlog("!!!!!! WALLET UPDATE 4");
 
-   _db.modify( wallet, [&]( wallet_object& acc )
-   {
-      if( o.memo_key && *o.memo_key != public_key_type() )
-            acc.memo_key = *o.memo_key;
-
-      acc.last_account_update = _db.head_block_time();
-   });
-
-   #ifndef IS_LOW_MEM
-   if( o.json_metadata.size() > 0 || o.social_json_metadata.size() > 0 )
-   {
-      _db.modify( _db.get< account_metadata_object, by_account >( wallet.id ), [&]( account_metadata_object& meta )
+      _db.modify( wallet, [&]( wallet_object& acc )
       {
-         if ( o.json_metadata.size() > 0 )
-            from_string( meta.json_metadata, o.json_metadata );
+         if( o.memo_key && *o.memo_key != public_key_type() )
+               acc.memo_key = *o.memo_key;
 
-         if ( o.social_json_metadata.size() > 0 )
-            from_string( meta.social_json_metadata, o.social_json_metadata );
+         acc.last_account_update = _db.head_block_time();
       });
-   }
-   #endif
 
-   wlog("!!!!!! WALLET UPDATE 5");
-
-   if( o.money || o.social )
-   {
-      _db.modify( wallet_auth, [&]( account_authority_object& auth)
+      #ifndef IS_LOW_MEM
+      if( o.json_metadata.size() > 0 || o.social_json_metadata.size() > 0 )
       {
-         if( o.money )  auth.money  = *o.money;
-         if( o.social ) auth.social = *o.social;
-      });
+         _db.modify( _db.get< account_metadata_object, by_account >( wallet.id ), [&]( account_metadata_object& meta )
+         {
+            if ( o.json_metadata.size() > 0 )
+               from_string( meta.json_metadata, o.json_metadata );
+
+            if ( o.social_json_metadata.size() > 0 )
+               from_string( meta.social_json_metadata, o.social_json_metadata );
+         });
+      }
+      #endif
+
+      wlog("!!!!!! WALLET UPDATE 5");
+
+      if( o.money || o.social )
+      {
+         _db.modify( wallet_auth, [&]( account_authority_object& auth)
+         {
+            if( o.money )  auth.money  = *o.money;
+            if( o.social ) auth.social = *o.social;
+         });
+      }
+
+      wlog("!!!!!! WALLET UPDATE 6");
    }
-
-   wlog("!!!!!! WALLET UPDATE 6");
-
 }
 
 void delete_comment_evaluator::do_apply( const delete_comment_operation& o )
@@ -897,7 +920,6 @@ void pow_evaluator::do_apply( const pow_operation& o )
 
    const auto& dgp = db.get_dynamic_global_properties();
    uint32_t target_pow = db.get_pow_summary_target();
-   wallet_name_type worker_account;
 
    const auto& work = o.work.get< sha2_pow >();
    fc::optional<block_id_type> previous_block_id = db.previous_block_id();
@@ -907,7 +929,7 @@ void pow_evaluator::do_apply( const pow_operation& o )
    FC_ASSERT( recent_block_num > dgp.last_irreversible_block_num,
       "POW done for block older than last irreversible block num" );
    FC_ASSERT( work.pow_summary < target_pow, "Insufficient work difficulty. Work: ${w}, Target: ${t}", ("w",work.pow_summary)("t", target_pow) );
-   worker_account = work.input.worker_account;
+   wallet_name_type worker_account = work.input.worker_account;
 
    FC_ASSERT( o.props.maximum_block_size >= XGT_MIN_BLOCK_SIZE_LIMIT * 2, "Voted maximum block size is too small." );
 
@@ -925,13 +947,18 @@ void pow_evaluator::do_apply( const pow_operation& o )
    double value = base_reward.amount.value * (1.0 / static_cast<double>(divisor));
    long price = static_cast<long>(floor(value));
    asset reward = asset(price, base_reward.symbol);
-   wlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
+   //wlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
 
-   const auto& accounts_by_name = db.get_index<wallet_index>().indices().get<by_name>();
-   auto itr = accounts_by_name.find( worker_account );
-   if(itr == accounts_by_name.end())
+   const wallet_object* w = db.find_account( worker_account );
+   if (w == nullptr)
    {
-      FC_ASSERT( o.new_recovery_key.valid(), "New recovery key is not valid." );
+      wlog( "Wallet does not exist for worker account ${w}", ("w",worker_account) );
+      if ( !o.new_recovery_key.valid() )
+      {
+         wlog( "Wallet new recovery key is not valid for wallet ${w}", ("w",worker_account) );
+         return;
+      }
+
       db.create< wallet_object >( [&]( wallet_object& acc )
       {
          initialize_wallet_object( acc, worker_account, *o.new_recovery_key, dgp, true /*mined*/, wallet_name_type(), _db.get_hardfork() );
@@ -946,7 +973,7 @@ void pow_evaluator::do_apply( const pow_operation& o )
          auth.social = auth.recovery;
       });
 
-      db.create<witness_object>( [&]( witness_object& w )
+      db.create< witness_object >( [&]( witness_object& w )
       {
           w.owner             = worker_account;
           copy_legacy_chain_properties< true >( w.props, o.props );
@@ -954,18 +981,19 @@ void pow_evaluator::do_apply( const pow_operation& o )
           w.pow_worker        = dgp.total_pow;
       });
    }
-   else
+
+   const witness_object* cur_witness = db.find_witness( worker_account );
+   if (cur_witness == nullptr)
    {
-      FC_ASSERT( !o.new_recovery_key.valid(), "Cannot specify an recovery key unless creating account." );
-      const witness_object* cur_witness = db.find_witness( worker_account );
-      FC_ASSERT( cur_witness, "Witness must be created for existing account before mining.");
-      //FC_ASSERT( cur_witness->pow_worker == 0, "This account is already scheduled for pow block production." );
-      db.modify(*cur_witness, [&]( witness_object& w )
-      {
-          copy_legacy_chain_properties< true >( w.props, o.props );
-          w.pow_worker        = dgp.total_pow;
-      });
+      wlog( "Witness does not exist for worker account ${w}", ("w",worker_account) );
+      return;
    }
+
+   db.modify(*cur_witness, [&]( witness_object& w )
+   {
+       copy_legacy_chain_properties< true >( w.props, o.props );
+       w.pow_worker        = dgp.total_pow;
+   });
 
    db.adjust_balance(worker_account, reward);
 }
