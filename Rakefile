@@ -121,6 +121,10 @@ task :run do
       log-file-appender = {"appender":"logfile","file":"logfile.log"}
       log-logger = {"name":"default","level":"debug","appender":"stderr"}
       log-logger = {"name":"default","level":"debug","appender":"logfile"}
+      log-logger = {"name":"sync","level":"debug","appender":"stderr"}
+      log-logger = {"name":"sync","level":"debug","appender":"logfile"}
+      log-logger = {"name":"p2p","level":"debug","appender":"stderr"}
+      log-logger = {"name":"p2p","level":"debug","appender":"logfile"}
 
       backtrace = yes
       plugin = #{plugins.join(' ')}

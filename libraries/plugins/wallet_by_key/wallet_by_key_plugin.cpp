@@ -255,12 +255,12 @@ void wallet_by_key_plugin_impl::on_pre_apply_transaction( const transaction_noti
                }
                bar.regenerate_energy(params, now);
                bar.use_energy(energy_cost);
+               _wallet.energybar = bar;
             }
             catch (fc::assert_exception &e)
             {
                ilog("Could not update energy bar for ${w}", ("w",wallet_name));
             }
-            _wallet.energybar = bar;
          } );
       }
    }

@@ -549,7 +549,7 @@ void witness_plugin::plugin_startup()
             new_chain_banner( d );
          my->_production_skip_flags |= chain::database::skip_undo_history_check;
       }
-      my->schedule_production_loop();
+      //my->schedule_production_loop();
    } else
       elog("No witnesses configured! Please add witness IDs and private keys to configuration.");
    ilog("witness plugin:  plugin_startup() end");
