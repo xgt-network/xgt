@@ -90,11 +90,33 @@ task :configure do
   )
 end
 
+desc 'Runs CMake to prepare the project using target UNIT_TESTS'
+task :configure_tests do
+  sh %(
+    mkdir -p ../xgt-build \
+      && cd ../xgt-build \
+      && cmake -DCMAKE_BUILD_TYPE=Debug \
+               -D CMAKE_CXX_COMPILER="ccache" \
+               -D CMAKE_CXX_COMPILER_ARG1="g++" \
+               -D CMAKE_C_COMPILER="ccache" \
+               -D CMAKE_C_COMPILER_ARG1="gcc" \
+               --target UNIT_TESTS \
+               ../xgt
+  )
+end
+
 desc 'Builds the project'
 task :make do
   count = ENV['THREAD_COUNT'].to_i
   count = 2 if count == 0
   sh %(cd ../xgt-build && cmake --build . --target xgtd -- -j#{count})
+end
+
+desc 'Builds the project with target UNIT_TESTS'
+task :make_tests do
+  count = ENV['THREAD_COUNT'].to_i
+  count = 2 if count == 0
+  sh %(cd ../xgt-build && cmake --build . --target UNIT_TESTS -- -j#{count})
 end
 
 desc 'Runs a basic example instance locally'
