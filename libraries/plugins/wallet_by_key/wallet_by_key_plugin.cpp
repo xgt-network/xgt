@@ -259,7 +259,8 @@ void wallet_by_key_plugin_impl::on_pre_apply_transaction( const transaction_noti
             }
             catch (fc::assert_exception &e)
             {
-               ilog("Could not update energy bar for ${w}", ("w",wallet_name));
+               // TODO: Keep an eye on this
+               //ilog("Could not update energy bar for ${w}", ("w",wallet_name));
             }
          } );
       }
