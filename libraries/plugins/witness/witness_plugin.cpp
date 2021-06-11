@@ -364,7 +364,7 @@ namespace detail {
 
       if( _witnesses.size() == 0 || _private_keys.size() == 0)
       {
-         wlog( "Either no witness set, no private key set, or both" );
+         //wlog( "Either no witness set, no private key set, or both" );
          return;
       }
 
@@ -395,7 +395,7 @@ namespace detail {
          schedule_production_loop();
          return;
       }
-      
+
       try
       {
          _db.get< chain::witness_object, chain::by_name >(*name_ptr);

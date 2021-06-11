@@ -1101,7 +1101,7 @@ namespace graphene { namespace net {
     void node_impl::trigger_fetch_sync_items_loop()
     {
       VERIFY_CORRECT_THREAD();
-      ilog( "Triggering fetch sync items loop now" );
+      dlog( "Triggering fetch sync items loop now" );
       _sync_items_to_fetch_updated = true;
       if( _retrigger_fetch_sync_items_loop_promise )
         _retrigger_fetch_sync_items_loop_promise->set_value();
@@ -1662,12 +1662,12 @@ namespace graphene { namespace net {
       else
         dlog("delayed_peer_deletion_task is already scheduled (current size of _peers_to_delete is ${size})", ("size", number_of_peers_to_delete));
 #else
-      ilog("scheduling peer for deletion: ${peer} (this will not block)", ("peer", peer_to_delete->get_remote_endpoint()));
+      dlog("scheduling peer for deletion: ${peer} (this will not block)", ("peer", peer_to_delete->get_remote_endpoint()));
       _peers_to_delete.push_back(peer_to_delete);
       if (!_node_is_shutting_down &&
           (!_delayed_peer_deletion_task_done.valid() || _delayed_peer_deletion_task_done.ready()))
       {
-        ilog("asyncing delayed_peer_deletion_task to delete ${size} peers", ("size", _peers_to_delete.size()));
+        dlog("asyncing delayed_peer_deletion_task to delete ${size} peers", ("size", _peers_to_delete.size()));
         _delayed_peer_deletion_task_done = async_task([this](){ delayed_peer_deletion_task(); }, "delayed_peer_deletion_task" );
       }
       else
@@ -3095,7 +3095,7 @@ namespace graphene { namespace net {
       try
       {
         std::vector<fc::uint160_t> contained_transaction_message_ids;
-        fc_dlog(fc::logger::get("sync"),
+        fc_ilog(fc::logger::get("sync"),
                 "p2p pushing sync block #${block_num} ${block_hash}",
                 ("block_num", block_message_to_send.block.block_num())
                 ("block_hash", block_message_to_send.block_id));
@@ -4305,7 +4305,7 @@ namespace graphene { namespace net {
       try
       {
         _bandwidth_monitor_loop_done.cancel_and_wait("node_impl::close()");
-        ilog("Bandwidth monitor loop terminated");
+        dlog("Bandwidth monitor loop terminated");
       }
       catch ( const fc::exception& e )
       {

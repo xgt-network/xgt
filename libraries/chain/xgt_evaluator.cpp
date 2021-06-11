@@ -947,7 +947,7 @@ void pow_evaluator::do_apply( const pow_operation& o )
    double value = base_reward.amount.value * (1.0 / static_cast<double>(divisor));
    long price = static_cast<long>(floor(value));
    asset reward = asset(price, base_reward.symbol);
-   wlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
+   //wlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
 
    const wallet_object* w = db.find_account( worker_account );
    if (w == nullptr)
