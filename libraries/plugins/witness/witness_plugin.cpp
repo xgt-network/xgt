@@ -538,21 +538,23 @@ void witness_plugin::plugin_startup()
    ilog("witness plugin:  plugin_startup() begin" );
    chain::database& d = appbase::app().get_plugin< xgt::plugins::chain::chain_plugin >().db();
 
-   if( !my->_witnesses.empty() )
+   if( my->_production_enabled )
    {
-      ilog( "Launching block production for ${n} witnesses.", ("n", my->_witnesses.size()) );
-      appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().set_block_production( true );
-      if( my->_production_enabled )
+      if( !my->_witnesses.empty() )
       {
+         ilog( "Launching block production for ${n} witnesses.", ("n", my->_witnesses.size()) );
+         appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().set_block_production( true );
+
          ilog( "Block production is enabled" );
          if( d.head_block_num() == 0 )
             new_chain_banner( d );
          my->_production_skip_flags |= chain::database::skip_undo_history_check;
+
+         my->schedule_production_loop();
+      } else
+         elog("No witnesses configured! Please add witness IDs and private keys to configuration.");
       }
-      //my->schedule_production_loop();
-   } else
-      elog("No witnesses configured! Please add witness IDs and private keys to configuration.");
-   ilog("witness plugin:  plugin_startup() end");
+      ilog("witness plugin:  plugin_startup() end");
    } FC_CAPTURE_AND_RETHROW() }
 
 void witness_plugin::plugin_shutdown()
