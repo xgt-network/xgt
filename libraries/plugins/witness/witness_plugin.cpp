@@ -344,7 +344,7 @@ namespace detail {
       // std::default_random_engine generator(_db.head_block_num());
       // std::uniform_real_distribution< double > distribution(2000.0, 10000.0);
       // int64_t sleep_time = static_cast<int64_t>( distribution(generator) );
-      int64_t sleep_time = 1000;
+      int64_t sleep_time = 100;
       _timer.expires_from_now( boost::posix_time::milliseconds( sleep_time ) );
       _timer.async_wait( boost::bind( &witness_plugin_impl::block_production_loop, this ) );
    }
