@@ -1090,19 +1090,26 @@ void database::notify_post_apply_custom_operation( const custom_operation_notifi
 
 fc::sha256 database::get_pow_target()const
 {
-   const auto& dgp = get_dynamic_global_properties();
-   //wlog("database::get_pow_target ${t}", ("t",dgp.mining_target));
-   return dgp.mining_target;
+   /// @since 1.1.1 added logic to slow mining for all miners by 64x
+   uint32_t head_num = head_block_num();
+   if (head_num < 400000)
+   {
+      const auto& dgp = get_dynamic_global_properties();
+      //wlog("database::get_pow_target 1 ${t}", ("t",dgp.mining_target));
+      return dgp.mining_target;
+   }
+   else
+   {
+      fc::sha256 target = fc::sha256("0000003fffc00000000000000000000000000000000000000000000000000000");
+      //wlog("database::get_pow_target 2 ${t}", ("t",target));
+      return target;
+   }
 }
 
 uint32_t database::get_pow_summary_target()const
 {
-   const auto& dgp = get_dynamic_global_properties();
-   //boost::multiprecision::uint256_t bigint = hash_to_bigint(dgp.mining_target);
-   //uint32_t summary = static_cast<uint32_t>( bigint >> 224 );
-   uint32_t summary = dgp.mining_target.approx_log_32();
-   //wlog("database::get_pow_summary_target ${s}", ("s",summary));
-   return summary;
+   fc::sha256 pow_target = get_pow_target();
+   return pow_target.approx_log_32();
 }
 
 void database::clear_null_wallet_balance()
