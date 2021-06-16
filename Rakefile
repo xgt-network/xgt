@@ -5,7 +5,7 @@ require 'json'
 require 'bigdecimal'
 require 'shellwords'
 require 'rake/testtask'
-require'xgt/ruby'
+autoload :Xgt, 'xgt/ruby'
 
 def mining_disabled?
   ENV['MINING_DISABLED'] == 'TRUE'
