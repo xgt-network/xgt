@@ -80,6 +80,15 @@ task :clean do
 end
 
 desc 'Runs CMake to prepare the project'
+task :targets do
+  sh %(
+    mkdir -p ../xgt-build \
+      && cd ../xgt-build \
+      && cmake --build .  --target help
+  )
+end
+
+desc 'Runs CMake to prepare the project'
 task :configure do
   sh %(
     mkdir -p ../xgt-build \
@@ -172,18 +181,38 @@ task :run do
   sh %(cd #{data_dir} && ../programs/xgtd/xgtd --data-dir=.)
 end
 
-desc 'Builds the tests'
-task :make_tests do
-  count = ENV['THREAD_COUNT'].to_i
-  count = 2 if count == 0
-  # TODO: XXX: Gradually expand tests
-  sh %(cd ../xgt-build && cmake --build . --target chain_test -- -j#{count})
-end
+namespace :tests do
+  namespace :sqrt do
+    desc 'Runs CMake to prepare the project for testing'
+    task :configure_tests do
+      sh %(
+      mkdir -p ../xgt-build \
+        && cd ../xgt-build \
+        && cmake -DCMAKE_BUILD_TYPE=Debug \
+                 -D CMAKE_CXX_COMPILER="ccache" \
+                 -D CMAKE_CXX_COMPILER_ARG1="g++" \
+                 -D CMAKE_C_COMPILER="ccache" \
+                 -D CMAKE_C_COMPILER_ARG1="gcc" \
+                 -DBUILD_XGT_TESTNET=ON \
+                 --target test_sqrt \
+                 ../xgt
+      )
+    end
 
-desc 'Runs the tests'
-task :run_tests do
-  sh 'cd ../xgt-build && ./tests/chain_test'
-  # TODO: Identify other tests
+    desc 'Builds the tests'
+    task :make_tests do
+      count = ENV['THREAD_COUNT'].to_i
+      count = 2 if count == 0
+      # TODO: XXX: Gradually expand tests
+      sh %(cd ../xgt-build && cmake --build . --target test_sqrt -- -j#{count})
+    end
+
+    desc 'Runs the tests'
+    task :run do
+      sh 'cd ../xgt-build && ./programs/util/test_sqrt'
+      # TODO: Identify other tests
+    end
+  end
 end
 
 desc 'Get approximate C++ LoC'
