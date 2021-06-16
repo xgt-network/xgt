@@ -81,10 +81,6 @@ task :configure do
     mkdir -p ../xgt-build \
       && cd ../xgt-build \
       && cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo \
-               -D CMAKE_CXX_COMPILER="ccache" \
-               -D CMAKE_CXX_COMPILER_ARG1="g++" \
-               -D CMAKE_C_COMPILER="ccache" \
-               -D CMAKE_C_COMPILER_ARG1="gcc" \
                --target xgtd \
                ../xgt
   )
