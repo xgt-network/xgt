@@ -278,8 +278,15 @@ endif()
 
 # fc/src/compress/miniz.c breaks strict aliasing. The Linux kernel builds with no strict aliasing
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing -DBOOST_THREAD_DONT_PROVIDE_PROMISE_LAZY" )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=deprecated-copy -Wno-error=pessimizing-move -Wno-error=sign-compare")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=sign-compare")
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -Werror -DBOOST_THREAD_DONT_PROVIDE_PROMISE_LAZY" )
+
+# supress unwanted warnings:
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-Wno-error=deprecated-copy -Wno-error=pessimizing-move" SUPPRESS_SOME_WARNINGS)
+if(SUPPRESS_SOME_WARNINGS)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated-copy -Wno-error=pessimizing-move")
+endif()
 
 # external_plugins needs to be compiled first because libraries/app depends on XGT_EXTERNAL_PLUGINS being fully populated
 add_subdirectory( external_plugins )

@@ -49,7 +49,13 @@ if(MSVC)
   set_source_files_properties( database.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )
 endif(MSVC)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=deprecated-copy -Wno-error=pessimizing-move -Wno-error=sign-compare")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=sign-compare")
+# supress unwanted warnings:
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-Wno-error=deprecated-copy -Wno-error=pessimizing-move" SUPPRESS_SOME_WARNINGS)
+if(SUPPRESS_SOME_WARNINGS)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated-copy -Wno-error=pessimizing-move")
+endif()
 
 INSTALL( TARGETS
    xgt_chain

@@ -9,7 +9,13 @@ endif(NOT XGT_GIT_REVISION_DESCRIPTION)
 
 file(GLOB HEADERS "include/xgt/utilities/*.hpp")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=deprecated-copy -Wno-error=pessimizing-move -Wno-error=sign-compare")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=sign-compare")
+# supress unwanted warnings:
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-Wno-error=deprecated-copy -Wno-error=pessimizing-move" SUPPRESS_SOME_WARNINGS)
+if(SUPPRESS_SOME_WARNINGS)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated-copy -Wno-error=pessimizing-move")
+endif()
 
 set(sources
    benchmark_dumper.cpp
