@@ -150,6 +150,22 @@ if ( XGT_CCACHE )
 endif()
 MESSAGE( STATUS "XGT_CCACHE: ${XGT_CCACHE}" )
 
+OPTION( XGT_OPT_NATIVE "Optimize for native architecture" OFF )
+if ( XGT_OPT_NATIVE )
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-march=native" CXX_SUPPORTS_MARCH_NATIVE)
+  if(CXX_SUPPORTS_MARCH_NATIVE)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+  endif()
+
+  include(CheckCCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-march=native" C_SUPPORTS_MARCH_NATIVE)
+  if(C_SUPPORTS_MARCH_NATIVE)
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+  endif()
+endif()
+MESSAGE( STATUS "XGT_OPT_NATIVE: ${XGT_OPT_NATIVE}" )
+
 SET( XGT_LINT_LEVEL "OFF" CACHE STRING "Lint level during xgt build (FULL, HIGH, LOW, OFF)" )
 find_program(
    CLANG_TIDY_EXE
