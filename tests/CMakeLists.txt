@@ -69,6 +69,7 @@ add_boost_test( chain_test
    #    basic_tests/parse_size_test
    #    basic_tests/valid_name_test
 
+   block_tests/generate_empty_blocks
    basic_tests/merkle_root
 
    #    operation_tests/account_create_validate
