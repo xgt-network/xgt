@@ -184,7 +184,7 @@ end
 namespace :tests do
   namespace :sqrt do
     desc 'Runs CMake to prepare the project for testing'
-    task :configure_tests do
+    task :configure do
       sh %(
       mkdir -p ../xgt-build \
         && cd ../xgt-build \
@@ -200,7 +200,7 @@ namespace :tests do
     end
 
     desc 'Builds the tests'
-    task :make_tests do
+    task :make do
       count = ENV['THREAD_COUNT'].to_i
       count = 2 if count == 0
       # TODO: XXX: Gradually expand tests
@@ -210,6 +210,70 @@ namespace :tests do
     desc 'Runs the tests'
     task :run do
       sh 'cd ../xgt-build && ./programs/util/test_sqrt'
+      # TODO: Identify other tests
+    end
+  end
+
+  namespace :block_log do
+    desc 'Runs CMake to prepare the project for testing'
+    task :configure do
+      sh %(
+      mkdir -p ../xgt-build \
+        && cd ../xgt-build \
+        && cmake -DCMAKE_BUILD_TYPE=Debug \
+                 -D CMAKE_CXX_COMPILER="ccache" \
+                 -D CMAKE_CXX_COMPILER_ARG1="g++" \
+                 -D CMAKE_C_COMPILER="ccache" \
+                 -D CMAKE_C_COMPILER_ARG1="gcc" \
+                 -DBUILD_XGT_TESTNET=ON \
+                 --target test_block_log \
+                 ../xgt
+      )
+    end
+
+    desc 'Builds the tests'
+    task :make do
+      count = ENV['THREAD_COUNT'].to_i
+      count = 2 if count == 0
+      # TODO: XXX: Gradually expand tests
+      sh %(cd ../xgt-build && cmake --build . --target test_block_log -- -j#{count})
+    end
+
+    desc 'Runs the tests'
+    task :run do
+      sh 'cd ../xgt-build && ./programs/util/test_block_log'
+      # TODO: Identify other tests
+    end
+  end
+
+  namespace :schema do
+    desc 'Runs CMake to prepare the project for testing'
+    task :configure do
+      sh %(
+      mkdir -p ../xgt-build \
+        && cd ../xgt-build \
+        && cmake -DCMAKE_BUILD_TYPE=Debug \
+                 -D CMAKE_CXX_COMPILER="ccache" \
+                 -D CMAKE_CXX_COMPILER_ARG1="g++" \
+                 -D CMAKE_C_COMPILER="ccache" \
+                 -D CMAKE_C_COMPILER_ARG1="gcc" \
+                 -DBUILD_XGT_TESTNET=ON \
+                 --target schema_test \
+                 ../xgt
+      )
+    end
+
+    desc 'Builds the tests'
+    task :make do
+      count = ENV['THREAD_COUNT'].to_i
+      count = 2 if count == 0
+      # TODO: XXX: Gradually expand tests
+      sh %(cd ../xgt-build && cmake --build . --target schema_test -- -j#{count})
+    end
+
+    desc 'Runs the tests'
+    task :run do
+      sh 'cd ../xgt-build && ./programs/util/schema_test'
       # TODO: Identify other tests
     end
   end
