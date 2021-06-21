@@ -182,100 +182,47 @@ task :run do
 end
 
 namespace :tests do
-  namespace :sqrt do
-    desc 'Runs CMake to prepare the project for testing'
-    task :configure do
-      sh %(
-      mkdir -p ../xgt-build \
-        && cd ../xgt-build \
-        && cmake -DCMAKE_BUILD_TYPE=Debug \
-                 -D CMAKE_CXX_COMPILER="ccache" \
-                 -D CMAKE_CXX_COMPILER_ARG1="g++" \
-                 -D CMAKE_C_COMPILER="ccache" \
-                 -D CMAKE_C_COMPILER_ARG1="gcc" \
-                 -DBUILD_XGT_TESTNET=ON \
-                 --target test_sqrt \
-                 ../xgt
-      )
-    end
+  def run_target(target)
+    sh %(
+    mkdir -p ../xgt-build \
+      && cd ../xgt-build \
+      && cmake -DCMAKE_BUILD_TYPE=Debug \
+               -D CMAKE_CXX_COMPILER="ccache" \
+               -D CMAKE_CXX_COMPILER_ARG1="g++" \
+               -D CMAKE_C_COMPILER="ccache" \
+               -D CMAKE_C_COMPILER_ARG1="gcc" \
+               -DBUILD_XGT_TESTNET=ON \
+               --target #{target} \
+               ../xgt
+    )
 
-    desc 'Builds the tests'
-    task :make do
-      count = ENV['THREAD_COUNT'].to_i
-      count = 2 if count == 0
-      # TODO: XXX: Gradually expand tests
-      sh %(cd ../xgt-build && cmake --build . --target test_sqrt -- -j#{count})
-    end
+    count = ENV['THREAD_COUNT'].to_i
+    count = 2 if count == 0
 
-    desc 'Runs the tests'
-    task :run do
-      sh 'cd ../xgt-build && ./programs/util/test_sqrt'
-      # TODO: Identify other tests
-    end
+    puts %(cd ../xgt-build && cmake --build . --target #{target} -- -j#{count})
+    sh %(cd ../xgt-build && cmake --build . --target #{target} -- -j#{count})
+    puts "cd ../xgt-build && ./programs/util/#{target}"
+    sh "cd ../xgt-build && ./programs/util/#{target}"
+  end
+  
+  desc 'Build and run test_sqrt'
+  task :sqrt do
+    run_target('test_sqrt')
   end
 
-  namespace :block_log do
-    desc 'Runs CMake to prepare the project for testing'
-    task :configure do
-      sh %(
-      mkdir -p ../xgt-build \
-        && cd ../xgt-build \
-        && cmake -DCMAKE_BUILD_TYPE=Debug \
-                 -D CMAKE_CXX_COMPILER="ccache" \
-                 -D CMAKE_CXX_COMPILER_ARG1="g++" \
-                 -D CMAKE_C_COMPILER="ccache" \
-                 -D CMAKE_C_COMPILER_ARG1="gcc" \
-                 -DBUILD_XGT_TESTNET=ON \
-                 --target test_block_log \
-                 ../xgt
-      )
-    end
-
-    desc 'Builds the tests'
-    task :make do
-      count = ENV['THREAD_COUNT'].to_i
-      count = 2 if count == 0
-      # TODO: XXX: Gradually expand tests
-      sh %(cd ../xgt-build && cmake --build . --target test_block_log -- -j#{count})
-    end
-
-    desc 'Runs the tests'
-    task :run do
-      sh 'cd ../xgt-build && ./programs/util/test_block_log'
-      # TODO: Identify other tests
-    end
+  desc 'Build and run test_block_log'
+  task :block_log do
+    run_target('test_block_log')
   end
 
-  namespace :schema do
-    desc 'Runs CMake to prepare the project for testing'
-    task :configure do
-      sh %(
-      mkdir -p ../xgt-build \
-        && cd ../xgt-build \
-        && cmake -DCMAKE_BUILD_TYPE=Debug \
-                 -D CMAKE_CXX_COMPILER="ccache" \
-                 -D CMAKE_CXX_COMPILER_ARG1="g++" \
-                 -D CMAKE_C_COMPILER="ccache" \
-                 -D CMAKE_C_COMPILER_ARG1="gcc" \
-                 -DBUILD_XGT_TESTNET=ON \
-                 --target schema_test \
-                 ../xgt
-      )
-    end
+  desc 'Build and run schema_test'
+  task :schema_test do
+    run_target('schema_test')
+  end
 
-    desc 'Builds the tests'
-    task :make do
-      count = ENV['THREAD_COUNT'].to_i
-      count = 2 if count == 0
-      # TODO: XXX: Gradually expand tests
-      sh %(cd ../xgt-build && cmake --build . --target schema_test -- -j#{count})
-    end
-
-    desc 'Runs the tests'
-    task :run do
-      sh 'cd ../xgt-build && ./programs/util/schema_test'
-      # TODO: Identify other tests
-    end
+  desc 'Build and run witness_plugin'
+  task :witness_plugin do
+    run_target('witness_plugin')
   end
 end
 
