@@ -182,7 +182,7 @@ task :run do
 end
 
 namespace :tests do
-  def run_target(target)
+  def run_target(target, executable = "./programs/util/#{target}")
     sh %(
     mkdir -p ../xgt-build \
       && cd ../xgt-build \
@@ -201,8 +201,8 @@ namespace :tests do
 
     puts %(cd ../xgt-build && cmake --build . --target #{target} -- -j#{count})
     sh %(cd ../xgt-build && cmake --build . --target #{target} -- -j#{count})
-    puts "cd ../xgt-build && ./programs/util/#{target}"
-    sh "cd ../xgt-build && ./programs/util/#{target}"
+    puts "cd ../xgt-build && #{executable}"
+    sh "cd ../xgt-build && #{executable}"
   end
   
   desc 'Build and run test_sqrt'
@@ -227,7 +227,7 @@ namespace :tests do
 
   desc 'Build and run chain_test'
   task :chain_test do
-    run_target('chain_test')
+    run_target('chain_test', './tests/chain_test')
   end
 end
 
