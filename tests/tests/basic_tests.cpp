@@ -30,7 +30,7 @@
 #include <xgt/protocol/protocol.hpp>
 
 #include <xgt/protocol/xgt_operations.hpp>
-#include <xgt/chain/account_object.hpp>
+// #include <xgt/chain/account_object.hpp>
 
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/hex.hpp>
@@ -75,65 +75,64 @@ BOOST_AUTO_TEST_CASE( parse_size_test )
  */
 BOOST_AUTO_TEST_CASE( valid_name_test )
 {
-   BOOST_CHECK( !is_valid_account_name( "a" ) );
-   BOOST_CHECK( !is_valid_account_name( "A" ) );
-   BOOST_CHECK( !is_valid_account_name( "0" ) );
-   BOOST_CHECK( !is_valid_account_name( "." ) );
-   BOOST_CHECK( !is_valid_account_name( "-" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "a" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "A" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "0" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "." ) );
+   BOOST_CHECK( !is_valid_wallet_name( "-" ) );
 
-   BOOST_CHECK( !is_valid_account_name( "aa" ) );
-   BOOST_CHECK( !is_valid_account_name( "aA" ) );
-   BOOST_CHECK( !is_valid_account_name( "a0" ) );
-   BOOST_CHECK( !is_valid_account_name( "a." ) );
-   BOOST_CHECK( !is_valid_account_name( "a-" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aa" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aA" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "a0" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "a." ) );
+   BOOST_CHECK( !is_valid_wallet_name( "a-" ) );
 
-   BOOST_CHECK( is_valid_account_name( "aaa" ) );
-   BOOST_CHECK( !is_valid_account_name( "aAa" ) );
-   BOOST_CHECK( is_valid_account_name( "a0a" ) );
-   BOOST_CHECK( !is_valid_account_name( "a.a" ) );
-   BOOST_CHECK( is_valid_account_name( "a-a" ) );
+   BOOST_CHECK( is_valid_wallet_name( "aaa" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aAa" ) );
+   BOOST_CHECK( is_valid_wallet_name( "a0a" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "a.a" ) );
+   BOOST_CHECK( is_valid_wallet_name( "a-a" ) );
 
-   BOOST_CHECK( is_valid_account_name( "aa0" ) );
-   BOOST_CHECK( !is_valid_account_name( "aA0" ) );
-   BOOST_CHECK( is_valid_account_name( "a00" ) );
-   BOOST_CHECK( !is_valid_account_name( "a.0" ) );
-   BOOST_CHECK( is_valid_account_name( "a-0" ) );
+   BOOST_CHECK( is_valid_wallet_name( "aa0" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aA0" ) );
+   BOOST_CHECK( is_valid_wallet_name( "a00" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "a.0" ) );
+   BOOST_CHECK( is_valid_wallet_name( "a-0" ) );
 
-   BOOST_CHECK(  is_valid_account_name( "aaa-bbb-ccc" ) );
-   BOOST_CHECK(  is_valid_account_name( "aaa-bbb.ccc" ) );
+   BOOST_CHECK(  is_valid_wallet_name( "aaa-bbb-ccc" ) );
+   BOOST_CHECK(  is_valid_wallet_name( "aaa-bbb.ccc" ) );
 
-   BOOST_CHECK( !is_valid_account_name( "aaa,bbb-ccc" ) );
-   BOOST_CHECK( !is_valid_account_name( "aaa_bbb-ccc" ) );
-   BOOST_CHECK( !is_valid_account_name( "aaa-BBB-ccc" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aaa,bbb-ccc" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aaa_bbb-ccc" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aaa-BBB-ccc" ) );
 
-   BOOST_CHECK( !is_valid_account_name( "1aaa-bbb" ) );
-   BOOST_CHECK( !is_valid_account_name( "-aaa-bbb-ccc" ) );
-   BOOST_CHECK( !is_valid_account_name( ".aaa-bbb-ccc" ) );
-   BOOST_CHECK( !is_valid_account_name( "/aaa-bbb-ccc" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "1aaa-bbb" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "-aaa-bbb-ccc" ) );
+   BOOST_CHECK( !is_valid_wallet_name( ".aaa-bbb-ccc" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "/aaa-bbb-ccc" ) );
 
-   BOOST_CHECK( !is_valid_account_name( "aaa-bbb-ccc-" ) );
-   BOOST_CHECK( !is_valid_account_name( "aaa-bbb-ccc." ) );
-   BOOST_CHECK( !is_valid_account_name( "aaa-bbb-ccc.." ) );
-   BOOST_CHECK( !is_valid_account_name( "aaa-bbb-ccc/" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aaa-bbb-ccc-" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aaa-bbb-ccc." ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aaa-bbb-ccc.." ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aaa-bbb-ccc/" ) );
 
-   BOOST_CHECK( !is_valid_account_name( "aaa..bbb-ccc" ) );
-   BOOST_CHECK( is_valid_account_name( "aaa.bbb-ccc" ) );
-   BOOST_CHECK( is_valid_account_name( "aaa.bbb.ccc" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "aaa..bbb-ccc" ) );
+   BOOST_CHECK( is_valid_wallet_name( "aaa.bbb-ccc" ) );
+   BOOST_CHECK( is_valid_wallet_name( "aaa.bbb.ccc" ) );
 
-   BOOST_CHECK(  is_valid_account_name( "aaa--bbb--ccc" ) );
-   BOOST_CHECK( !is_valid_account_name( "xn--san-p8a.de" ) );
-   BOOST_CHECK(  is_valid_account_name( "xn--san-p8a.dex" ) );
-   BOOST_CHECK( !is_valid_account_name( "xn-san-p8a.de" ) );
-   BOOST_CHECK(  is_valid_account_name( "xn-san-p8a.dex" ) );
+   BOOST_CHECK(  is_valid_wallet_name( "aaa--bbb--ccc" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "xn--san-p8a.de" ) );
+   BOOST_CHECK(  is_valid_wallet_name( "xn--san-p8a.dex" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "xn-san-p8a.de" ) );
+   BOOST_CHECK(  is_valid_wallet_name( "xn-san-p8a.dex" ) );
 
-   BOOST_CHECK(  is_valid_account_name( "this-label-has" ) );
-   BOOST_CHECK( !is_valid_account_name( "this-label-has-more-than-63-char.act.ers-64-to-be-really-precise" ) );
-   BOOST_CHECK( !is_valid_account_name( "none.of.these.labels.has.more.than-63.chars--but.still.not.valid" ) );
+   BOOST_CHECK(  is_valid_wallet_name( "this-label-has" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "this-label-has-more-than-63-char.act.ers-64-to-be-really-precise" ) );
+   BOOST_CHECK( !is_valid_wallet_name( "none.of.these.labels.has.more.than-63.chars--but.still.not.valid" ) );
 }
 
 BOOST_AUTO_TEST_CASE( merkle_root )
 {
-  std::cout << "Is it hanging?" << std::endl;
 /*
    signed_block block;
    vector<signed_transaction> tx;

@@ -277,7 +277,7 @@ void database_fixture::generate_blocks(fc::time_point_sec timestamp, bool miss_i
    BOOST_REQUIRE( ( db->head_block_time() - timestamp ).to_seconds() < XGT_BLOCK_INTERVAL );
 }
 
-const account_object& database_fixture::account_create(
+const wallet_object& database_fixture::account_create(
    const string& name,
    const string& creator,
    const private_key_type& creator_key,
@@ -290,7 +290,7 @@ const account_object& database_fixture::account_create(
    try
    {
       wallet_create_operation op;
-      op.new_account_name = name;
+      op.new_wallet_name = name;
       op.creator = creator;
       op.fee = asset( 0, XGT_SYMBOL );
       op.recovery = authority( 1, key, 1 );
@@ -307,14 +307,14 @@ const account_object& database_fixture::account_create(
       db->push_transaction( trx, 0 );
       trx.clear();
 
-      const account_object& acct = db->get_account( name );
+      const wallet_object& acct = db->get_account( name );
 
       return acct;
    }
    FC_CAPTURE_AND_RETHROW( (name)(creator) )
 }
 
-const account_object& database_fixture::account_create(
+const wallet_object& database_fixture::account_create(
    const string& name,
    const public_key_type& key,
    const public_key_type& post_key
@@ -334,7 +334,7 @@ const account_object& database_fixture::account_create(
    FC_CAPTURE_AND_RETHROW( (name) );
 }
 
-const account_object& database_fixture::account_create(
+const wallet_object& database_fixture::account_create(
    const string& name,
    const public_key_type& key
 )
@@ -370,21 +370,21 @@ const witness_object& database_fixture::witness_create(
 }
 
 void database_fixture::fund(
-   const string& account_name,
+   const string& wallet_name,
    const share_type& amount
    )
 {
 }
 
 void database_fixture::fund(
-   const string& account_name,
+   const string& wallet_name,
    const asset& amount
    )
 {
 }
 
 void database_fixture::convert(
-   const string& account_name,
+   const string& wallet_name,
    const asset& amount )
 {
 }
@@ -427,7 +427,7 @@ void database_fixture::vest( const string& from, const asset& amount )
 {
 }
 
-void database_fixture::proxy( const string& account, const string& proxy )
+void database_fixture::proxy( const string& wallet, const string& proxy )
 {
 }
 
@@ -467,9 +467,9 @@ void database_fixture::set_witness_props( const flat_map< string, vector< char >
    */
 }
 
-const asset& database_fixture::get_balance( const string& account_name )const
+const asset& database_fixture::get_balance( const string& wallet_name )const
 {
-  return db->get_account( account_name ).balance;
+  return db->get_account( wallet_name ).balance;
 }
 
 void database_fixture::sign(signed_transaction& trx, const fc::ecc::private_key& key)
@@ -506,20 +506,20 @@ void database_fixture::validate_database()
    FC_LOG_AND_RETHROW();
 }
 
-asset_symbol_type database_fixture::create_xtt_with_nai( const string& account_name, const fc::ecc::private_key& key,
+asset_symbol_type database_fixture::create_xtt_with_nai( const string& wallet_name, const fc::ecc::private_key& key,
    uint32_t nai, uint8_t token_decimal_places )
 {
    xtt_create_operation op;
    signed_transaction tx;
    try
    {
-      fund( account_name, 10 * 1000 * 1000 );
+      fund( wallet_name, 10 * 1000 * 1000 );
       this->generate_block();
 
       op.symbol = asset_symbol_type::from_nai( nai, token_decimal_places );
       op.precision = op.symbol.decimals();
       op.xtt_creation_fee = this->db->get_dynamic_global_properties().xtt_creation_fee;
-      op.control_account = account_name;
+      op.control_account = wallet_name;
 
       tx.operations.push_back( op );
       tx.set_expiration( this->db->head_block_time() + XGT_MAX_TIME_UNTIL_EXPIRATION );
@@ -534,34 +534,34 @@ asset_symbol_type database_fixture::create_xtt_with_nai( const string& account_n
    return op.symbol;
 }
 
-asset_symbol_type database_fixture::create_xtt( const string& account_name, const fc::ecc::private_key& key,
+asset_symbol_type database_fixture::create_xtt( const string& wallet_name, const fc::ecc::private_key& key,
    uint8_t token_decimal_places )
 {
    asset_symbol_type symbol;
    try
    {
       auto nai_symbol = this->get_new_xtt_symbol( token_decimal_places, this->db );
-      symbol = create_xtt_with_nai( account_name, key, nai_symbol.to_nai(), token_decimal_places );
+      symbol = create_xtt_with_nai( wallet_name, key, nai_symbol.to_nai(), token_decimal_places );
    }
    FC_LOG_AND_RETHROW();
 
    return symbol;
 }
 
-void sub_set_create_op( xtt_create_operation* op, account_name_type control_acount, chain::database& db )
+void sub_set_create_op( xtt_create_operation* op, wallet_name_type control_acount, chain::database& db )
 {
    op->precision = op->symbol.decimals();
    op->xtt_creation_fee = db.get_dynamic_global_properties().xtt_creation_fee;
    op->control_account = control_acount;
 }
 
-void set_create_op( xtt_create_operation* op, account_name_type control_account, uint8_t token_decimal_places, chain::database& db )
+void set_create_op( xtt_create_operation* op, wallet_name_type control_account, uint8_t token_decimal_places, chain::database& db )
 {
    op->symbol = database_fixture::get_new_xtt_symbol( token_decimal_places, &db );
    sub_set_create_op( op, control_account, db );
 }
 
-void set_create_op( xtt_create_operation* op, account_name_type control_account, uint32_t token_nai, uint8_t token_decimal_places, chain::database& db )
+void set_create_op( xtt_create_operation* op, wallet_name_type control_account, uint32_t token_nai, uint8_t token_decimal_places, chain::database& db )
 {
    op->symbol.from_nai(token_nai, token_decimal_places);
    sub_set_create_op( op, control_account, db );

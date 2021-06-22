@@ -224,6 +224,11 @@ namespace :tests do
   task :witness_plugin do
     run_target('witness_plugin')
   end
+
+  desc 'Build and run chain_test'
+  task :chain_test do
+    run_target('chain_test')
+  end
 end
 
 desc 'Get approximate C++ LoC'

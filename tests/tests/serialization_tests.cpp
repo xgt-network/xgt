@@ -29,8 +29,8 @@
 #include <xgt/chain/xgt_objects.hpp>
 #include <xgt/chain/database.hpp>
 
-#include <xgt/plugins/condenser_api/condenser_api_legacy_asset.hpp>
-#include <xgt/plugins/condenser_api/condenser_api_legacy_objects.hpp>
+// #include <xgt/plugins/condenser_api/condenser_api_legacy_asset.hpp>
+// #include <xgt/plugins/condenser_api/condenser_api_legacy_objects.hpp>
 
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/elliptic.hpp>
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE( serialization_json_test )
       throw;
    }
 }
-
+/*
 BOOST_AUTO_TEST_CASE( legacy_asset_test )
 {
    try
@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE( asset_test )
    }
    FC_LOG_AND_RETHROW()
 }
-
+*/
 template< typename T >
 std::string hex_bytes( const T& obj )
 {
@@ -504,7 +504,7 @@ BOOST_AUTO_TEST_CASE( min_block_size )
    size_t min_size = fc::raw::pack_size( b );
    BOOST_CHECK( min_size == XGT_MIN_BLOCK_SIZE );
 }
-
+/*
 BOOST_AUTO_TEST_CASE( legacy_signed_transaction )
 {
    using xgt::plugins::condenser_api::legacy_signed_transaction;
@@ -524,7 +524,7 @@ BOOST_AUTO_TEST_CASE( legacy_signed_transaction )
 
    BOOST_REQUIRE( tx.id() == tx2.id() );
 }
-
+*/
 BOOST_AUTO_TEST_CASE( static_variant_json_test )
 {
    try
@@ -569,7 +569,7 @@ BOOST_AUTO_TEST_CASE( static_variant_json_test )
    }
    FC_LOG_AND_RETHROW();
 }
-
+/*
 BOOST_AUTO_TEST_CASE( legacy_operation_test )
 {
    try
@@ -622,7 +622,7 @@ BOOST_AUTO_TEST_CASE( asset_symbol_type_test )
    }
    FC_LOG_AND_RETHROW();
 }
-
+*/
 BOOST_AUTO_TEST_CASE( unpack_clear_test )
 {
    try

@@ -19,7 +19,7 @@ using fc::string;
 
 BOOST_FIXTURE_TEST_SUITE( automated_action_tests, clean_database_fixture )
 
-
+/*
 BOOST_AUTO_TEST_CASE( push_pending_required_actions )
 { try {
    BOOST_TEST_MESSAGE( "Testing: push_pending_required_actions" );
@@ -375,7 +375,7 @@ BOOST_AUTO_TEST_CASE( reject_optional_action )
    BOOST_REQUIRE_THROW( db->push_block( block ), fc::assert_exception );
 
 } FC_LOG_AND_RETHROW() }
-
+*/
 
 BOOST_AUTO_TEST_SUITE_END()
 #endif

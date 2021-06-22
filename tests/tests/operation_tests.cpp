@@ -10,10 +10,10 @@
 #include <xgt/chain/database_exceptions.hpp>
 #include <xgt/chain/xgt_objects.hpp>
 
-#include <xgt/chain/util/reward.hpp>
+// #include <xgt/chain/util/reward.hpp>
 
-#include <xgt/plugins/rc/rc_objects.hpp>
-#include <xgt/plugins/rc/resource_count.hpp>
+// #include <xgt/plugins/rc/rc_objects.hpp>
+// #include <xgt/plugins/rc/resource_count.hpp>
 
 #include <fc/macros.hpp>
 #include <fc/crypto/digest.hpp>
@@ -51,12 +51,12 @@ BOOST_AUTO_TEST_CASE( account_create_authorities )
    {
       BOOST_TEST_MESSAGE( "Testing: account_create_authorities" );
 
-      account_create_operation op;
+      wallet_create_operation op;
       op.creator = "alice";
       op.new_account_name = "bob";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       BOOST_TEST_MESSAGE( "--- Testing owner authority" );
       op.get_required_owner_authorities( auths );
@@ -99,7 +99,7 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
       const account_object& init = db->get_account( XGT_INIT_MINER_NAME );
       asset init_starting_balance = init.balance;
 
-      account_create_operation op;
+      wallet_create_operation op;
 
       op.new_account_name = "alice";
       op.creator = XGT_INIT_MINER_NAME;
@@ -197,13 +197,13 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
       tx.operations.push_back( op );
       db->push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db->get_account( "bob" ).recovery_account == account_name_type() );
+      BOOST_REQUIRE( db->get_account( "bob" ).recovery_account == wallet_name_type() );
       validate_database();
 
    }
    FC_LOG_AND_RETHROW()
 }
-
+/*
 BOOST_AUTO_TEST_CASE( account_update_validate )
 {
    try
@@ -353,13 +353,13 @@ BOOST_AUTO_TEST_CASE( account_update_apply )
       BOOST_REQUIRE( acct_auth.active == authority( 2, new_private_key.get_public_key(), 2 ) );
       BOOST_REQUIRE( acct.memo_key == new_private_key.get_public_key() );
 
-      /* This is being moved out of consensus
+      [> This is being moved out of consensus
       #ifndef IS_LOW_MEM
          BOOST_REQUIRE( acct.json_metadata == "{\"bar\":\"foo\"}" );
       #else
          BOOST_REQUIRE( acct.json_metadata == "" );
       #endif
-      */
+      <]
 
       validate_database();
 
@@ -767,8 +767,8 @@ BOOST_AUTO_TEST_CASE( vote_authorities )
       vote_operation op;
       op.voter = "alice";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -2464,8 +2464,8 @@ BOOST_AUTO_TEST_CASE( custom_authorities )
    op.required_auths.insert( "alice" );
    op.required_auths.insert( "bob" );
 
-   flat_set< account_name_type > auths;
-   flat_set< account_name_type > expected;
+   flat_set< wallet_name_type > auths;
+   flat_set< wallet_name_type > expected;
 
    op.get_required_owner_authorities( auths );
    BOOST_REQUIRE( auths == expected );
@@ -2485,8 +2485,8 @@ BOOST_AUTO_TEST_CASE( custom_json_authorities )
    op.required_auths.insert( "alice" );
    op.required_posting_auths.insert( "bob" );
 
-   flat_set< account_name_type > auths;
-   flat_set< account_name_type > expected;
+   flat_set< wallet_name_type > auths;
+   flat_set< wallet_name_type > expected;
 
    op.get_required_owner_authorities( auths );
    BOOST_REQUIRE( auths == expected );
@@ -2588,8 +2588,8 @@ BOOST_AUTO_TEST_CASE( custom_binary_authorities )
    op.required_posting_auths.insert( "sam" );
    op.required_auths.push_back( db->get< account_authority_object, by_account >( "alice" ).posting );
 
-   flat_set< account_name_type > acc_auths;
-   flat_set< account_name_type > acc_expected;
+   flat_set< wallet_name_type > acc_auths;
+   flat_set< wallet_name_type > acc_expected;
    vector< authority > auths;
    vector< authority > expected;
 
@@ -3415,9 +3415,9 @@ BOOST_AUTO_TEST_CASE( limit_order_create2_apply )
       }
 
       op.owner = "alice";
-      /** Here intentionally price has assigned its members directly, to skip validation
+      [>* Here intentionally price has assigned its members directly, to skip validation
           inside price constructor, and force the one performed at tx push.
-      */
+      <]
       op.exchange_rate = price();
       op.exchange_rate.base = ASSET("1.000 TBD");
       op.exchange_rate.quote = ASSET("0.000 TESTS");
@@ -3926,7 +3926,7 @@ BOOST_AUTO_TEST_CASE( account_recovery )
 
       BOOST_TEST_MESSAGE( "Creating account bob with alice" );
 
-      account_create_operation acc_create;
+      wallet_create_operation acc_create;
       acc_create.fee = ASSET( "0.100 TESTS" );
       acc_create.creator = "alice";
       acc_create.new_account_name = "bob";
@@ -4349,8 +4349,8 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_authorities )
       op.ratification_deadline = db->head_block_time() + 100;
       op.escrow_expiration = db->head_block_time() + 200;
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -4508,8 +4508,8 @@ BOOST_AUTO_TEST_CASE( escrow_approve_authorities )
       op.escrow_id = 0;
       op.approve = true;
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -4827,8 +4827,8 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_authorities )
       op.to = "bob";
       op.who = "alice";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -5113,8 +5113,8 @@ BOOST_AUTO_TEST_CASE( escrow_release_authorities )
       op.to = "bob";
       op.who = "alice";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -5661,8 +5661,8 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_authorities )
       op.to = "alice";
       op.amount = ASSET( "1.000 TESTS" );
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -5855,8 +5855,8 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_authorities )
       op.to = "alice";
       op.amount = ASSET( "1.000 TESTS" );
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -6124,8 +6124,8 @@ BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_authorities )
       cancel_transfer_from_savings_operation op;
       op.from = "alice";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -6224,8 +6224,8 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_authorities )
       decline_voting_rights_operation op;
       op.account = "alice";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_active_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -6453,8 +6453,8 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_authorities )
       claim_reward_balance_operation op;
       op.account = "alice";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -6478,8 +6478,8 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_authorities )
       account_create_with_delegation_operation op;
       op.creator = "alice";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -7122,14 +7122,14 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_validate )
 
       BOOST_TEST_MESSAGE( "--- Testing more than 100% weight on a single route" );
       comment_payout_beneficiaries b;
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), XGT_100_PERCENT + 1 ) );
+      b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( "bob" ), XGT_100_PERCENT + 1 ) );
       op.extensions.insert( b );
       XGT_REQUIRE_THROW( op.validate(), fc::assert_exception );
 
       BOOST_TEST_MESSAGE( "--- Testing more than 100% total weight" );
       b.beneficiaries.clear();
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), XGT_1_PERCENT * 75 ) );
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "sam" ), XGT_1_PERCENT * 75 ) );
+      b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( "bob" ), XGT_1_PERCENT * 75 ) );
+      b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( "sam" ), XGT_1_PERCENT * 75 ) );
       op.extensions.clear();
       op.extensions.insert( b );
       XGT_REQUIRE_THROW( op.validate(), fc::assert_exception );
@@ -7138,7 +7138,7 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_validate )
       b.beneficiaries.clear();
       for( size_t i = 0; i < 127; i++ )
       {
-         b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "foo" + fc::to_string( i ) ), 1 ) );
+         b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( "foo" + fc::to_string( i ) ), 1 ) );
       }
 
       op.extensions.clear();
@@ -7147,7 +7147,7 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_validate )
       op.validate();
 
       BOOST_TEST_MESSAGE( "--- Testing one too many routes" );
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bar" ), 1 ) );
+      b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( "bar" ), 1 ) );
       std::sort( b.beneficiaries.begin(), b.beneficiaries.end() );
       op.extensions.clear();
       op.extensions.insert( b );
@@ -7222,11 +7222,11 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
       db->push_transaction( tx );
 
       BOOST_TEST_MESSAGE( "--- Test failure on more than 8 benefactors" );
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), XGT_1_PERCENT ) );
+      b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( "bob" ), XGT_1_PERCENT ) );
 
       for( size_t i = 0; i < 8; i++ )
       {
-         b.beneficiaries.push_back( beneficiary_route_type( account_name_type( XGT_INIT_MINER_NAME + fc::to_string( i ) ), XGT_1_PERCENT ) );
+         b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( XGT_INIT_MINER_NAME + fc::to_string( i ) ), XGT_1_PERCENT ) );
       }
 
       op.author = "alice";
@@ -7241,7 +7241,7 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
 
       BOOST_TEST_MESSAGE( "--- Test specifying a non-existent benefactor" );
       b.beneficiaries.clear();
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "doug" ), XGT_1_PERCENT ) );
+      b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( "doug" ), XGT_1_PERCENT ) );
       op.extensions.clear();
       op.extensions.insert( b );
       tx.clear();
@@ -7257,9 +7257,9 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
       vote.weight = XGT_100_PERCENT;
 
       b.beneficiaries.clear();
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "bob" ), 25 * XGT_1_PERCENT ) );
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "sam" ), 50 * XGT_1_PERCENT ) );
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( XGT_TREASURY_ACCOUNT ), 10 * XGT_1_PERCENT ) );
+      b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( "bob" ), 25 * XGT_1_PERCENT ) );
+      b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( "sam" ), 50 * XGT_1_PERCENT ) );
+      b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( XGT_TREASURY_ACCOUNT ), 10 * XGT_1_PERCENT ) );
       op.extensions.clear();
       op.extensions.insert( b );
 
@@ -7280,7 +7280,7 @@ BOOST_AUTO_TEST_CASE( comment_beneficiaries_apply )
 
       BOOST_TEST_MESSAGE( "--- Test setting when there are already beneficiaries" );
       b.beneficiaries.clear();
-      b.beneficiaries.push_back( beneficiary_route_type( account_name_type( "dave" ), 25 * XGT_1_PERCENT ) );
+      b.beneficiaries.push_back( beneficiary_route_type( wallet_name_type( "dave" ), 25 * XGT_1_PERCENT ) );
       op.extensions.clear();
       op.extensions.insert( b );
       sign( tx, alice_private_key );
@@ -7451,8 +7451,8 @@ BOOST_AUTO_TEST_CASE( witness_set_properties_authorities )
       op.owner = "alice";
       op.props[ "key" ] = fc::raw::pack_to_vector( generate_private_key( "key" ).get_public_key() );
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -7627,7 +7627,7 @@ BOOST_AUTO_TEST_CASE( claim_account_validate )
    {
       BOOST_TEST_MESSAGE( "Testing: claim_account_validate" );
 
-      claim_account_operation op;
+      claim_wallet_operation op;
       op.creator = "alice";
       op.fee = ASSET( "1.000 TESTS" );
 
@@ -7662,11 +7662,11 @@ BOOST_AUTO_TEST_CASE( claim_account_authorities )
    {
      BOOST_TEST_MESSAGE( "Testing: claim_account_authorities" );
 
-      claim_account_operation op;
+      claim_wallet_operation op;
       op.creator = "alice";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -7717,7 +7717,7 @@ BOOST_AUTO_TEST_CASE( claim_account_apply )
       generate_blocks( XGT_BLOCKS_PER_HOUR/2 );
 
       signed_transaction tx;
-      claim_account_operation op;
+      claim_wallet_operation op;
 
       BOOST_TEST_MESSAGE( "--- Test failure when creator cannot cover fee" );
       op.creator = "alice";
@@ -7801,7 +7801,7 @@ BOOST_AUTO_TEST_CASE( claim_account_apply )
 
       while( true )
       {
-         account_name_type next_witness = db->get_scheduled_witness( 1 );
+         wallet_name_type next_witness = db->get_scheduled_witness( 1 );
          if( db->get_witness( next_witness ).schedule == witness_object::elected )
             break;
          generate_block();
@@ -7957,8 +7957,8 @@ BOOST_AUTO_TEST_CASE( create_claimed_account_authorities )
       create_claimed_account_operation op;
       op.creator = "alice";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -8075,7 +8075,7 @@ BOOST_AUTO_TEST_CASE( create_claimed_account_apply )
       tx.operations.push_back( op );
       db->push_transaction( tx, 0 );
 
-      BOOST_REQUIRE( db->get_account( "charlie" ).recovery_account == account_name_type() );
+      BOOST_REQUIRE( db->get_account( "charlie" ).recovery_account == wallet_name_type() );
       validate_database();
    }
    FC_LOG_AND_RETHROW()
@@ -8189,7 +8189,7 @@ BOOST_AUTO_TEST_CASE( account_update2_validate )
       BOOST_TEST_MESSAGE( "Testing: account_update2_validate" );
 
       BOOST_TEST_MESSAGE( " -- Testing failure when account name is not valid" );
-      account_update2_operation op;
+      wallet_update_operation op;
       op.account = "invalid_account";
 
       XGT_REQUIRE_THROW( op.validate(), fc::assert_exception );
@@ -8221,11 +8221,11 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       BOOST_TEST_MESSAGE( "Testing: account_update2_authorities" );
 
       BOOST_TEST_MESSAGE( " -- Testing account only case" );
-      account_update2_operation op;
+      wallet_update_operation op;
       op.account = "alice";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
       op.get_required_owner_authorities( auths );
       BOOST_REQUIRE( auths == expected );
@@ -8261,7 +8261,7 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       auths.clear();
 
       BOOST_TEST_MESSAGE( " -- Testing active case" );
-      op = account_update2_operation();
+      op = wallet_update_operation();
       op.account = "alice";
       op.active = authority();
       op.active->weight_threshold = 1;
@@ -8283,7 +8283,7 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       auths.clear();
 
       BOOST_TEST_MESSAGE( " -- Testing posting case" );
-      op = account_update2_operation();
+      op = wallet_update_operation();
       op.account = "alice";
       op.posting = authority();
       op.posting->weight_threshold = 1;
@@ -8305,7 +8305,7 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       auths.clear();
 
       BOOST_TEST_MESSAGE( " -- Testing memo_key case" );
-      op = account_update2_operation();
+      op = wallet_update_operation();
       op.account = "alice";
       op.memo_key = public_key_type();
 
@@ -8325,7 +8325,7 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       auths.clear();
 
       BOOST_TEST_MESSAGE( " -- Testing json_metadata case" );
-      op = account_update2_operation();
+      op = wallet_update_operation();
       op.account = "alice";
       op.json_metadata = "{\"success\":true}";
 
@@ -8345,7 +8345,7 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       auths.clear();
 
       BOOST_TEST_MESSAGE( " -- Testing posting_json_metadata case" );
-      op = account_update2_operation();
+      op = wallet_update_operation();
       op.account = "alice";
       op.posting_json_metadata = "{\"success\":true}";
 
@@ -8366,7 +8366,7 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
 
       BOOST_TEST_MESSAGE( " -- Testing full operation cases" );
 
-      op = account_update2_operation();
+      op = wallet_update_operation();
       op.account = "alice";
 
       op.get_required_owner_authorities( auths );
@@ -8479,7 +8479,7 @@ BOOST_AUTO_TEST_CASE( account_update2_apply )
 
       BOOST_TEST_MESSAGE( "--- Test normal update" );
 
-      account_update2_operation op;
+      wallet_update_operation op;
       op.account = "alice";
       op.owner = authority( 1, new_private_key.get_public_key(), 1 );
       op.active = authority( 2, new_private_key.get_public_key(), 2 );
@@ -8521,7 +8521,7 @@ BOOST_AUTO_TEST_CASE( account_update2_apply )
 
       BOOST_TEST_MESSAGE( "--- Test failure when account authority does not exist" );
       tx.clear();
-      op = account_update2_operation();
+      op = wallet_update_operation();
       op.account = "alice";
       op.posting = authority();
       op.posting->weight_threshold = 1;
@@ -8533,6 +8533,6 @@ BOOST_AUTO_TEST_CASE( account_update2_apply )
    }
    FC_LOG_AND_RETHROW()
 }
-
+*/
 BOOST_AUTO_TEST_SUITE_END()
 #endif

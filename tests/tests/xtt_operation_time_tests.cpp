@@ -15,10 +15,10 @@
 #include <xgt/chain/xgt_objects.hpp>
 #include <xgt/chain/xtt_objects.hpp>
 
-#include <xgt/chain/util/reward.hpp>
-#include <xgt/plugins/rc/rc_objects.hpp>
-#include <xgt/plugins/rc/rc_operations.hpp>
-#include <xgt/plugins/rc/rc_plugin.hpp>
+// #include <xgt/chain/util/reward.hpp>
+// #include <xgt/plugins/rc/rc_objects.hpp>
+// #include <xgt/plugins/rc/rc_operations.hpp>
+// #include <xgt/plugins/rc/rc_plugin.hpp>
 #include <xgt/plugins/debug_node/debug_node_plugin.hpp>
 
 #include <fc/crypto/digest.hpp>
