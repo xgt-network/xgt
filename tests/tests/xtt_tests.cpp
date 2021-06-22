@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE( xtt_transfer_apply )
    }
    FC_LOG_AND_RETHROW()
 }
-
+/*
 BOOST_AUTO_TEST_CASE( asset_symbol_vesting_methods )
 {
    try
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE( xtt_founder_vesting )
    BOOST_REQUIRE( xtt::unit_target::is_founder_vesting( "$!alice.vesting" ) );
 
    BOOST_TEST_MESSAGE( " -- Account name parsing" );
-   BOOST_REQUIRE( xtt::unit_target::get_unit_target_account( "$!alice.vesting" ) == account_name_type( "alice" ) );
+   BOOST_REQUIRE( xtt::unit_target::get_unit_target_account( "$!alice.vesting" ) == wallet_name_type( "alice" ) );
 
    BOOST_TEST_MESSAGE( " -- No possible room for an account name" );
    BOOST_REQUIRE( xtt::unit_target::is_founder_vesting( "$!.vesting" ) == false );
@@ -184,9 +184,10 @@ BOOST_AUTO_TEST_CASE( xtt_founder_vesting )
    BOOST_REQUIRE( xtt::unit_target::is_founder_vesting( "bob.vesting" ) == false );
 
    BOOST_TEST_MESSAGE( " -- Valid account name that appears to be founder vesting" );
-   BOOST_REQUIRE( xtt::unit_target::get_unit_target_account( "bob.vesting" ) == account_name_type( "bob.vesting" ) );
+   BOOST_REQUIRE( xtt::unit_target::get_unit_target_account( "bob.vesting" ) == wallet_name_type( "bob.vesting" ) );
 }
-
+*/
+/*
 BOOST_AUTO_TEST_CASE( tick_pricing_rules_validation )
 {
    BOOST_TEST_MESSAGE( "Testing: tick_pricing_rules_validatation" );
@@ -382,7 +383,8 @@ BOOST_AUTO_TEST_CASE( tick_pricing_rules )
    BOOST_REQUIRE( db->get_balance( "bob", XGT_SYMBOL ) == asset( 1000000 - 125000 - 10000, XGT_SYMBOL ) );
    BOOST_REQUIRE( db->get_balance( "bob", SBD_SYMBOL )   == asset( 1000000 + 1000000, SBD_SYMBOL ) );
 }
-
+*/
+/*
 BOOST_AUTO_TEST_CASE( price_as_decimal_and_real )
 {
    BOOST_TEST_MESSAGE( "Testing: price_as_decimal_and_real" );
@@ -581,7 +583,7 @@ BOOST_AUTO_TEST_CASE( token_emission_timing )
    }
    FC_LOG_AND_RETHROW()
 }
-
+*/
 /*
  * XTT legacy tests
  *
@@ -589,7 +591,7 @@ BOOST_AUTO_TEST_CASE( token_emission_timing )
  * We are keeping these tests around to provide an additional layer re-assurance for the time being
  */
 FC_TODO( "Remove XTT legacy tests and ensure code coverage is not reduced" );
-
+/*
 BOOST_AUTO_TEST_CASE( setup_validate )
 {
    try
@@ -659,17 +661,17 @@ BOOST_AUTO_TEST_CASE( setup_authorities )
       xtt_setup_operation op;
       op.control_account = "alice";
 
-      flat_set< account_name_type > auths;
-      flat_set< account_name_type > expected;
+      flat_set< wallet_name_type > auths;
+      flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
    }
    FC_LOG_AND_RETHROW()
@@ -802,6 +804,6 @@ BOOST_AUTO_TEST_CASE( xtt_create_apply )
    }
    FC_LOG_AND_RETHROW()
 }
-
+*/
 BOOST_AUTO_TEST_SUITE_END()
 #endif

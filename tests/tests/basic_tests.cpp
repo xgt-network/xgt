@@ -30,7 +30,7 @@
 #include <xgt/protocol/protocol.hpp>
 
 #include <xgt/protocol/xgt_operations.hpp>
-// #include <xgt/chain/account_object.hpp>
+#include <xgt/chain/wallet_object.hpp>
 
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/hex.hpp>

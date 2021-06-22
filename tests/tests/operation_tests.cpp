@@ -28,12 +28,12 @@ using namespace xgt;
 using namespace xgt::chain;
 using namespace xgt::protocol;
 using fc::string;
-
+/*
 inline uint16_t get_voting_power( const account_object& a )
 {
    return (uint16_t)( a.voting_energybar.current_energy / chain::util::get_effective_vesting_shares( a ) );
 }
-
+*/
 BOOST_FIXTURE_TEST_SUITE( operation_tests, clean_database_fixture )
 
 BOOST_AUTO_TEST_CASE( account_create_validate )
@@ -49,33 +49,33 @@ BOOST_AUTO_TEST_CASE( account_create_authorities )
 {
    try
    {
-      BOOST_TEST_MESSAGE( "Testing: account_create_authorities" );
+      BOOST_TEST_MESSAGE( "Testing: wallet_create_authorities" );
 
       wallet_create_operation op;
       op.creator = "alice";
-      op.new_account_name = "bob";
+      op.new_wallet_name = "bob";
 
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      BOOST_TEST_MESSAGE( "--- Testing owner authority" );
-      op.get_required_owner_authorities( auths );
+      BOOST_TEST_MESSAGE( "--- Testing recovery authority" );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      BOOST_TEST_MESSAGE( "--- Testing active authority" );
+      BOOST_TEST_MESSAGE( "--- Testing money authority" );
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      BOOST_TEST_MESSAGE( "--- Testing posting authority" );
+      BOOST_TEST_MESSAGE( "--- Testing social authority" );
       expected.clear();
       auths.clear();
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
    }
    FC_LOG_AND_RETHROW()
 }
-
+/*
 BOOST_AUTO_TEST_CASE( account_create_apply )
 {
    try
@@ -103,8 +103,8 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
 
       op.new_account_name = "alice";
       op.creator = XGT_INIT_MINER_NAME;
-      op.owner = authority( 1, priv_key.get_public_key(), 1 );
-      op.active = authority( 2, priv_key.get_public_key(), 2 );
+      op.recovery = authority( 1, priv_key.get_public_key(), 1 );
+      op.money = authority( 2, priv_key.get_public_key(), 2 );
       op.memo_key = priv_key.get_public_key();
       op.json_metadata = "{\"foo\":\"bar\"}";
 
@@ -128,8 +128,8 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
       const account_authority_object& acct_auth = db->get< account_authority_object, by_account >( "alice" );
 
       BOOST_REQUIRE( acct.name == "alice" );
-      BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
+      BOOST_REQUIRE( acct_auth.recovery == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( acct_auth.money == authority( 2, priv_key.get_public_key(), 2 ) );
       BOOST_REQUIRE( acct.memo_key == priv_key.get_public_key() );
       BOOST_REQUIRE( acct.proxy == "" );
       BOOST_REQUIRE( acct.created == db->head_block_time() );
@@ -146,8 +146,8 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
       BOOST_REQUIRE_THROW( db->push_transaction( tx, database::skip_transaction_dupe_check ), fc::exception );
 
       BOOST_REQUIRE( acct.name == "alice" );
-      BOOST_REQUIRE( acct_auth.owner == authority( 1, priv_key.get_public_key(), 1 ) );
-      BOOST_REQUIRE( acct_auth.active == authority( 2, priv_key.get_public_key(), 2 ) );
+      BOOST_REQUIRE( acct_auth.recovery == authority( 1, priv_key.get_public_key(), 1 ) );
+      BOOST_REQUIRE( acct_auth.money == authority( 2, priv_key.get_public_key(), 2 ) );
       BOOST_REQUIRE( acct.memo_key == priv_key.get_public_key() );
       BOOST_REQUIRE( acct.proxy == "" );
       BOOST_REQUIRE( acct.created == db->head_block_time() );
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE( account_create_apply )
 
    }
    FC_LOG_AND_RETHROW()
-}
+}*/
 /*
 BOOST_AUTO_TEST_CASE( account_update_validate )
 {
@@ -770,14 +770,14 @@ BOOST_AUTO_TEST_CASE( vote_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
    }
    FC_LOG_AND_RETHROW()
@@ -2467,15 +2467,15 @@ BOOST_AUTO_TEST_CASE( custom_authorities )
    flat_set< wallet_name_type > auths;
    flat_set< wallet_name_type > expected;
 
-   op.get_required_owner_authorities( auths );
+   op.get_required_recovery_authorities( auths );
    BOOST_REQUIRE( auths == expected );
 
-   op.get_required_posting_authorities( auths );
+   op.get_required_social_authorities( auths );
    BOOST_REQUIRE( auths == expected );
 
    expected.insert( "alice" );
    expected.insert( "bob" );
-   op.get_required_active_authorities( auths );
+   op.get_required_money_authorities( auths );
    BOOST_REQUIRE( auths == expected );
 }
 
@@ -2488,17 +2488,17 @@ BOOST_AUTO_TEST_CASE( custom_json_authorities )
    flat_set< wallet_name_type > auths;
    flat_set< wallet_name_type > expected;
 
-   op.get_required_owner_authorities( auths );
+   op.get_required_recovery_authorities( auths );
    BOOST_REQUIRE( auths == expected );
 
    expected.insert( "alice" );
-   op.get_required_active_authorities( auths );
+   op.get_required_money_authorities( auths );
    BOOST_REQUIRE( auths == expected );
 
    auths.clear();
    expected.clear();
    expected.insert( "bob" );
-   op.get_required_posting_authorities( auths );
+   op.get_required_social_authorities( auths );
    BOOST_REQUIRE( auths == expected );
 }
 
@@ -2594,19 +2594,19 @@ BOOST_AUTO_TEST_CASE( custom_binary_authorities )
    vector< authority > expected;
 
    acc_expected.insert( "alice" );
-   op.get_required_owner_authorities( acc_auths );
+   op.get_required_recovery_authorities( acc_auths );
    BOOST_REQUIRE( acc_auths == acc_expected );
 
    acc_auths.clear();
    acc_expected.clear();
    acc_expected.insert( "bob" );
-   op.get_required_active_authorities( acc_auths );
+   op.get_required_money_authorities( acc_auths );
    BOOST_REQUIRE( acc_auths == acc_expected );
 
    acc_auths.clear();
    acc_expected.clear();
    acc_expected.insert( "sam" );
-   op.get_required_posting_authorities( acc_auths );
+   op.get_required_social_authorities( acc_auths );
    BOOST_REQUIRE( acc_auths == acc_expected );
 
    expected.push_back( db->get< account_authority_object, by_account >( "alice" ).posting );
@@ -4352,13 +4352,13 @@ BOOST_AUTO_TEST_CASE( escrow_transfer_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       expected.insert( "alice" );
       BOOST_REQUIRE( auths == expected );
    }
@@ -4511,13 +4511,13 @@ BOOST_AUTO_TEST_CASE( escrow_approve_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       expected.insert( "bob" );
       BOOST_REQUIRE( auths == expected );
 
@@ -4525,7 +4525,7 @@ BOOST_AUTO_TEST_CASE( escrow_approve_authorities )
       auths.clear();
 
       op.who = "sam";
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       expected.insert( "sam" );
       BOOST_REQUIRE( auths == expected );
    }
@@ -4830,20 +4830,20 @@ BOOST_AUTO_TEST_CASE( escrow_dispute_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       expected.insert( "alice" );
       BOOST_REQUIRE( auths == expected );
 
       auths.clear();
       expected.clear();
       op.who = "bob";
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       expected.insert( "bob" );
       BOOST_REQUIRE( auths == expected );
    }
@@ -5116,28 +5116,28 @@ BOOST_AUTO_TEST_CASE( escrow_release_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       op.who = "bob";
       auths.clear();
       expected.clear();
       expected.insert( "bob" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       op.who = "sam";
       auths.clear();
       expected.clear();
       expected.insert( "sam" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
    }
    FC_LOG_AND_RETHROW()
@@ -5664,20 +5664,20 @@ BOOST_AUTO_TEST_CASE( transfer_to_savings_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       expected.insert( "alice" );
       BOOST_REQUIRE( auths == expected );
 
       auths.clear();
       expected.clear();
       op.from = "bob";
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       expected.insert( "bob" );
       BOOST_REQUIRE( auths == expected );
    }
@@ -5858,20 +5858,20 @@ BOOST_AUTO_TEST_CASE( transfer_from_savings_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       expected.insert( "alice" );
       BOOST_REQUIRE( auths == expected );
 
       auths.clear();
       expected.clear();
       op.from = "bob";
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       expected.insert( "bob" );
       BOOST_REQUIRE( auths == expected );
    }
@@ -6127,20 +6127,20 @@ BOOST_AUTO_TEST_CASE( cancel_transfer_from_savings_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       expected.insert( "alice" );
       BOOST_REQUIRE( auths == expected );
 
       auths.clear();
       expected.clear();
       op.from = "bob";
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       expected.insert( "bob" );
       BOOST_REQUIRE( auths == expected );
    }
@@ -6227,14 +6227,14 @@ BOOST_AUTO_TEST_CASE( decline_voting_rights_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
    }
    FC_LOG_AND_RETHROW()
@@ -6456,14 +6456,14 @@ BOOST_AUTO_TEST_CASE( claim_reward_balance_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
    }
    FC_LOG_AND_RETHROW()
@@ -6481,16 +6481,16 @@ BOOST_AUTO_TEST_CASE( account_create_with_delegation_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.clear();
       auths.clear();
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
    }
    FC_LOG_AND_RETHROW()
@@ -7454,13 +7454,13 @@ BOOST_AUTO_TEST_CASE( witness_set_properties_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       vector< authority > key_auths;
@@ -7473,13 +7473,13 @@ BOOST_AUTO_TEST_CASE( witness_set_properties_authorities )
       key_auths.clear();
       expected_keys.clear();
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected_keys.push_back( authority( 1, XGT_NULL_ACCOUNT, 1 ) );
@@ -7668,16 +7668,16 @@ BOOST_AUTO_TEST_CASE( claim_account_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.clear();
       auths.clear();
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
    }
    FC_LOG_AND_RETHROW()
@@ -7960,16 +7960,16 @@ BOOST_AUTO_TEST_CASE( create_claimed_account_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.clear();
       auths.clear();
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
    }
    FC_LOG_AND_RETHROW()
@@ -8227,15 +8227,15 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       flat_set< wallet_name_type > auths;
       flat_set< wallet_name_type > expected;
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.clear();
@@ -8246,15 +8246,15 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       op.owner = authority();
 
       expected.insert( "alice" );
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.clear();
@@ -8267,16 +8267,16 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       op.active->weight_threshold = 1;
       op.active->add_authorities( "alice", 1 );
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.clear();
@@ -8289,16 +8289,16 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       op.posting->weight_threshold = 1;
       op.posting->add_authorities( "alice", 1 );
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.clear();
@@ -8309,16 +8309,16 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       op.account = "alice";
       op.memo_key = public_key_type();
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.clear();
@@ -8329,16 +8329,16 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       op.account = "alice";
       op.json_metadata = "{\"success\":true}";
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.clear();
@@ -8349,14 +8349,14 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       op.account = "alice";
       op.posting_json_metadata = "{\"success\":true}";
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
@@ -8369,100 +8369,100 @@ BOOST_AUTO_TEST_CASE( account_update2_authorities )
       op = wallet_update_operation();
       op.account = "alice";
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
       op.posting_json_metadata = "{\"success\":true}";
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
       op.json_metadata = "{\"success\":true}";
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       op.memo_key = public_key_type();
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       op.posting = authority();
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       op.active = authority();
 
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       expected.insert( "alice" );
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
       op.owner = authority();
 
       expected.insert( "alice" );
-      op.get_required_owner_authorities( auths );
+      op.get_required_recovery_authorities( auths );
       BOOST_REQUIRE( auths == expected );
       auths.clear();
       expected.clear();
 
-      op.get_required_active_authorities( auths );
+      op.get_required_money_authorities( auths );
       BOOST_REQUIRE( auths == expected );
 
-      op.get_required_posting_authorities( auths );
+      op.get_required_social_authorities( auths );
       BOOST_REQUIRE( auths == expected );
    }
    FC_LOG_AND_RETHROW()

@@ -51,7 +51,7 @@ using namespace xgt::plugins;
 
 BOOST_AUTO_TEST_SUITE(block_tests)
 
-void open_test_database( database& db, const fc::path& dir )
+/*void open_test_database( database& db, const fc::path& dir )
 {
    database::open_args args;
    args.data_dir = dir;
@@ -61,8 +61,8 @@ void open_test_database( database& db, const fc::path& dir )
    args.shared_file_size = TEST_SHARED_MEM_SIZE;
    args.database_cfg = xgt::utilities::default_database_configuration();
    db.open( args );
-}
-
+}*/
+/*
 BOOST_AUTO_TEST_CASE( generate_empty_blocks )
 {
    try {
@@ -133,7 +133,8 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
       throw;
    }
 }
-
+*/
+/*
 BOOST_AUTO_TEST_CASE( undo_block )
 {
    try {
@@ -183,7 +184,8 @@ BOOST_AUTO_TEST_CASE( undo_block )
       throw;
    }
 }
-
+*/
+/*
 BOOST_AUTO_TEST_CASE( fork_blocks )
 {
    try {
@@ -252,7 +254,8 @@ BOOST_AUTO_TEST_CASE( fork_blocks )
       throw;
    }
 }
-
+*/
+/*
 BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
 {
    try {
@@ -271,7 +274,7 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       public_key_type init_account_pub_key  = init_account_priv_key.get_public_key();
       db1.get_index< account_index >();
 
-      //*
+      /[>
       signed_transaction trx;
       account_create_operation cop;
       cop.new_account_name = "alice";
@@ -282,7 +285,7 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       trx.set_expiration( db1.head_block_time() + XGT_MAX_TIME_UNTIL_EXPIRATION );
       trx.sign( init_account_priv_key, db1.get_chain_id(), fc::ecc::fc_canonical );
       PUSH_TX( db1, trx );
-      //*/
+      /[>/
       // generate blocks
       // db1 : A
       // db2 : B C D
@@ -313,7 +316,8 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
       throw;
    }
 }
-
+*/
+/*
 BOOST_AUTO_TEST_CASE( duplicate_transactions )
 {
    try {
@@ -418,7 +422,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       b = bp1.generate_block(db1.get_slot_time(1), db1.get_scheduled_witness(1), init_account_priv_key, database::skip_nothing);
       trx.signatures.clear();
       trx.sign( init_account_priv_key, db1.get_chain_id(), fc::ecc::fc_canonical );
-      BOOST_REQUIRE_THROW( db1.push_transaction(trx, 0/*database::skip_transaction_signatures | database::skip_authority_check*/), fc::exception );
+      BOOST_REQUIRE_THROW( db1.push_transaction(trx, 0[>database::skip_transaction_signatures | database::skip_authority_check<]), fc::exception );
    } catch (fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
@@ -888,6 +892,6 @@ BOOST_FIXTURE_TEST_CASE( generate_block_size, clean_database_fixture )
    }
    FC_LOG_AND_RETHROW()
 }
-
+*/
 BOOST_AUTO_TEST_SUITE_END()
 #endif

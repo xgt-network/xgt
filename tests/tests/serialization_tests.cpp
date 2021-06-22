@@ -223,7 +223,7 @@ std::string hex_bytes( const T& obj )
    }
    return ss.str();
 }
-
+/*
 void old_pack_symbol(vector<char>& v, asset_symbol_type sym)
 {
    if( sym == XGT_SYMBOL )
@@ -286,8 +286,8 @@ std::string old_json_asset( const asset& a )
    result.insert(0, 1, '"');
    result += '"';
    return result;
-}
-
+}*/
+/*
 BOOST_AUTO_TEST_CASE( asset_raw_test )
 {
    try
@@ -310,11 +310,11 @@ BOOST_AUTO_TEST_CASE( asset_raw_test )
       }
       // ilog( "h0:${h0}", ("h0", h._hash[0]) );
 
-/*      asset xgt = asset::from_string( "0.001 TESTS" );
+[>      asset xgt = asset::from_string( "0.001 TESTS" );
 #define VESTS_SYMBOL  (uint64_t(6) | (uint64_t('V') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< VESTS with 6 digits of precision
 #define XGT_SYMBOL  (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('E') << 16) | (uint64_t('S') << 24) | (uint64_t('T') << 32) | (uint64_t('S') << 40)) ///< XGT with 3 digits of precision
 #define SBD_SYMBOL    (uint64_t(3) | (uint64_t('T') << 8) | (uint64_t('B') << 16) | (uint64_t('D') << 24) ) ///< Test Backed Dollars with 3 digits of precision
-*/
+<]
       std::vector< asset_symbol_type > symbols;
 
       symbols.push_back( XGT_SYMBOL );
@@ -386,7 +386,7 @@ BOOST_AUTO_TEST_CASE( extended_private_key_type_test )
       throw;
    }
 }
-
+*/
 BOOST_AUTO_TEST_CASE( extended_public_key_type_test )
 {
    try
@@ -449,7 +449,7 @@ BOOST_AUTO_TEST_CASE( version_test )
    }
    FC_LOG_AND_RETHROW();
 }
-
+/*
 BOOST_AUTO_TEST_CASE( hardfork_version_test )
 {
    try
@@ -503,7 +503,7 @@ BOOST_AUTO_TEST_CASE( min_block_size )
       b.witness += 'a';
    size_t min_size = fc::raw::pack_size( b );
    BOOST_CHECK( min_size == XGT_MIN_BLOCK_SIZE );
-}
+}*/
 /*
 BOOST_AUTO_TEST_CASE( legacy_signed_transaction )
 {
@@ -623,7 +623,7 @@ BOOST_AUTO_TEST_CASE( asset_symbol_type_test )
    FC_LOG_AND_RETHROW();
 }
 */
-BOOST_AUTO_TEST_CASE( unpack_clear_test )
+/*BOOST_AUTO_TEST_CASE( unpack_clear_test )
 {
    try
    {
@@ -709,7 +709,7 @@ BOOST_AUTO_TEST_CASE( unpack_clear_test )
    }
    FC_LOG_AND_RETHROW();
 }
-
+*/
 BOOST_AUTO_TEST_CASE( unpack_recursion_test )
 {
    try
