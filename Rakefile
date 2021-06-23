@@ -104,10 +104,12 @@ task :run do
     wallet_by_key wallet_history wallet_history_api wallet_by_key_api
   )
 
+  data_dir = "../xgt-build/chain-data-#{instance_index}"
+
   if flush_testnet?
-    sh 'rm -rf ../xgt-build/testnet-data'
+    sh "rm -rf #{data_dir}"
   end
-  sh 'mkdir -p ../xgt-build/testnet-data'
+  sh "mkdir -p #{data_dir}"
 
   # TODO: Needs revisiting
   their_host = if host
@@ -118,8 +120,7 @@ task :run do
   end
 
   my_host = '0.0.0.0'
-  path = '../xgt-build/testnet-data'
-  File.open(File.join(path, 'config.ini'), 'w') do |f|
+  File.open(File.join(data_dir, 'config.ini'), 'w') do |f|
     f.puts(unindent(%(
       log-console-appender = {"appender":"stderr","stream":"std_error"}
       log-file-appender = {"appender":"logfile","file":"logfile.log"}
@@ -149,9 +150,9 @@ task :run do
       required-participation = 0
     )))
   end
-  $stderr.puts(File.read('../xgt-build/testnet-data/config.ini'))
+  $stderr.puts(File.read("#{data_dir}/config.ini"))
 
-  sh %(cd ../xgt-build/testnet-data && ../programs/xgtd/xgtd --data-dir=.)
+  sh %(cd #{data_dir} && ../programs/xgtd/xgtd --data-dir=.)
 end
 
 desc 'Builds the tests'
