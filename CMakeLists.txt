@@ -311,6 +311,17 @@ if(SUPPRESS_SOME_WARNINGS)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated-copy -Wno-error=pessimizing-move")
 endif()
 
+# When using ccache colored diagnostics are suppressed by default (as they also
+# often are using Ninja, etc). This option forcefully re-enables them.
+option (COLOR_DIAGNOSTICS "Force colored diagnostics" OFF)
+if (COLOR_DIAGNOSTICS)
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+       add_compile_options (-fdiagnostics-color=always)
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+       add_compile_options (-fcolor-diagnostics)
+    endif ()
+endif ()
+
 # external_plugins needs to be compiled first because libraries/app depends on XGT_EXTERNAL_PLUGINS being fully populated
 add_subdirectory( external_plugins )
 add_subdirectory( libraries )
