@@ -1090,20 +1090,9 @@ void database::notify_post_apply_custom_operation( const custom_operation_notifi
 
 fc::sha256 database::get_pow_target()const
 {
-   /// @since 1.1.1 added logic to slow mining for all miners by 64x
-   uint32_t head_num = head_block_num();
-   if (head_num < 400000)
-   {
-      const auto& dgp = get_dynamic_global_properties();
-      //wlog("database::get_pow_target 1 ${t}", ("t",dgp.mining_target));
-      return dgp.mining_target;
-   }
-   else
-   {
-      fc::sha256 target = fc::sha256("0000003fffc00000000000000000000000000000000000000000000000000000");
-      //wlog("database::get_pow_target 2 ${t}", ("t",target));
-      return target;
-   }
+   const auto& dgp = get_dynamic_global_properties();
+   wlog("database::get_pow_target 1 ${t}", ("t",dgp.mining_target));
+   return dgp.mining_target;
 }
 
 uint32_t database::get_pow_summary_target()const
@@ -1405,7 +1394,7 @@ void database::init_genesis( uint64_t init_supply )
       {
          p.mining_target = fc::sha256(XGT_MINING_TARGET_START);
          //p.mining_target = fc::sha256("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-         p.last_mining_recalc_time = fc::time_point::now();
+         p.last_mining_recalc_time = XGT_GENESIS_TIME;
          p.current_witness = XGT_INIT_MINER_NAME;
          p.time = XGT_GENESIS_TIME;
          p.recent_slots_filled = fc::uint128::max_value();
@@ -1622,22 +1611,24 @@ void database::_apply_block( const signed_block& next_block )
    const uint32_t frequency = XGT_MINING_RECALC_EVERY_N_BLOCKS;
    if( next_block_num == 1)
    {
-      /*fc::sha256 initial_target = fc::sha256(XGT_MINING_TARGET_START);
+      fc::sha256 initial_target = fc::sha256(XGT_MINING_TARGET_START);
       wlog("!!!!!! Initializing mining difficulty at ${w}", ("w",initial_target));
       const auto& gprops = get_dynamic_global_properties();
       modify( gprops, [&]( dynamic_global_property_object& dgp ) {
          dgp.mining_target = initial_target;
-      });*/
+         dgp.last_mining_recalc_time = next_block.timestamp;
+      });
    }
    else if( (XGT_STARTING_OFFSET + next_block_num) % frequency == 1 )
    {
       wlog("!!!!!! Updating mining difficulty...");
       const auto& gprops = get_dynamic_global_properties();
-      fc::time_point_sec now = fc::time_point::now();
+      fc::time_point_sec now = next_block.timestamp;
       fc::microseconds interval = now - gprops.last_mining_recalc_time;
       float actual = (float)interval.to_seconds();
-      float expected = XGT_MINING_RECALC_EVERY_N_BLOCKS * XGT_MINING_BLOCKS_PER_SECOND;
-      float ratio = actual / expected;
+      float expected = XGT_MINING_RECALC_EVERY_N_BLOCKS / XGT_MINING_BLOCKS_PER_SECOND;
+      wlog("!!!!!! Interval actual ${a} expected ${b}", ("a",actual)("b",expected));
+      float ratio = expected / actual;
 
       // Limit the adjustment by a factor of 4 (to prevent massive changes from one target to the next)
       float adjusted_ratio = ratio;
@@ -1654,7 +1645,7 @@ void database::_apply_block( const signed_block& next_block )
       const fc::sha256 previous_target_h = gprops.mining_target;
       boost::multiprecision::uint256_t previous_target = hash_to_bigint(previous_target_h);
       boost::multiprecision::cpp_dec_float_50 previous_target_f(previous_target);
-      boost::multiprecision::cpp_dec_float_50 next_target_f = previous_target_f * adjusted_ratio;
+      boost::multiprecision::cpp_dec_float_50 next_target_f = previous_target_f  / adjusted_ratio;
       boost::multiprecision::uint256_t next_target(next_target_f);
       fc::sha256 next_target_h = bigint_to_hash(next_target);
       if (next_target >= max_target)
@@ -1668,6 +1659,7 @@ void database::_apply_block( const signed_block& next_block )
 
       modify( gprops, [&]( dynamic_global_property_object& dgp ) {
          dgp.mining_target = next_target_h;
+         dgp.last_mining_recalc_time = now;
       });
    }
 
