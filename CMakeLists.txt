@@ -322,6 +322,13 @@ if (COLOR_DIAGNOSTICS)
     endif ()
 endif ()
 
+# The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated. Please use
+# <boost/bind/bind.hpp> + using namespace boost::placeholders, or define BOOST_BIND_GLOBAL_PLACEHOLDERS to retain the
+# current behavior.
+# TODO(raggi): actually fixup the usage instead.
+# TODO(raggi): move this to more specific targets in fc and the places where it's used in libraries/ such as chain.
+add_compile_definitions("BOOST_BIND_GLOBAL_PLACEHOLDERS")
+
 # external_plugins needs to be compiled first because libraries/app depends on XGT_EXTERNAL_PLUGINS being fully populated
 add_subdirectory( external_plugins )
 add_subdirectory( libraries )
