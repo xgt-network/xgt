@@ -218,6 +218,7 @@ void debug_node_plugin::debug_generate_blocks(
       return;
    }
 
+   // TODO possibly remove -- schedule related
    chain::database& db = database();
    witness::block_producer bp( db );
    uint32_t slot = args.miss_blocks+1, produced = 0;
@@ -238,6 +239,7 @@ void debug_node_plugin::debug_generate_blocks(
          if( args.edit_if_needed )
          {
             if( logging ) wlog( "Modified key for witness ${w}", ("w", scheduled_witness_name) );
+            /*
             debug_update( [=]( chain::database& db )
             {
                db.modify( db.get_witness( scheduled_witness_name ), [&]( chain::witness_object& w )
@@ -245,6 +247,7 @@ void debug_node_plugin::debug_generate_blocks(
                   w.signing_key = debug_public_key;
                });
             }, args.skip );
+            */
          }
          else
             break;

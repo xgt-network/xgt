@@ -286,7 +286,7 @@ add_boost_test( chain_test
    #    undo_tests/undo_generate_blocks
 )
 
-target_link_libraries( chain_test db_fixture chainbase xgt_chain xgt_protocol wallet_history_plugin witness_plugin debug_node_plugin fc ${PLATFORM_SPECIFIC_LIBS} )
+target_link_libraries( chain_test db_fixture chainbase xgt_chain xgt_protocol chain_plugin wallet_history_plugin witness_plugin debug_node_plugin fc ${PLATFORM_SPECIFIC_LIBS} )
 
 file(GLOB PLUGIN_TESTS "plugin_tests/*.cpp")
 

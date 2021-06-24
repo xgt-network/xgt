@@ -50,19 +50,18 @@ using namespace xgt::plugins;
 #define TEST_SHARED_MEM_SIZE (1024 * 1024 * 8)
 
 BOOST_AUTO_TEST_SUITE(block_tests)
-
-/*void open_test_database( database& db, const fc::path& dir )
+/*
+void open_test_database( database& db, const fc::path& dir )
 {
    database::open_args args;
    args.data_dir = dir;
    args.shared_mem_dir = dir;
    args.initial_supply = INITIAL_TEST_SUPPLY;
-   args.sbd_initial_supply = SBD_INITIAL_TEST_SUPPLY;
    args.shared_file_size = TEST_SHARED_MEM_SIZE;
    args.database_cfg = xgt::utilities::default_database_configuration();
    db.open( args );
-}*/
-/*
+}
+
 BOOST_AUTO_TEST_CASE( generate_empty_blocks )
 {
    try {
@@ -132,8 +131,7 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
       edump((e.to_detail_string()));
       throw;
    }
-}
-*/
+}*/
 /*
 BOOST_AUTO_TEST_CASE( undo_block )
 {

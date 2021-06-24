@@ -1592,6 +1592,7 @@ BOOST_AUTO_TEST_CASE( xtt_create_validate )
    FC_LOG_AND_RETHROW()
 }
 */
+/*
 BOOST_AUTO_TEST_CASE( xtt_create_authorities )
 {
    try
@@ -1647,7 +1648,7 @@ BOOST_AUTO_TEST_CASE( xtt_create_duplicate_differing_decimals )
       BOOST_TEST_MESSAGE( "Testing: xtt_create_duplicate_differing_decimals" );
 
       ACTORS( (alice) )
-      asset_symbol_type alice_symbol = create_xtt( "alice", alice_private_key, 3 /* Decimals */ );
+      asset_symbol_type alice_symbol = create_xtt( "alice", alice_private_key, 3 [> Decimals <] );
 
       // We add the NAI back to the pool to ensure the test does not fail because the NAI is not in the pool
       db->modify( db->get< nai_pool_object >(), [&] ( nai_pool_object& obj )
@@ -1656,7 +1657,7 @@ BOOST_AUTO_TEST_CASE( xtt_create_duplicate_differing_decimals )
       } );
 
       // Fail on duplicate XTT lookup
-      XGT_REQUIRE_THROW( create_xtt_with_nai( "alice", alice_private_key, alice_symbol.to_nai(), 2 /* Decimals */ ), fc::assert_exception)
+      XGT_REQUIRE_THROW( create_xtt_with_nai( "alice", alice_private_key, alice_symbol.to_nai(), 2 [> Decimals <] ), fc::assert_exception)
    }
    FC_LOG_AND_RETHROW();
 }
@@ -1680,7 +1681,7 @@ BOOST_AUTO_TEST_CASE( xtt_create_duplicate_different_users )
       XGT_REQUIRE_THROW( create_xtt_with_nai( "bob", bob_private_key, alice_symbol.to_nai(), alice_symbol.decimals() ), fc::assert_exception)
    }
    FC_LOG_AND_RETHROW();
-}
+}*/
 /*
 BOOST_AUTO_TEST_CASE( xtt_create_with_xgt_funds )
 {
@@ -1764,6 +1765,7 @@ BOOST_AUTO_TEST_CASE( xtt_create_with_sbd_funds )
    FC_LOG_AND_RETHROW();
 }
 */
+/*
 BOOST_AUTO_TEST_CASE( xtt_create_with_invalid_nai )
 {
    try
@@ -1788,7 +1790,7 @@ BOOST_AUTO_TEST_CASE( xtt_create_with_invalid_nai )
       XGT_REQUIRE_THROW( create_xtt_with_nai( "alice", alice_private_key, ast.to_nai(), ast.decimals() ), fc::assert_exception)
    }
    FC_LOG_AND_RETHROW();
-}
+}*/
 /*
 BOOST_AUTO_TEST_CASE( xtt_creation_fee_test )
 {

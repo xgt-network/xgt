@@ -35,8 +35,9 @@ inline uint16_t get_voting_power( const account_object& a )
 }
 */
 BOOST_FIXTURE_TEST_SUITE( operation_tests, clean_database_fixture )
+// BOOST_AUTO_TEST_SUITE(operation_tests)
 
-BOOST_AUTO_TEST_CASE( account_create_validate )
+BOOST_AUTO_TEST_CASE( adjust_mining_difficulty )
 {
    try
    {
@@ -45,6 +46,18 @@ BOOST_AUTO_TEST_CASE( account_create_validate )
    FC_LOG_AND_RETHROW()
 }
 
+/*
+BOOST_AUTO_TEST_CASE( account_create_validate )
+{
+   try
+   {
+
+   }
+   FC_LOG_AND_RETHROW()
+}
+*/
+
+/*
 BOOST_AUTO_TEST_CASE( account_create_authorities )
 {
    try
@@ -75,6 +88,7 @@ BOOST_AUTO_TEST_CASE( account_create_authorities )
    }
    FC_LOG_AND_RETHROW()
 }
+*/
 /*
 BOOST_AUTO_TEST_CASE( account_create_apply )
 {

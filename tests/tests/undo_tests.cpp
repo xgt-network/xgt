@@ -382,6 +382,7 @@ BOOST_AUTO_TEST_CASE( undo_different_indexes )
    FC_LOG_AND_RETHROW()
 }
 */
+/*
 BOOST_AUTO_TEST_CASE( undo_generate_blocks )
 {
    try
@@ -485,6 +486,6 @@ BOOST_AUTO_TEST_CASE( undo_generate_blocks )
    }
    FC_LOG_AND_RETHROW()
 }
-
+*/
 BOOST_AUTO_TEST_SUITE_END()
 #endif

@@ -45,7 +45,7 @@ using namespace xgt::chain;
 using namespace xgt::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( serialization_tests, clean_database_fixture )
-
+/*
 BOOST_AUTO_TEST_CASE( serialization_raw_test )
 {
    try {
@@ -88,7 +88,7 @@ BOOST_AUTO_TEST_CASE( serialization_json_test )
       edump((e.to_detail_string()));
       throw;
    }
-}
+}*/
 /*
 BOOST_AUTO_TEST_CASE( legacy_asset_test )
 {
@@ -387,6 +387,7 @@ BOOST_AUTO_TEST_CASE( extended_private_key_type_test )
    }
 }
 */
+/*
 BOOST_AUTO_TEST_CASE( extended_public_key_type_test )
 {
    try
@@ -448,7 +449,7 @@ BOOST_AUTO_TEST_CASE( version_test )
       XGT_REQUIRE_THROW( fc::from_variant( ver_str, ver ), fc::exception );
    }
    FC_LOG_AND_RETHROW();
-}
+}*/
 /*
 BOOST_AUTO_TEST_CASE( hardfork_version_test )
 {
@@ -525,6 +526,7 @@ BOOST_AUTO_TEST_CASE( legacy_signed_transaction )
    BOOST_REQUIRE( tx.id() == tx2.id() );
 }
 */
+/*
 BOOST_AUTO_TEST_CASE( static_variant_json_test )
 {
    try
@@ -568,7 +570,7 @@ BOOST_AUTO_TEST_CASE( static_variant_json_test )
       XGT_REQUIRE_THROW( from_variant( fc::json::from_string( json_str ), op ), fc::assert_exception );
    }
    FC_LOG_AND_RETHROW();
-}
+}*/
 /*
 BOOST_AUTO_TEST_CASE( legacy_operation_test )
 {
@@ -710,6 +712,7 @@ BOOST_AUTO_TEST_CASE( asset_symbol_type_test )
    FC_LOG_AND_RETHROW();
 }
 */
+/*
 BOOST_AUTO_TEST_CASE( unpack_recursion_test )
 {
    try
@@ -729,6 +732,6 @@ BOOST_AUTO_TEST_CASE( unpack_recursion_test )
    }
    FC_LOG_AND_RETHROW();
 }
-
+*/
 BOOST_AUTO_TEST_SUITE_END()
 #endif

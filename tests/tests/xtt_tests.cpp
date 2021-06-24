@@ -28,7 +28,7 @@ using boost::container::flat_set;
 using boost::container::flat_map;
 
 BOOST_FIXTURE_TEST_SUITE( xtt_tests, clean_database_fixture )
-
+/*
 BOOST_AUTO_TEST_CASE( xtt_transfer_validate )
 {
    try
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE( xtt_transfer_apply )
       validate_database();
    }
    FC_LOG_AND_RETHROW()
-}
+}*/
 /*
 BOOST_AUTO_TEST_CASE( asset_symbol_vesting_methods )
 {

@@ -32,7 +32,7 @@ using namespace xgt::chain;
 using namespace xgt::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( xtt_operation_time_tests, clean_database_fixture )
-
+/*
 BOOST_AUTO_TEST_CASE( xtt_refunds )
 {
    try
@@ -348,7 +348,7 @@ BOOST_AUTO_TEST_CASE( xtt_ico_payouts )
       BOOST_REQUIRE( contribution_idx.find( boost::make_tuple( symbol, 0 ) ) == contribution_idx.end() );
    }
    FC_LOG_AND_RETHROW()
-}
+}*/
 /*
 BOOST_AUTO_TEST_CASE( xtt_ico_payouts_special_destinations )
 {

@@ -50,16 +50,19 @@ clean_database_fixture::clean_database_fixture( uint16_t shared_file_size_in_mb 
          std::cout << "running test " << boost::unit_test::framework::current_test_case().p_name << std::endl;
    }
 
-   appbase::app().register_plugin< xgt::plugins::wallet_history::wallet_history_plugin >();
+   appbase::app().register_plugin< xgt::plugins::chain::chain_plugin >();
+   // appbase::app().register_plugin< xgt::plugins::wallet_history::wallet_history_plugin >();
    db_plugin = &appbase::app().register_plugin< xgt::plugins::debug_node::debug_node_plugin >();
-   appbase::app().register_plugin< xgt::plugins::witness::witness_plugin >();
 
+   appbase::app().register_plugin< xgt::plugins::witness::witness_plugin >();
    db_plugin->logging = false;
+
    appbase::app().initialize<
-      xgt::plugins::wallet_history::wallet_history_plugin,
-      xgt::plugins::debug_node::debug_node_plugin,
-      xgt::plugins::witness::witness_plugin
-      >( argc, argv );
+        xgt::plugins::chain::chain_plugin,
+        // xgt::plugins::wallet_history::wallet_history_plugin,
+        xgt::plugins::debug_node::debug_node_plugin,
+        xgt::plugins::witness::witness_plugin
+     >( argc, argv );
 
    db = &appbase::app().get_plugin< xgt::plugins::chain::chain_plugin >().db();
    BOOST_REQUIRE( db );
@@ -69,13 +72,11 @@ clean_database_fixture::clean_database_fixture( uint16_t shared_file_size_in_mb 
    open_database( shared_file_size_in_mb );
 
    generate_block();
+
    db->set_hardfork( XGT_BLOCKCHAIN_VERSION.minor_v() );
    generate_block();
 
-   vest( "initminer", 10000 );
-
    /*
-   // Fill up the rest of the required miners
    for( int i = XGT_NUM_INIT_MINERS; i < XGT_MAX_WITNESSES; i++ )
    {
       account_create( XGT_INIT_MINER_NAME + fc::to_string( i ), init_account_pub_key );
@@ -85,17 +86,18 @@ clean_database_fixture::clean_database_fixture( uint16_t shared_file_size_in_mb 
    */
 
    validate_database();
+
    } catch ( const fc::exception& e )
    {
       edump( (e.to_detail_string()) );
       throw;
    }
-
    return;
 }
 
 clean_database_fixture::~clean_database_fixture()
-{ try {
+{ 
+  try {
    // If we're unwinding due to an exception, don't do any more checks.
    // This way, boost test's last checkpoint tells us approximately where the error was.
    if( !std::uncaught_exception() )
@@ -145,9 +147,9 @@ void clean_database_fixture::resize_shared_mem( uint64_t size )
 
    generate_block();
    db->set_hardfork( XGT_BLOCKCHAIN_VERSION.minor_v() );
-   generate_block();
+   // generate_block();
 
-   vest( "initminer", 10000 );
+   // vest( "initminer", 10000 );
 
    /*
    // Fill up the rest of the required miners
@@ -159,7 +161,7 @@ void clean_database_fixture::resize_shared_mem( uint64_t size )
    }
    */
 
-   validate_database();
+   // validate_database();
 }
 
 live_database_fixture::live_database_fixture()
@@ -317,7 +319,7 @@ const wallet_object& database_fixture::account_create(
 const wallet_object& database_fixture::account_create(
    const string& name,
    const public_key_type& key,
-   const public_key_type& post_key
+   const public_key_type& social_key
 )
 {
    try
@@ -328,7 +330,7 @@ const wallet_object& database_fixture::account_create(
          init_account_priv_key,
          share_type( 100 ),
          key,
-         post_key,
+         social_key,
          "" );
    }
    FC_CAPTURE_AND_RETHROW( (name) );
@@ -344,7 +346,7 @@ const wallet_object& database_fixture::account_create(
 
 const witness_object& database_fixture::witness_create(
    const string& owner,
-   const private_key_type& owner_key,
+   const private_key_type& recovery_key,
    const string& url,
    const public_key_type& signing_key,
    const share_type& fee )
@@ -359,7 +361,7 @@ const witness_object& database_fixture::witness_create(
 
       trx.operations.push_back( op );
       trx.set_expiration( db->head_block_time() + XGT_MAX_TIME_UNTIL_EXPIRATION );
-      sign( trx, owner_key );
+      sign( trx, recovery_key );
       trx.validate();
       db->push_transaction( trx, 0 );
       trx.clear();
