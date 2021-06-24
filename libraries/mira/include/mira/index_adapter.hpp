@@ -14,12 +14,16 @@ template< typename MultiIndexAdapterType, typename IndexedBy >
 struct index_adapter
 {
    typedef typename MultiIndexAdapterType::value_type                                              value_type;
+   #pragma GCC diagnostic ignored "-Wnonnull"
    typedef typename std::remove_reference< decltype(
       (((typename MultiIndexAdapterType::mira_type*)nullptr)->template get<IndexedBy>()) ) >::type mira_type;
+   #pragma GCC diagnostic ignored "-Wnonnull"
    typedef typename std::remove_reference< decltype(
       (((typename MultiIndexAdapterType::bmic_type*)nullptr)->template get<IndexedBy>()) ) >::type bmic_type;
 
+   #pragma GCC diagnostic ignored "-Wnonnull"
    typedef decltype( (((mira_type*)nullptr)->begin()) )     mira_iter_type;
+   #pragma GCC diagnostic ignored "-Wnonnull"
    typedef decltype( (((bmic_type*)nullptr)->begin()) )     bmic_iter_type;
 
    typedef iterator_adapter<
