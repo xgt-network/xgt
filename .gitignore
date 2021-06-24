@@ -17,6 +17,9 @@ Release/
 # Visual Studio Code files
 .vscode
 
+# clangd
+.cache/
+
 # CMake files
 cmake_install.cmake
 CMakeCache.txt
