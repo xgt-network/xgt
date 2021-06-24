@@ -1029,6 +1029,7 @@ namespace chainbase {
          }
 
 #ifndef ENABLE_MIRA
+         #pragma GCC diagnostic ignored "-Wnonnull"
          auto get_segment_manager() -> decltype( ((bip::managed_mapped_file*)nullptr)->get_segment_manager()) {
             return _segment->get_segment_manager();
          }

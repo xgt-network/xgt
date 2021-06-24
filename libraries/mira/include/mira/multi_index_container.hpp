@@ -16,7 +16,7 @@
 #include <memory>
 #include <boost/core/addressof.hpp>
 #include <boost/core/ignore_unused.hpp>
-#include <boost/detail/no_exceptions_support.hpp>
+#include <boost/core/no_exceptions_support.hpp>
 #include <boost/detail/workaround.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/move/core.hpp>
