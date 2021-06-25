@@ -8,11 +8,11 @@ require 'rake/testtask'
 autoload :Xgt, 'xgt/ruby'
 
 def mining_disabled?
-  ENV['MINING_DISABLED'] == 'TRUE'
+  ENV['MINING_DISABLED']&.upcase == 'TRUE'
 end
 
 def flush_testnet?
-  ENV['FLUSH_TESTNET'] == 'TRUE'
+  ENV['FLUSH_TESTNET']&.upcase == 'TRUE'
 end
 
 def wallet

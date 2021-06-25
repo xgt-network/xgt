@@ -41,7 +41,7 @@ namespace xgt { namespace chain {
          wallet_name_type  current_witness;
 
          fc::sha256 mining_target;
-         time_point_sec last_mining_recalc_time;
+         time_point_sec last_mining_recalc_time; // @since 1.1.2 - Deprecated
 
          /**
           *  The total POW accumulated, aka the sum of num_pow_witness at the time new POW is added

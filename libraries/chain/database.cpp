@@ -1090,9 +1090,23 @@ void database::notify_post_apply_custom_operation( const custom_operation_notifi
 
 fc::sha256 database::get_pow_target()const
 {
-   const auto& dgp = get_dynamic_global_properties();
-   wlog("database::get_pow_target 1 ${t}", ("t",dgp.mining_target));
-   return dgp.mining_target;
+   /// @since 1.1.1 added logic to slow mining for all miners by 64x
+   /// @since 1.1.2 added logic for adjustable mining difficulty
+   uint32_t head_num = head_block_num();
+   if (head_num < 400000)
+   {
+      return fc::sha256("00000ffff0000000000000000000000000000000000000000000000000000000");
+   }
+   else if (head_num < 700000)
+   {
+      return fc::sha256("0000003fffc00000000000000000000000000000000000000000000000000000");
+   }
+   else
+   {
+      const auto& dgp = get_dynamic_global_properties();
+      //wlog("database::get_pow_target ${t}", ("t",dgp.mining_target));
+      return dgp.mining_target;
+   }
 }
 
 uint32_t database::get_pow_summary_target()const
@@ -1394,7 +1408,6 @@ void database::init_genesis( uint64_t init_supply )
       {
          p.mining_target = fc::sha256(XGT_MINING_TARGET_START);
          //p.mining_target = fc::sha256("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-         p.last_mining_recalc_time = XGT_GENESIS_TIME;
          p.current_witness = XGT_INIT_MINER_NAME;
          p.time = XGT_GENESIS_TIME;
          p.recent_slots_filled = fc::uint128::max_value();
@@ -1700,7 +1713,6 @@ void database::_apply_block( const signed_block& next_block )
       const auto& gprops = get_dynamic_global_properties();
       modify( gprops, [&]( dynamic_global_property_object& dgp ) {
          dgp.mining_target = initial_target;
-         dgp.last_mining_recalc_time = next_block.timestamp;
       });
    }
    else if( (XGT_STARTING_OFFSET + next_block_num) % frequency == 1 )
@@ -1757,7 +1769,6 @@ void database::_apply_block( const signed_block& next_block )
 
       modify( gprops, [&]( dynamic_global_property_object& dgp ) {
          dgp.mining_target = next_target_h;
-         dgp.last_mining_recalc_time = now;
       });
    }
 
