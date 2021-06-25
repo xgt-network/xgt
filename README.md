@@ -1,4 +1,8 @@
-# XGT - Sound Money & Robust Programmability
+![XGT Logo](https://xgt-network.github.io/assets/images/xgt-logo.png)
+
+# Sound Money & Robust Programmability
+
+
 
 Infinite scalablilty for financial inclusion With native smart contracts and robust architecture, XGT supports up to 3,000 transactions per second and a financially-inclusive experience for all users.
 
