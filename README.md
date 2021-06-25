@@ -1,4 +1,4 @@
-![XGT Logo](https://xgt-network.github.io/assets/images/xgt-logo.png)
+[![XGT Logo](https://xgt-network.github.io/assets/images/xgt-logo.png)](https://www.xgt.network)
 
 # Sound Money & Robust Programmability
 
