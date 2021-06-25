@@ -12,7 +12,26 @@ Streamlined full nodes for perfect app integration The advantage of XGT nodes is
 
 ## Documents
 
-* Forthcoming
+Documentation can be found at the [XGT Documentation Hub](https://xgt-network.github.io/).
+
+### Usage
+<ul class="ul-buttons">
+  <li><a href="https://xgt-network.github.io/compilation/">Compiling XGT</a></li>
+  <li><a href="https://xgt-network.github.io/mining/">Mining</a></li>
+  <li><a href="https://xgt-network.github.io/ubuntu_quickstart.html">Ubuntu Quickstart</a></li>
+</ul>
+
+### API Docs
+<ul class="ul-buttons">
+  <li><a href="https://xgt-network.github.io/json_rpc.html">JSON RPC Documentation</a></li>
+  <li><a href="https://xgt-network.github.io/schema_outline.html">XGT Schema</a></li>
+</ul>
+
+### Libraries
+<ul class="https://xgt-network.github.ioul-buttons">
+  <li><a href="/xgt_ruby_recipes.html">xgt-ruby recipes</a></li>
+</ul>
+
 
 ## Advantages
 
