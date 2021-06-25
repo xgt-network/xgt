@@ -6,13 +6,11 @@
 
 Infinite scalablilty for financial inclusion With native smart contracts and robust architecture, XGT supports up to 3,000 transactions per second and a financially-inclusive experience for all users.
 
-Dockerized libraries for egalitarian opportunity to run full nodes An XGT daemon can be easily run with the provided Docker images, which enables exchanges, developers and applications to integrate and run XGT with unparalled efficiency, while also embracing reliability as a key security measure. Deploying and maintaining an XGT node is simple enough that anyone can do it.
+Dockerized libraries for egalitarian opportunity to run full nodes: An XGT daemon can be easily run with the provided Docker images, which enables exchanges, developers and applications to integrate and run XGT with unparalled efficiency, while also embracing reliability as a key security measure. Deploying and maintaining an XGT node is simple enough that anyone can do it.
 
-Optimal governance for egalitarian participation XGT will be supported by an unlimited number of nodes run by developers, applications, users and miners. Miners produce the blocks that track all XGT transactions at a rate of one block every three seconds and there is no limit on the number of miners. Together these nodes provide growing decentralization and security to XGT.
+Optimal governance for egalitarian participation: XGT will be supported by an unlimited number of nodes run by developers, applications, users and miners. Miners produce the blocks that track all XGT transactions at a rate of one block every three seconds and there is no limit on the number of miners. Together these nodes provide growing decentralization and security to XGT.
 
-Streamlined full nodes for perfect app integration The advantage of XGT nodes is that they are extremely quick to set up, inexpensive to operate or migrate to, and highly responsive relative to other networks. Better still, the open nature of the network means that it is available to all, and participants are not subject to the behaviour of a group of insiders. Anyone can operate a full node, or mine using the open source software. XGT is built with the knowledge that the benefit of a full node designed specifically for economic purposes, knowing full well non-economic data needs to be supported by off-chain, application-based APIs for optimal performance.
-
-
+Streamlined full nodes for perfect app integration: The advantage of XGT nodes is that they are extremely quick to set up, inexpensive to operate or migrate to, and highly responsive relative to other networks. Better still, the open nature of the network means that it is available to all, and participants are not subject to the behaviour of a group of insiders. Anyone can operate a full node, or mine using the open source software. XGT is built with the knowledge that the benefit of a full node designed specifically for economic purposes, knowing full well non-economic data needs to be supported by off-chain, application-based APIs for optimal performance.
 
 ## Documents
 
@@ -37,6 +35,7 @@ Documentation can be found at the [XGT Documentation Hub](https://xgt-network.gi
 </ul>
 
 
+
 ## Advantages
 
 * Fast application and exchange integration: New streamlined blockchain infrastructure based on years of research.
@@ -55,9 +54,13 @@ Documentation can be found at the [XGT Documentation Hub](https://xgt-network.gi
 * ~18,700,000 XGT for egalitarian distribution, 21,000,000 token supply schedule.
 * Mining halvings, targetted for sync with BTC supply halvings
 
+## Announcement 
+
+XGT was formally announced on [BitcoinTalk](https://bitcointalk.org/index.php?topic=5340639.newmail) on May 28, 2021, at 06:56 PM PST.
+
 # Installation
 
-Getting started with XGT is fairly simple. You can either choose to use docker-images, build with docker manually or build from source directly. All steps have been documented and while many different OS are supported, the easiest one is Ubuntu 16.04.
+Getting started with XGT is fairly simple. You can either choose to use docker-images, build with docker manually or build from source directly. All steps have been documented and while many different OS are supported, the easiest one is Ubuntu 20.04.
 
 ## Quickstart
 
@@ -69,17 +72,7 @@ We **strongly** recommend using one of our pre-built Docker images or using Dock
 
 To build from source, we also have [build instructions](https://github.com/xgt-network/xgt/wiki/Compiling-XGT) for Linux (Ubuntu 20.04 LTS) and macOS.
 
-## Dockerized P2P Node
-
-To run a p2p node (ca. 2GB of memory is required at the moment):
-
-    docker run \
-        -d -p 2001:2001 -p 8090:8090 --name xgtd-default \
-        xgt-network/xgt
-
-    docker logs -f xgtd-default  # follow along
-
-## Dockerized Full Node
+## Dockerized Mining & Seed Nodes
 
 See [Mining XGT](https://github.com/xgt-network/xgt/wiki/Mining-XGT)
 
