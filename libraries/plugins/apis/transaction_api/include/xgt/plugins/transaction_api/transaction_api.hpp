@@ -1,7 +1,5 @@
 #pragma once
 
-#include <xgt/protocol/block.hpp>
-
 #include <xgt/plugins/database_api/database_api.hpp>
 #include <xgt/plugins/p2p/p2p_plugin.hpp>
 #include <xgt/plugins/chain/chain_plugin.hpp>
