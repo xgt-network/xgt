@@ -246,11 +246,12 @@ namespace detail {
 
    void witness_plugin_impl::start_mining( const fc::ecc::public_key& pub, const fc::ecc::private_key& pk, const string& miner )
    {
-      wlog( "Miner has started work ${o} pubkey ${p} privkey ${q}", ("o", miner)("p", pub)("q", pk) );
-
       static uint64_t seed = fc::time_point::now().time_since_epoch().count();
       static uint64_t start = fc::city_hash64( (const char*)&seed, sizeof(seed) );
       auto block_id = _db.head_block_id();
+      auto block_num = _db.head_block_num();
+      wlog( "Miner has started work ${o} at block ${b} from nonce ${s}", ("o", miner)("b", block_num)("s", start));
+
       //fc::thread* mainthread = &fc::thread::current();
       _total_hashes = 0;
       _hash_start_time = fc::time_point::now();
@@ -279,7 +280,7 @@ namespace detail {
             auto head_block_time = _db.head_block_time();
             if( this->_head_block_num != head_block_num )
             {
-               wlog( "Stop mining due new block arrival, nonce: ${n} ${o} ${p}", ("n", nonce)("o",this->_head_block_num)("p",head_block_num) );
+               wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("n", nonce)("o",this->_head_block_num)("p",head_block_num) );
                this->_head_block_num = head_block_num;
                break;
             }
@@ -290,7 +291,7 @@ namespace detail {
 
             if (work.pow_summary < lowest) lowest = work.pow_summary;
             if (this->_total_hashes % 1000000 == 0) {
-               wlog("!!!!!! work.pow_summary target ${p} ${t}", ("p",lowest)("t",target));
+               wlog("Miner working at block ${b} lowest: ${p} target: ${t} nonce: ${n}", ("b", block_num)("p",lowest)("t",target)("n", nonce));
             }
 
             if( work.pow_summary < target && work.is_valid() )
