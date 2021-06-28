@@ -1,4 +1,17 @@
+cmake_minimum_required(VERSION 3.9.4)
+
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT error)
+
 add_executable( xgtd main.cpp )
+
+if( ipo_supported )
+       message(STATUS "IPO / LTO enabled")
+       set_property(TARGET xgtd PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+else()
+       message(STATUS "IPO / LTO not supported: <${error}>")
+endif()
+
 if( UNIX AND NOT APPLE )
   set(rt_library rt )
 endif()

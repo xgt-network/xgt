@@ -143,6 +143,29 @@ if( XGT_STATIC_BUILD AND ( ( MSVC AND NOT MINGW ) OR APPLE ) )
 endif()
 MESSAGE( STATUS "XGT_STATIC_BUILD: ${XGT_STATIC_BUILD}" )
 
+OPTION( XGT_CCACHE "Use ccache during the build" ON )
+if ( XGT_CCACHE )
+  SET( CMAKE_C_COMPILER_LAUNCHER "ccache" )
+  SET( CMAKE_CXX_COMPILER_LAUNCHER "ccache" )
+endif()
+MESSAGE( STATUS "XGT_CCACHE: ${XGT_CCACHE}" )
+
+OPTION( XGT_OPT_NATIVE "Optimize for native architecture" OFF )
+if ( XGT_OPT_NATIVE )
+  include(CheckCXXCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-march=native" CXX_SUPPORTS_MARCH_NATIVE)
+  if(CXX_SUPPORTS_MARCH_NATIVE)
+      set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=native")
+  endif()
+
+  include(CheckCCompilerFlag)
+  CHECK_CXX_COMPILER_FLAG("-march=native" C_SUPPORTS_MARCH_NATIVE)
+  if(C_SUPPORTS_MARCH_NATIVE)
+      set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=native")
+  endif()
+endif()
+MESSAGE( STATUS "XGT_OPT_NATIVE: ${XGT_OPT_NATIVE}" )
+
 SET( XGT_LINT_LEVEL "OFF" CACHE STRING "Lint level during xgt build (FULL, HIGH, LOW, OFF)" )
 find_program(
    CLANG_TIDY_EXE
@@ -278,8 +301,15 @@ endif()
 
 # fc/src/compress/miniz.c breaks strict aliasing. The Linux kernel builds with no strict aliasing
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing -DBOOST_THREAD_DONT_PROVIDE_PROMISE_LAZY" )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=deprecated-copy -Wno-error=pessimizing-move -Wno-error=sign-compare")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=sign-compare")
 SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -Werror -DBOOST_THREAD_DONT_PROVIDE_PROMISE_LAZY" )
+
+# supress unwanted warnings:
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-Wno-error=deprecated-copy -Wno-error=pessimizing-move" SUPPRESS_SOME_WARNINGS)
+if(SUPPRESS_SOME_WARNINGS)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated-copy -Wno-error=pessimizing-move")
+endif()
 
 # external_plugins needs to be compiled first because libraries/app depends on XGT_EXTERNAL_PLUGINS being fully populated
 add_subdirectory( external_plugins )
