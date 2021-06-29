@@ -1097,7 +1097,7 @@ fc::sha256 database::get_pow_target()const
    {
       return fc::sha256("00000ffff0000000000000000000000000000000000000000000000000000000");
    }
-   else if (head_num < 700000)
+   else if (head_num < 907200)
    {
       return fc::sha256("0000003fffc00000000000000000000000000000000000000000000000000000");
    }
