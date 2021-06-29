@@ -6,7 +6,6 @@
 #include <xgt/schema/schema_types.hpp>
 
 #include <xgt/chain/schema_types/oid.hpp>
-#include <xgt/protocol/schema_types/account_name_type.hpp>
 #include <xgt/protocol/schema_types/asset_symbol_type.hpp>
 
 #include <iostream>
@@ -15,7 +14,6 @@
 #include <string>
 #include <vector>
 
-#include <xgt/chain/account_object.hpp>
 #include <xgt/chain/xgt_objects.hpp>
 #include <xgt/chain/database.hpp>
 #include <xgt/chain/index.hpp>

@@ -16,7 +16,7 @@
 #include "rocksdb/status.h"
 #include "table/internal_iterator.h"
 
-namespace rocksdb {
+namespace ROCKSDB_NAMESPACE {
 
 struct FragmentedRangeTombstoneList {
  public:
@@ -68,6 +68,14 @@ struct FragmentedRangeTombstoneList {
   // number in [lower, upper].
   bool ContainsRange(SequenceNumber lower, SequenceNumber upper) const;
 
+  uint64_t num_unfragmented_tombstones() const {
+    return num_unfragmented_tombstones_;
+  }
+
+  uint64_t total_tombstone_payload_bytes() const {
+    return total_tombstone_payload_bytes_;
+  }
+
  private:
   // Given an ordered range tombstone iterator unfragmented_tombstones,
   // "fragment" the tombstones into non-overlapping pieces, and store them in
@@ -82,6 +90,8 @@ struct FragmentedRangeTombstoneList {
   std::set<SequenceNumber> seq_set_;
   std::list<std::string> pinned_slices_;
   PinnedIteratorsManager pinned_iters_mgr_;
+  uint64_t num_unfragmented_tombstones_;
+  uint64_t total_tombstone_payload_bytes_;
 };
 
 // FragmentedRangeTombstoneIterator converts an InternalIterator of a range-del
@@ -144,6 +154,8 @@ class FragmentedRangeTombstoneIterator : public InternalIterator {
   void Invalidate() {
     pos_ = tombstones_->end();
     seq_pos_ = tombstones_->seq_end();
+    pinned_pos_ = tombstones_->end();
+    pinned_seq_pos_ = tombstones_->seq_end();
   }
 
   RangeTombstone Tombstone() const {
@@ -177,6 +189,13 @@ class FragmentedRangeTombstoneIterator : public InternalIterator {
 
   SequenceNumber upper_bound() const { return upper_bound_; }
   SequenceNumber lower_bound() const { return lower_bound_; }
+
+  uint64_t num_unfragmented_tombstones() const {
+    return tombstones_->num_unfragmented_tombstones();
+  }
+  uint64_t total_tombstone_payload_bytes() const {
+    return tombstones_->total_tombstone_payload_bytes();
+  }
 
  private:
   using RangeTombstoneStack = FragmentedRangeTombstoneList::RangeTombstoneStack;
@@ -251,4 +270,4 @@ class FragmentedRangeTombstoneIterator : public InternalIterator {
   mutable InternalKey current_start_key_;
 };
 
-}  // namespace rocksdb
+}  // namespace ROCKSDB_NAMESPACE

@@ -11,7 +11,6 @@ struct votable_asset_info_v1;
 #include <xgt/schema/schema_types.hpp>
 
 #include <xgt/chain/schema_types/oid.hpp>
-#include <xgt/protocol/schema_types/account_name_type.hpp>
 #include <xgt/protocol/schema_types/asset_symbol_type.hpp>
 
 #include <iostream>
@@ -19,7 +18,6 @@ struct votable_asset_info_v1;
 #include <string>
 #include <vector>
 
-#include <xgt/chain/account_object.hpp>
 #include <xgt/chain/xgt_objects.hpp>
 
 using namespace xgt::schema;
