@@ -1,3 +1,5 @@
+#include <bits/stdint-uintn.h>
+#include <limits>
 #include <xgt/chain/xgt_fwd.hpp>
 
 #include <xgt/plugins/witness/witness_plugin.hpp>
@@ -76,6 +78,7 @@ namespace detail {
       void block_production_loop();
       fc::optional< chain::wallet_name_type > get_witness();
 
+      unsigned int _num_threads;
       bool     _production_enabled              = false;
       uint32_t _production_skip_flags           = chain::database::skip_nothing;
 
@@ -92,7 +95,7 @@ namespace detail {
       std::shared_ptr< witness::block_producer >                       _block_producer;
 
       bool _is_braking = false;
-      std::vector<std::shared_ptr<fc::thread> > _thread_pool;
+      std::vector<std::shared_ptr<fc::thread>> _threads;
       std::map<chain::public_key_type, fc::ecc::private_key> _mining_private_keys;
       xgt::chain::legacy_chain_properties _miner_prop_vote;
       uint64_t _head_block_num = 0;
@@ -244,68 +247,85 @@ namespace detail {
       }
    }
 
+   // mine_rounds performs work in work for miner solving for block_id with target and returns the number of rounds attempted.
+   uint64_t mine_rounds(std::shared_ptr<protocol::sha2_pow> work, uint32_t target, uint64_t rounds) {
+      thread_local uint64_t nonce = std::hash<std::thread::id>()(std::this_thread::get_id());
+      uint64_t done = 0;
+      for (; done != rounds; ++done) {
+         work->update(++nonce);
+         if (work->pow_summary < target && work->is_valid()) {
+            wlog("Miner found a solution with ${n}!", ("n", nonce));
+            break;
+         }
+      }
+      return done;
+   }
+
    void witness_plugin_impl::start_mining( const fc::ecc::public_key& pub, const fc::ecc::private_key& pk, const string& miner )
    {
-      static uint64_t seed = fc::time_point::now().time_since_epoch().count();
-      static uint64_t start = fc::city_hash64( (const char*)&seed, sizeof(seed) );
       auto block_id = _db.head_block_id();
       auto block_num = _db.head_block_num();
+      auto head_block_time = _db.head_block_time();
       uint32_t target = _db.get_pow_summary_target();
-      wlog( "Miner has started work ${o} at block ${b} target ${t} nonce ${s}", ("o", miner)("b", block_num)("t", target)("s", start));
+      wlog( "Miner has started work ${o} at block ${b} target ${t}", ("o", miner)("b", block_num)("t", target));
 
-      //fc::thread* mainthread = &fc::thread::current();
       _total_hashes = 0;
       _hash_start_time = fc::time_point::now();
       const auto& acct_idx  = _db.get_index< chain::wallet_index >().indices().get< chain::by_name >();
       auto acct_it = acct_idx.find( miner );
       bool has_account = (acct_it != acct_idx.end());
 
-      auto& t = _thread_pool[0];
-      t->async( [=]()
+      std::vector<std::shared_ptr<protocol::sha2_pow>> works(_num_threads);
+      for (auto& work : works) {
+         work = std::make_shared<protocol::sha2_pow>();
+         work->init(block_id, miner);
+      }
+
+      std::vector<fc::future<uint64_t>> tasks(_num_threads);
+
+      while (!this->_is_braking)
       {
-         uint64_t nonce = start;
-         protocol::sha2_pow work;
-         protocol::pow_operation op;
-         op.props = _miner_prop_vote;
+         for(size_t i = 0; i < _num_threads; i++) {
+            auto work = works[i];
+            tasks[i] = this->_threads[i]->async([=]() { return mine_rounds(work, target, 50000); });
+         }
 
-         auto head_block_num = _db.head_block_num();
+         for(auto f : tasks) {
+            this->_total_hashes += f.wait();
+         }
 
-         while (!this->_is_braking)
-         {
-            ++this->_total_hashes;
-            ++nonce;
-            work.create( block_id, miner, nonce );
+         for(auto& work : works) {
+            if (work->pow_summary < target && work->is_valid()) {
+               work->prev_block = block_id;
 
-            if( work.pow_summary < target && work.is_valid() )
-            {
-               auto head_block_time = _db.head_block_time();
-               protocol::signed_transaction trx;
-               work.prev_block = block_id;
-               op.work = work;
+               protocol::pow_operation op;
+               op.props = _miner_prop_vote;
+               op.work = *work;
                if( !has_account )
                   op.new_recovery_key = pub;
+
+               protocol::signed_transaction trx;
                trx.operations.push_back( op );
-               trx.ref_block_num = head_block_num;
-               trx.ref_block_prefix = work.input.prev_block._hash[1];
-               trx.set_expiration( head_block_time + XGT_MAX_TIME_UNTIL_EXPIRATION );
+               trx.ref_block_num = block_num;
+               trx.ref_block_prefix = work->input.prev_block._hash[1];
+               fc::time_point_sec now_sec = fc::time_point::now();
+               trx.set_expiration( now_sec + XGT_MAX_TIME_UNTIL_EXPIRATION );
                trx.sign( pk, XGT_CHAIN_ID, fc::ecc::fc_canonical );
 
                wlog( "Broadcasting..." );
                try
                {
-                  wlog("Mined block proceeding #${n} with timestamp ${t} at time ${c}", ("n", head_block_num)("t", head_block_time)("c", fc::time_point::now()));
-                  //mainthread->async( [this,trx,miner,pk]()
-                  //{
-                     fc::time_point now = fc::time_point::now();
-                     auto block = _chain_plugin.generate_block( now, miner, pk, _production_skip_flags);
-                     _db.push_block(block, (uint32_t)0);
-                     appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
-                     wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
-                     _db.push_transaction( trx );
-                     appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
+                  wlog("Mined block proceeding #${n} with timestamp ${t} at time ${c}", ("n", block_num)("t", head_block_time)("c", fc::time_point::now()));
+                  fc::time_point now = fc::time_point::now();
+                  auto block = _chain_plugin.generate_block( now, miner, pk, _production_skip_flags);
+                  _db.push_block(block, (uint32_t)0);
+                  appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
 
-                     ++this->_head_block_num;
-                  //} );
+                  wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
+                  _db.push_transaction( trx );
+                  appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
+
+                  ++this->_head_block_num;
                   wlog( "Broadcast succeeded!" );
                }
                catch( const fc::exception& e )
@@ -313,41 +333,38 @@ namespace detail {
                   wlog( "Broadcast failed!" );
                   wdump((e.to_detail_string()));
                }
-               break;
-            }
-
-            if (this->_total_hashes % 1000000 == 0) {
-               uint64_t micros = (fc::time_point::now() - _hash_start_time).count();
-               uint64_t hashrate = (this->_total_hashes * 1000000) / micros;
-               wlog("Miner working at block ${b} rate: ${r}H/s", ("b", block_num)("r",hashrate));
-
-               head_block_num = _db.head_block_num();
-               if( this->_head_block_num != head_block_num )
-               {
-                  wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("n", nonce)("o",this->_head_block_num)("p",head_block_num) );
-                  this->_head_block_num = head_block_num;
-                  break;
-               }
+               schedule_production_loop();
+               return;
             }
          }
-         if (!this->_is_braking)
+
+         if (this->_total_hashes % 1000000 == 0) {
+            uint64_t micros = (fc::time_point::now() - _hash_start_time).count();
+            uint64_t hashrate = (this->_total_hashes * 1000000) / micros;
+            wlog("Miner working at block ${b} rate: ${r}H/s", ("b", block_num)("r",hashrate));
+         }
+
+         auto head_block_num = _db.head_block_num();
+         if( this->_head_block_num != head_block_num )
          {
-            schedule_production_loop();
+            wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("o",this->_head_block_num)("p",head_block_num) );
+            this->_head_block_num = head_block_num;
+            break;
          }
-      } );
+      }
+      if (!this->_is_braking)
+      {
+         schedule_production_loop();
+      }
    }
 
    void witness_plugin_impl::schedule_production_loop() {
-      // TODO: XXX: Look into this
-      // std::default_random_engine generator(_db.head_block_num());
-      // std::uniform_real_distribution< double > distribution(2000.0, 10000.0);
-      // int64_t sleep_time = static_cast<int64_t>( distribution(generator) );
       if (!appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().ready_to_mine()) {
          _timer.expires_from_now( boost::posix_time::milliseconds( 1000 ) );
          _timer.async_wait( boost::bind( &witness_plugin_impl::schedule_production_loop, this ) );
          return;
       }
-      _timer.expires_from_now( boost::posix_time::milliseconds( 1 ) );
+      _timer.expires_from_now( boost::posix_time::milliseconds( 10 ) );
       _timer.async_wait( boost::bind( &witness_plugin_impl::block_production_loop, this ) );
    }
 
@@ -460,9 +477,11 @@ void witness_plugin::set_program_options(
          ("mining-reward-key", bpo::value<vector<string>>()->composing()->multitoken(), "WIF PRIVATE KEY to be used by one or more witnesses or miners" )
          ("miner-account-creation-fee", bpo::value<uint64_t>()->implicit_value(100000),"Account creation fee to be voted on upon successful POW - Minimum fee is 100.000 XGT (written as 100000)")
          ("miner-maximum-block-size", bpo::value<uint32_t>()->implicit_value(131072),"Maximum block size (in bytes) to be voted on upon successful POW - Max block size must be between 128 KB and 750 MB")
+         ("mining-threads", bpo::value<unsigned int>()->default_value(std::thread::hardware_concurrency()), "Number of mining threads to run (default: number of hardware threads)");
          ;
    cli.add_options()
          ("enable-stale-production", bpo::bool_switch()->default_value( false ), "Enable block production, even if the chain is stale.")
+         ("mining-threads", bpo::value<unsigned int>()->default_value(std::thread::hardware_concurrency()), "Number of mining threads to run (default: number of hardware threads)");
          ;
 }
 
@@ -470,6 +489,12 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
 { try {
    ilog( "Initializing witness plugin" );
    my = std::make_unique< detail::witness_plugin_impl >( appbase::app().get_io_service() );
+
+   my->_num_threads = options.at("mining-threads").as<unsigned int>();
+   if (my->_num_threads == 0) {
+      my->_num_threads = std::thread::hardware_concurrency();
+   }
+   ilog("Mining configured with ${n} threads", ("n",my->_num_threads));
 
    my->_chain_plugin.register_block_generator( get_name(), my->_block_producer );
 
@@ -480,8 +505,10 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
    my->_db.set_witnesses(my->_witnesses);
 
    my->_is_braking = false;
-   my->_thread_pool.resize(1);
-   my->_thread_pool[0] = std::make_shared<fc::thread>();
+   my->_threads.resize(my->_num_threads);
+   for (auto& thread : my->_threads) {
+      thread = std::make_shared<fc::thread>();
+   }
 
    if( options.count("miner-account-creation-fee") )
    {

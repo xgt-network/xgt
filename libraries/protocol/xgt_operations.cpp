@@ -191,10 +191,23 @@ namespace xgt { namespace protocol {
       FC_ASSERT( pow_summary == tmp.pow_summary, "reported work does not match calculated work" );
    }
 
-   void sha2_pow::create( const block_id_type& recent_block, const wallet_name_type& wallet_name, uint32_t nonce )
+   void sha2_pow::create( const block_id_type& recent_block, const wallet_name_type& wallet_name, uint64_t nonce )
    {
       input.worker_account = wallet_name;
       input.prev_block = recent_block;
+      input.nonce = nonce;
+
+      proof = fc::sha256::hash( fc::sha256::hash( input ) );
+      pow_summary = proof.approx_log_32();
+   }
+
+   void sha2_pow::init( const block_id_type& recent_block, const wallet_name_type& wallet_name )
+   {
+      input.worker_account = wallet_name;
+      input.prev_block = recent_block;
+   }
+
+   void sha2_pow::update(uint64_t nonce) {
       input.nonce = nonce;
 
       proof = fc::sha256::hash( fc::sha256::hash( input ) );
