@@ -1091,18 +1091,21 @@ void database::notify_post_apply_custom_operation( const custom_operation_notifi
 fc::sha256 database::get_pow_target()const
 {
    /// @since 1.1.1 added logic to slow mining for all miners by 64x
+   /// @since 1.1.2 added logic for adjustable mining difficulty
    uint32_t head_num = head_block_num();
    if (head_num < 400000)
    {
-      const auto& dgp = get_dynamic_global_properties();
-      //wlog("database::get_pow_target 1 ${t}", ("t",dgp.mining_target));
-      return dgp.mining_target;
+      return fc::sha256("00000ffff0000000000000000000000000000000000000000000000000000000");
+   }
+   else if (head_num < 907200)
+   {
+      return fc::sha256("0000003fffc00000000000000000000000000000000000000000000000000000");
    }
    else
    {
-      fc::sha256 target = fc::sha256("0000003fffc00000000000000000000000000000000000000000000000000000");
-      //wlog("database::get_pow_target 2 ${t}", ("t",target));
-      return target;
+      const auto& dgp = get_dynamic_global_properties();
+      //wlog("database::get_pow_target ${t}", ("t",dgp.mining_target));
+      return dgp.mining_target;
    }
 }
 
@@ -1405,7 +1408,6 @@ void database::init_genesis( uint64_t init_supply )
       {
          p.mining_target = fc::sha256(XGT_MINING_TARGET_START);
          //p.mining_target = fc::sha256("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-         p.last_mining_recalc_time = fc::time_point::now();
          p.current_witness = XGT_INIT_MINER_NAME;
          p.time = XGT_GENESIS_TIME;
          p.recent_slots_filled = fc::uint128::max_value();
@@ -1619,58 +1621,6 @@ void database::_apply_block( const signed_block& next_block )
       }
    }
 
-   const uint32_t frequency = XGT_MINING_RECALC_EVERY_N_BLOCKS;
-   if( next_block_num == 1)
-   {
-      /*fc::sha256 initial_target = fc::sha256(XGT_MINING_TARGET_START);
-      wlog("!!!!!! Initializing mining difficulty at ${w}", ("w",initial_target));
-      const auto& gprops = get_dynamic_global_properties();
-      modify( gprops, [&]( dynamic_global_property_object& dgp ) {
-         dgp.mining_target = initial_target;
-      });*/
-   }
-   else if( (XGT_STARTING_OFFSET + next_block_num) % frequency == 1 )
-   {
-      wlog("!!!!!! Updating mining difficulty...");
-      const auto& gprops = get_dynamic_global_properties();
-      fc::time_point_sec now = fc::time_point::now();
-      fc::microseconds interval = now - gprops.last_mining_recalc_time;
-      float actual = (float)interval.to_seconds();
-      float expected = XGT_MINING_RECALC_EVERY_N_BLOCKS * XGT_MINING_BLOCKS_PER_SECOND;
-      float ratio = actual / expected;
-
-      // Limit the adjustment by a factor of 4 (to prevent massive changes from one target to the next)
-      float adjusted_ratio = ratio;
-      float reciprocal = 1.0f / XGT_MINING_ADJUSTMENT_MAX_FACTOR;
-      if (adjusted_ratio < reciprocal)
-         adjusted_ratio = reciprocal;
-      else if (adjusted_ratio > XGT_MINING_ADJUSTMENT_MAX_FACTOR)
-         adjusted_ratio = XGT_MINING_ADJUSTMENT_MAX_FACTOR;
-
-      wlog("Updating mining difficulty ratio ${w} adjusted_ratio ${x}", ("w",ratio)("x",adjusted_ratio));
-
-      const fc::sha256 max_target_h = fc::sha256(XGT_MINING_TARGET_MAX);
-      boost::multiprecision::uint256_t max_target = hash_to_bigint(max_target_h);
-      const fc::sha256 previous_target_h = gprops.mining_target;
-      boost::multiprecision::uint256_t previous_target = hash_to_bigint(previous_target_h);
-      boost::multiprecision::cpp_dec_float_50 previous_target_f(previous_target);
-      boost::multiprecision::cpp_dec_float_50 next_target_f = previous_target_f * adjusted_ratio;
-      boost::multiprecision::uint256_t next_target(next_target_f);
-      fc::sha256 next_target_h = bigint_to_hash(next_target);
-      if (next_target >= max_target)
-      {
-         wlog( "Capping next target ${a} to be lower than ${b}",
-               ("a",next_target_h)("b",max_target_h) );
-         next_target = max_target;
-         next_target_h = bigint_to_hash(next_target);
-      }
-      wlog("Updating mining difficulty next target... ${w}", ("w",next_target_h));
-
-      modify( gprops, [&]( dynamic_global_property_object& dgp ) {
-         dgp.mining_target = next_target_h;
-      });
-   }
-
    if( !( skip & skip_merkle_check ) )
    {
       auto merkle_root = next_block.calculate_merkle_root();
@@ -1754,6 +1704,73 @@ void database::_apply_block( const signed_block& next_block )
 
    // process_required_actions( req_actions );
    // process_optional_actions( opt_actions );
+
+   const uint32_t frequency = XGT_MINING_RECALC_EVERY_N_BLOCKS;
+   if( next_block_num == 1)
+   {
+      fc::sha256 initial_target = fc::sha256(XGT_MINING_TARGET_START);
+      wlog("MINING DIFFICULTY - Initializing mining difficulty at ${w}", ("w",initial_target));
+      const auto& gprops = get_dynamic_global_properties();
+      modify( gprops, [&]( dynamic_global_property_object& dgp ) {
+         dgp.mining_target = initial_target;
+      });
+   }
+   else if( (XGT_STARTING_OFFSET + next_block_num) % frequency == 1 )
+   {
+      wlog("MINING DIFFICULTY - Updating mining difficulty...");
+
+
+      const uint32_t prior_block_num = next_block_num - XGT_MINING_RECALC_EVERY_N_BLOCKS;
+      wlog("MINING DIFFICULTY - prior_block_num ${a}", ("a",prior_block_num));
+      optional<signed_block> prior_block = optional<signed_block>();
+      prior_block = _block_log.read_block_by_num(prior_block_num);
+      if (!prior_block)
+      {
+         auto itr = _fork_db.fetch_block_by_number(prior_block_num);
+         auto block = itr[0]->data;
+         prior_block = optional<signed_block>(block);
+      }
+      wlog("MINING DIFFICULTY - prior_block_num ${a} next_block_num ${b} next_block_timestamp ${d}", ("a",prior_block_num)("b",next_block_num)("c",prior_block->timestamp)("d",next_block.timestamp));
+
+      const auto& gprops = get_dynamic_global_properties();
+      fc::time_point_sec now = next_block.timestamp;
+      fc::microseconds interval = now - prior_block->timestamp;
+      float actual = (float)interval.to_seconds();
+      float expected = XGT_MINING_RECALC_EVERY_N_BLOCKS / XGT_MINING_BLOCKS_PER_SECOND;
+      wlog("MINING DIFFICULTY - Interval actual ${a} expected ${b}", ("a",actual)("b",expected));
+      float ratio = expected / actual;
+
+      // Limit the adjustment by a factor of 4 (to prevent massive changes from one target to the next)
+      float adjusted_ratio = ratio;
+      float reciprocal = 1.0f / XGT_MINING_ADJUSTMENT_MAX_FACTOR;
+      if (adjusted_ratio < reciprocal)
+         adjusted_ratio = reciprocal;
+      else if (adjusted_ratio > XGT_MINING_ADJUSTMENT_MAX_FACTOR)
+         adjusted_ratio = XGT_MINING_ADJUSTMENT_MAX_FACTOR;
+
+      wlog("MINING DIFFICULTY - Updating mining difficulty ratio ${w} adjusted_ratio ${x}", ("w",ratio)("x",adjusted_ratio));
+
+      const fc::sha256 max_target_h = fc::sha256(XGT_MINING_TARGET_MAX);
+      boost::multiprecision::uint256_t max_target = hash_to_bigint(max_target_h);
+      const fc::sha256 previous_target_h = gprops.mining_target;
+      boost::multiprecision::uint256_t previous_target = hash_to_bigint(previous_target_h);
+      boost::multiprecision::cpp_dec_float_50 previous_target_f(previous_target);
+      boost::multiprecision::cpp_dec_float_50 next_target_f = previous_target_f  / adjusted_ratio;
+      boost::multiprecision::uint256_t next_target(next_target_f);
+      fc::sha256 next_target_h = bigint_to_hash(next_target);
+      if (next_target >= max_target)
+      {
+         wlog( "MINING DIFFICULTY - Capping next target ${a} to be lower than ${b}",
+               ("a",next_target_h)("b",max_target_h) );
+         next_target = max_target;
+         next_target_h = bigint_to_hash(next_target);
+      }
+      wlog("MINING DIFFICULTY - Updating mining difficulty previous_target ${a} next target ${b}", ("a",previous_target_h.approx_log_32())("b",next_target_h.approx_log_32()));
+
+      modify( gprops, [&]( dynamic_global_property_object& dgp ) {
+         dgp.mining_target = next_target_h;
+      });
+   }
 
    process_hardforks();
 
