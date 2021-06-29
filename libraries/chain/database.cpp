@@ -1705,6 +1705,34 @@ void database::_apply_block( const signed_block& next_block )
    // process_required_actions( req_actions );
    // process_optional_actions( opt_actions );
 
+   // Ensure no duplicate mining rewards
+   /// @since 1.1.2 reject blocks with duplicate rewards
+   uint32_t head_num = head_block_num();
+   if (head_num >= 907200)
+   {
+      std::set< wallet_name_type > rewarded_wallets;
+      for( const auto& trx : next_block.transactions )
+      {
+
+         const auto& operations = trx.operations;
+         for (auto& op : operations)
+         {
+            if ( !is_pow_operation(op) )
+               continue;
+            const pow_operation& o = op.template get< pow_operation >();
+            const wallet_name_type& wallet_name = o.get_worker_name();
+            auto it = rewarded_wallets.find(wallet_name);
+            if (it != rewarded_wallets.end())
+            {
+               wlog("!!!!!! Wallet ${w} already rewarded!", ("w", wallet_name));
+               throw operation_validate_exception();
+            }
+            rewarded_wallets.insert(wallet_name);
+         }
+      }
+   }
+
+   // Adjust mining difficulty
    const uint32_t frequency = XGT_MINING_RECALC_EVERY_N_BLOCKS;
    if( next_block_num == 1)
    {
