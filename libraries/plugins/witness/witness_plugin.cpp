@@ -250,12 +250,12 @@ namespace detail {
       static uint64_t start = fc::city_hash64( (const char*)&seed, sizeof(seed) );
       auto block_id = _db.head_block_id();
       auto block_num = _db.head_block_num();
-      wlog( "Miner has started work ${o} at block ${b} from nonce ${s}", ("o", miner)("b", block_num)("s", start));
+      uint32_t target = _db.get_pow_summary_target();
+      wlog( "Miner has started work ${o} at block ${b} target ${t} nonce ${s}", ("o", miner)("b", block_num)("t", target)("s", start));
 
       //fc::thread* mainthread = &fc::thread::current();
       _total_hashes = 0;
       _hash_start_time = fc::time_point::now();
-      uint32_t target = _db.get_pow_summary_target();
       const auto& acct_idx  = _db.get_index< chain::wallet_index >().indices().get< chain::by_name >();
       auto acct_it = acct_idx.find( miner );
       bool has_account = (acct_it != acct_idx.end());
@@ -268,34 +268,17 @@ namespace detail {
          protocol::pow_operation op;
          op.props = _miner_prop_vote;
 
-         uint32_t lowest = 0xffffffff;
-         while (true)
+         auto head_block_num = _db.head_block_num();
+
+         while (!this->_is_braking)
          {
-            if( _is_braking )
-            {
-               break;
-            }
-
-            auto head_block_num = _db.head_block_num();
-            auto head_block_time = _db.head_block_time();
-            if( this->_head_block_num != head_block_num )
-            {
-               wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("n", nonce)("o",this->_head_block_num)("p",head_block_num) );
-               this->_head_block_num = head_block_num;
-               break;
-            }
-
             ++this->_total_hashes;
             ++nonce;
             work.create( block_id, miner, nonce );
 
-            if (work.pow_summary < lowest) lowest = work.pow_summary;
-            if (this->_total_hashes % 1000000 == 0) {
-               wlog("Miner working at block ${b} lowest: ${p} target: ${t} nonce: ${n}", ("b", block_num)("p",lowest)("t",target)("n", nonce));
-            }
-
             if( work.pow_summary < target && work.is_valid() )
             {
+               auto head_block_time = _db.head_block_time();
                protocol::signed_transaction trx;
                work.prev_block = block_id;
                op.work = work;
@@ -332,8 +315,22 @@ namespace detail {
                }
                break;
             }
+
+            if (this->_total_hashes % 1000000 == 0) {
+               uint64_t micros = (fc::time_point::now() - _hash_start_time).count();
+               uint64_t hashrate = (this->_total_hashes * 1000000) / micros;
+               wlog("Miner working at block ${b} rate: ${r}H/s", ("b", block_num)("r",hashrate));
+
+               head_block_num = _db.head_block_num();
+               if( this->_head_block_num != head_block_num )
+               {
+                  wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("n", nonce)("o",this->_head_block_num)("p",head_block_num) );
+                  this->_head_block_num = head_block_num;
+                  break;
+               }
+            }
          }
-         if (!_is_braking)
+         if (!this->_is_braking)
          {
             schedule_production_loop();
          }
