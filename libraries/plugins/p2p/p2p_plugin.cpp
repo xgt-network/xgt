@@ -777,7 +777,7 @@ void p2p_plugin::broadcast_block( const xgt::protocol::signed_block& block )
 
 void p2p_plugin::broadcast_transaction( const xgt::protocol::signed_transaction& tx )
 {
-   ilog("Broadcasting tx #${n}", ("id", tx.id()));
+   ilog("Broadcasting tx #${id}", ("id", tx.id()));
    my->node->broadcast( graphene::net::trx_message( tx ) );
 }
 
