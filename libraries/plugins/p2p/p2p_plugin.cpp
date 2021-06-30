@@ -111,6 +111,7 @@ public:
    uint32_t max_connections = 0;
    bool force_validate = false;
    bool block_producer = false;
+   std::atomic_bool   ready_to_mine;
    std::atomic_bool   running;
    std::atomic_bool   activeHandleBlock;
    std::atomic_bool   activeHandleTx;
@@ -477,6 +478,9 @@ std::vector< graphene::net::item_hash_t > p2p_plugin_impl::get_blockchain_synops
 
 void p2p_plugin_impl::sync_status( uint32_t item_type, uint32_t item_count )
 {
+   if (item_count == 0) {
+      this->ready_to_mine = true;
+   }
    // any status reports to GUI go here
 }
 
@@ -571,6 +575,8 @@ void p2p_plugin::set_program_options( bpo::options_description& cli, bpo::option
 void p2p_plugin::plugin_initialize(const boost::program_options::variables_map& options)
 {
    my = std::make_unique< detail::p2p_plugin_impl >( appbase::app().get_plugin< plugins::chain::chain_plugin >() );
+
+   my->ready_to_mine = false;
 
    if( options.count( "p2p-endpoint" ) )
       my->endpoint = fc::ip::endpoint::from_string( options.at( "p2p-endpoint" ).as< string >() );
@@ -778,6 +784,10 @@ void p2p_plugin::broadcast_transaction( const xgt::protocol::signed_transaction&
 void p2p_plugin::set_block_production( bool producing_blocks )
 {
    my->block_producer = producing_blocks;
+}
+
+bool p2p_plugin::ready_to_mine() {
+   return my->ready_to_mine;
 }
 
 } } } // namespace xgt::plugins::p2p

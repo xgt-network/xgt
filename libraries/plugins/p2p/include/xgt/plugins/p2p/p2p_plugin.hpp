@@ -31,6 +31,7 @@ public:
    void broadcast_block( const xgt::protocol::signed_block& block );
    void broadcast_transaction( const xgt::protocol::signed_transaction& tx );
    void set_block_production( bool producing_blocks );
+   bool ready_to_mine();
 
 private:
    std::unique_ptr< detail::p2p_plugin_impl > my;
