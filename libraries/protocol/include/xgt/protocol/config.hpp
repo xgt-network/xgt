@@ -208,7 +208,7 @@
 #define XGT_MIN_FEEDS                       (XGT_MAX_WITNESSES/3) /// protects the network from conversions before price has been established
 
 #define XGT_MIN_UNDO_HISTORY                10
-#define XGT_MAX_UNDO_HISTORY                10000
+#define XGT_MAX_UNDO_HISTORY                151200 // 2016 * 150 * 0.5
 
 #define XGT_MIN_TRANSACTION_EXPIRATION_LIMIT (XGT_BLOCK_INTERVAL * 5) // 5 transactions per block
 #define XGT_BLOCKCHAIN_PRECISION            uint64_t( 100000000 )
