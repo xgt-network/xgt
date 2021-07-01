@@ -137,6 +137,7 @@ FC_REFLECT( xgt::chain::dynamic_global_property_object,
              (head_block_id)
              (time)
              (current_witness)
+             (mining_target)
              (total_pow)
              (num_pow_witnesses)
              (virtual_supply)
