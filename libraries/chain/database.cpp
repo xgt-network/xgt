@@ -1724,8 +1724,8 @@ void database::_apply_block( const signed_block& next_block )
             auto it = rewarded_wallets.find(wallet_name);
             if (it != rewarded_wallets.end())
             {
-               wlog("!!!!!! Wallet ${w} already rewarded!", ("w", wallet_name));
-               throw operation_validate_exception();
+               wlog("!!!!!! Wallet ${w} already rewarded, discarding duplicate operation!", ("w", wallet_name));
+               continue;
             }
             rewarded_wallets.insert(wallet_name);
          }
