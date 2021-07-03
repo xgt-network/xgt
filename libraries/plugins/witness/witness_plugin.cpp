@@ -319,8 +319,8 @@ namespace detail {
                   appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
 
                   wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
-                  _db.push_transaction( trx );
-                  appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
+                  // _db.push_transaction( trx );
+                  // appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
 
                   ++this->_head_block_num;
                   wlog( "Broadcast succeeded!" );
@@ -395,9 +395,24 @@ namespace detail {
          {
             wlog("Generating genesis block...");
 
+            // TODO :: generate PoW reward for genesis block; or otherwise
             auto pair = _private_keys.begin();
-            auto block = _chain_plugin.generate_block( now, XGT_INIT_MINER_NAME, pair->second, _production_skip_flags );
-            _db.push_block(block, (uint32_t)0);
+            xgt::chain::signed_transaction init_tx;
+
+            comment_operation op;
+            op.author = "anon";
+            op.permlink = "/xgt";
+            op.parent_author = "";
+            op.parent_permlink = "/sn";
+            op.body = "New York Times 7/1/2021 U.S. Deficit Expected to Hit $3 Trillion in 2021, Budget Office Says";
+
+            init_tx.operations.push_back( op );
+            init_tx.set_expiration( _db.head_block_time() + XGT_MAX_TIME_UNTIL_EXPIRATION );
+            init_tx.sign( pair->second, XGT_CHAIN_ID, fc::ecc::fc_canonical );
+            // sign( init_tx, alice_private_key );
+
+            auto block = _chain_plugin.generate_block( now, XGT_INIT_MINER_NAME, pair->second, init_tx, _production_skip_flags );
+            // _db.push_block(block, (uint32_t)0);
             this->_head_block_num++;
             schedule_production_loop();
             return;
