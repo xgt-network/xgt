@@ -383,7 +383,9 @@ namespace xgt { namespace protocol {
       block_id_type       prev_block;
       uint32_t            pow_summary = 0;
 
-      void create( const block_id_type& recent_block, const wallet_name_type& wallet_name, uint32_t nonce );
+      void create( const block_id_type& recent_block, const wallet_name_type& wallet_name, uint64_t nonce );
+      void init( const block_id_type& recent_block, const wallet_name_type& wallet_name );
+      void update( uint64_t nonce );
       void validate() const;
       uint64_t energy_cost()const { return 0; }
       bool is_valid() const;
