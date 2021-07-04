@@ -11,6 +11,10 @@ def mining_disabled?
   ENV['MINING_DISABLED']&.upcase == 'TRUE'
 end
 
+def mining_threads
+  ENV['MINING_THREADS'] || 1
+end
+
 def flush_testnet?
   ENV['FLUSH_TESTNET']&.upcase == 'TRUE'
 end
@@ -137,7 +141,7 @@ task :run do
       webserver-http-endpoint = #{my_host}:#{8751 + instance_index * 2}
 
       miner = ["#{wallet}","#{wif}"]
-      mining-threads = 1
+      mining-threads = #{mining_threads}
       witness = "#{wallet}"
       private-key = #{recovery_private_key}
       mining-reward-key = #{witness_private_key}
