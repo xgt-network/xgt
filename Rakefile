@@ -35,8 +35,8 @@ def host
   ENV['XGT_HOST'] || 'http://localhost:8751'
 end
 
-def seed_host
-  ENV['XGT_SEED_HOST']
+def seed_hosts
+  (ENV['XGT_SEED_HOST'] || "").split(",")
 end
 
 def instance_index
@@ -133,7 +133,7 @@ task :run do
       shared-file-dir = "blockchain"
       shared-file-size = 12G
       p2p-endpoint = #{my_host}:#{2001 + instance_index}
-      #{seed_host ? %(p2p-seed-node = #{seed_host}) : %(p2p-seed-node =)}
+      p2p-seed-node = #{seed_hosts.join(" ")}
       webserver-http-endpoint = #{my_host}:#{8751 + instance_index * 2}
 
       miner = ["#{wallet}","#{wif}"]
