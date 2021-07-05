@@ -137,7 +137,6 @@ task :run do
       shared-file-dir = "blockchain"
       shared-file-size = 12G
       p2p-endpoint = #{my_host}:#{2001 + instance_index}
-      p2p-seed-node = #{seed_hosts.join(" ")}
       webserver-http-endpoint = #{my_host}:#{8751 + instance_index * 2}
 
       miner = ["#{wallet}","#{wif}"]
@@ -147,8 +146,10 @@ task :run do
       mining-reward-key = #{witness_private_key}
 
       enable-stale-production = #{mining_disabled? ? 'false' : 'true'}
-      required-participation = 0
     )))
+    if seed_hosts && seed_hosts.any?
+      f.puts "p2p-seed-node = #{seed_hosts.join(" ")}"
+    end
   end
   $stderr.puts(File.read("#{data_dir}/config.ini"))
 
