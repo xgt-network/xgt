@@ -322,9 +322,13 @@ namespace detail {
                   _db.push_block(block, (uint32_t)0);
                   appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
 
-                  wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
-                  _db.push_transaction( trx );
-                  appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
+                  /// @since 1.3.0 store mining metadata on block
+                  if (block_num < 1209600)
+                  {
+                     wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
+                     _db.push_transaction( trx );
+                     appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
+                  }
 
                   ++this->_head_block_num;
                   wlog( "Broadcast succeeded!" );

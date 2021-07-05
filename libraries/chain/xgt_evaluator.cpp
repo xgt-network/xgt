@@ -918,6 +918,7 @@ void pow_evaluator::do_apply( const pow_operation& o )
 {
    database& db = this->db();
 
+   /// @since 1.3.0 store mining metadata on block
    uint32_t head_num = db.head_block_num();
    if (head_num >= 1209600)
    {
