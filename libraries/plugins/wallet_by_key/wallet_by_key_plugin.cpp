@@ -221,19 +221,26 @@ void wallet_by_key_plugin_impl::on_post_apply_operation( const operation_notific
 void wallet_by_key_plugin_impl::on_pre_apply_transaction( const transaction_notification& note )
 {
    uint64_t energy_cost = 0;
-   const auto& gpo = _db.get_dynamic_global_properties();
-   auto now = gpo.time.sec_since_epoch();
+   auto visitor = energy_cost_visitor(_db);
    for( const operation& op : note.transaction.operations )
    {
-      uint64_t cost = op.visit( energy_cost_visitor(_db) );
+      uint64_t cost = op.visit( visitor );
       energy_cost += cost;
    }
+
+   if (energy_cost == 0) {
+      return;
+   }
+
+   const auto& gpo = _db.get_dynamic_global_properties();
+   auto now = gpo.time.sec_since_epoch();
 
    flat_set<public_key_type> key_set = note.transaction.get_signature_keys(_db.get_chain_id(), fc::ecc::fc_canonical);
    vector<wallet_name_type> wallets = get_key_references(key_set);
    // TODO: Figure out how to divvy energy costs for multisig
    //uint64_t energy_share = energy_cost;
-   for (wallet_name_type wallet_name : wallets)
+
+   for (auto& wallet_name : wallets)
    {
       const wallet_object* w = _db.find_account( wallet_name );
       if (w == nullptr)
@@ -269,16 +276,10 @@ void wallet_by_key_plugin_impl::on_pre_apply_transaction( const transaction_noti
 
 vector<wallet_name_type> wallet_by_key_plugin_impl::get_key_references( const flat_set<public_key_type> key_set )const
 {
+   const auto key_idx = _db.get_index< wallet_by_key::key_lookup_index >().indices().get< wallet_by_key::by_key >();
    vector<wallet_name_type> wallets;
-   const auto& key_idx = _db.get_index< wallet_by_key::key_lookup_index >().indices().get< wallet_by_key::by_key >();
-   for( auto& key_itr : key_idx )
-   {
-      auto lookup_itr = key_idx.lower_bound( key_itr.key );
-      while( lookup_itr != key_idx.end() && lookup_itr->key == key_itr.key )
-      {
-         wallets.push_back( lookup_itr->account );
-         ++lookup_itr;
-      }
+   for (auto& key : key_set) {
+      wallets.push_back(key_idx.find(key)->account);
    }
    return wallets;
 }
