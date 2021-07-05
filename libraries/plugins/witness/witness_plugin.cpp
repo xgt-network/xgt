@@ -1,5 +1,3 @@
-#include <bits/stdint-uintn.h>
-#include <limits>
 #include <xgt/chain/xgt_fwd.hpp>
 
 #include <xgt/plugins/witness/witness_plugin.hpp>
@@ -25,7 +23,9 @@
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 
+#include <cstdint>
 #include <iostream>
+#include <limits>
 #include <random>
 
 
