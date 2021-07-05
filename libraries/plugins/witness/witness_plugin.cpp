@@ -318,6 +318,7 @@ namespace detail {
                   wlog("Mined block proceeding #${n} with timestamp ${t} at time ${c}", ("n", block_num)("t", head_block_time)("c", fc::time_point::now()));
                   fc::time_point now = fc::time_point::now();
                   auto block = _chain_plugin.generate_block( now, miner, pk, _production_skip_flags);
+                  block.pow_summary = work->pow_summary;
                   _db.push_block(block, (uint32_t)0);
                   appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
 

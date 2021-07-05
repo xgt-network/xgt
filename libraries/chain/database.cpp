@@ -1706,9 +1706,10 @@ void database::_apply_block( const signed_block& next_block )
    // process_optional_actions( opt_actions );
 
    // Ensure no duplicate mining rewards
-   /// @since 1.1.2 reject blocks with duplicate rewards
+   /// @since 1.2.0 reject blocks with duplicate rewards
+   /// @since 1.3.0 deprecated
    uint32_t head_num = head_block_num();
-   if (head_num >= 907200)
+   if (head_num >= 907200 && head_num < 1209600)
    {
       std::set< wallet_name_type > rewarded_wallets;
       for( const auto& trx : next_block.transactions )
@@ -1729,6 +1730,41 @@ void database::_apply_block( const signed_block& next_block )
             }
             rewarded_wallets.insert(wallet_name);
          }
+      }
+   }
+
+   // Mining rewards
+   /// @since 1.3.0 store mining metadata on block
+   if (head_num >= 1209600)
+   {
+      ilog( "Processing mining rewards for miner ${w}", ("w",next_block.witness) );
+
+      uint32_t target_pow = get_pow_summary_target();
+      FC_ASSERT( next_block.pow_summary < target_pow, "Insufficient work difficulty. Work: ${w}, Target: ${t}", ("w",next_block.pow_summary)("t", target_pow) );
+
+      const auto& dgp = get_dynamic_global_properties();
+      // TODO: Check for 0
+      int halvings = (XGT_STARTING_OFFSET + dgp.head_block_number) / XGT_MINING_REWARD_HALVING_INTERVAL;
+      // TODO: Assert no overflow
+      long divisor = 1L << halvings;
+      asset base_reward = XGT_MINING_REWARD;
+      double value = base_reward.amount.value * (1.0 / static_cast<double>(divisor));
+      long price = static_cast<long>(floor(value));
+      asset reward = asset(price, base_reward.symbol);
+
+      const wallet_object* w = find_account( next_block.witness );
+      const witness_object* cur_witness = find_witness( next_block.witness );
+      if (w == nullptr)
+      {
+         wlog( "Wallet does not exist for worker account ${w}", ("w",next_block.witness) );
+      }
+      else if (cur_witness == nullptr)
+      {
+         wlog( "Witness does not exist for worker account ${w}", ("w",next_block.witness) );
+      }
+      else
+      {
+         adjust_balance(next_block.witness, reward);
       }
    }
 

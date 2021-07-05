@@ -560,6 +560,7 @@ void p2p_plugin::set_program_options( bpo::options_description& cli, bpo::option
    }
 
    cfg.add_options()
+      ("from-genesis", bpo::value<bool>()->default_value( false ), "Don't wait to start mining (from genesis)")
       ("p2p-endpoint", bpo::value<string>()->implicit_value("127.0.0.1:9876"), "The local IP address and port to listen for incoming connections.")
       ("p2p-max-connections", bpo::value<uint32_t>(), "Maxmimum number of incoming connections on P2P endpoint.")
       ("seed-node", bpo::value<vector<string>>()->composing(), "The IP address and port of a remote peer to sync with. Deprecated in favor of p2p-seed-node.")
@@ -576,7 +577,7 @@ void p2p_plugin::plugin_initialize(const boost::program_options::variables_map& 
 {
    my = std::make_unique< detail::p2p_plugin_impl >( appbase::app().get_plugin< plugins::chain::chain_plugin >() );
 
-   my->ready_to_mine = false;
+   my->ready_to_mine = options.at( "from-genesis" ).as< bool >();
 
    if( options.count( "p2p-endpoint" ) )
       my->endpoint = fc::ip::endpoint::from_string( options.at( "p2p-endpoint" ).as< string >() );

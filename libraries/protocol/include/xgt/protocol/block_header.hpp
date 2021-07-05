@@ -28,6 +28,8 @@ namespace xgt { namespace protocol {
       checksum_type                 transaction_merkle_root;
       block_header_extensions_type  extensions;
 
+      uint32_t pow_summary = 0;
+
       static uint32_t num_from_id(const block_id_type& id);
    };
 
