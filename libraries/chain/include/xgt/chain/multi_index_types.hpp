@@ -9,7 +9,8 @@
 #include <mira/indexed_by.hpp>
 #include <mira/composite_key.hpp>
 #include <mira/mem_fun.hpp>
-#endif
+
+#else
 
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/composite_key.hpp>
@@ -18,6 +19,7 @@
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/tag.hpp>
 #include <mira/boost_adapter.hpp>
+#endif
 
 #include <boost/mpl/vector.hpp>
 #include <type_traits>

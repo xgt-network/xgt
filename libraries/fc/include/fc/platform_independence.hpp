@@ -1,3 +1,4 @@
+#pragma once
 #ifdef _MSC_VER
 #include <intrin.h>
     #ifdef _M_X64
