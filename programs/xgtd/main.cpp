@@ -8,12 +8,21 @@
 #include <xgt/utilities/key_conversion.hpp>
 #include <xgt/utilities/git_revision.hpp>
 
-#include <xgt/plugins/wallet_by_key/wallet_by_key_plugin.hpp>
+// API plugins
+#include <xgt/plugins/block_api/block_api_plugin.hpp>
+#include <xgt/plugins/chain_api/chain_api_plugin.hpp>
+#include <xgt/plugins/database_api/database_api_plugin.hpp>
+#include <xgt/plugins/transaction_api/transaction_api_plugin.hpp>
 #include <xgt/plugins/wallet_by_key_api/wallet_by_key_api_plugin.hpp>
+#include <xgt/plugins/wallet_history_api/wallet_history_api_plugin.hpp>
+
+// Core plugins
 #include <xgt/plugins/chain/chain_plugin.hpp>
 #include <xgt/plugins/p2p/p2p_plugin.hpp>
 #include <xgt/plugins/webserver/webserver_plugin.hpp>
 #include <xgt/plugins/witness/witness_plugin.hpp>
+#include <xgt/plugins/wallet_by_key/wallet_by_key_plugin.hpp>
+#include <xgt/plugins/wallet_history/wallet_history_plugin.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
@@ -83,14 +92,23 @@ int main( int argc, char** argv )
       appbase::app().set_default_plugins<
          xgt::plugins::witness::witness_plugin,
          xgt::plugins::wallet_by_key::wallet_by_key_plugin,
-         xgt::plugins::wallet_by_key::wallet_by_key_api_plugin >();
+         xgt::plugins::wallet_history::wallet_history_plugin,
+
+         // APIs:
+         xgt::plugins::block_api::block_api_plugin,
+         xgt::plugins::chain::chain_api_plugin,
+         xgt::plugins::database_api::database_api_plugin,
+         xgt::plugins::transaction_api::transaction_api_plugin,
+         xgt::plugins::wallet_by_key::wallet_by_key_api_plugin,
+         xgt::plugins::wallet_history::wallet_history_api_plugin
+      >();
 
       // These plugins are loaded regardless of the config
       bool initialized = appbase::app().initialize<
             xgt::plugins::chain::chain_plugin,
             xgt::plugins::p2p::p2p_plugin,
-            xgt::plugins::webserver::webserver_plugin >
-            ( argc, argv );
+            xgt::plugins::webserver::webserver_plugin
+      >( argc, argv );
 
       info();
 
