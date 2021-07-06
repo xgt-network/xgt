@@ -351,6 +351,9 @@ namespace detail {
             this->_head_block_num = head_block_num;
             break;
          }
+         if (this->_is_braking) {
+            break;
+         }
       }
       if (!this->_is_braking)
       {
