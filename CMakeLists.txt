@@ -142,18 +142,6 @@ else()
    endif()
 endif( NOT CLANG_TIDY_EXE )
 
-SET(BOOST_COMPONENTS)
-LIST(APPEND BOOST_COMPONENTS thread
-                             date_time
-                             system
-                             filesystem
-                             program_options
-                             serialization
-                             chrono
-                             unit_test_framework
-                             context
-                             locale
-                             coroutine)
 
 SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
 
@@ -163,7 +151,17 @@ IF( WIN32 )
   set(BOOST_ALL_DYN_LINK OFF) # force dynamic linking for all libraries
 ENDIF(WIN32)
 
-FIND_PACKAGE(Boost 1.58 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+FIND_PACKAGE(Boost 1.58 REQUIRED COMPONENTS thread
+                                            date_time
+                                            system
+                                            filesystem
+                                            program_options
+                                            serialization
+                                            chrono
+                                            unit_test_framework
+                                            context
+                                            locale
+                                            coroutine)
 
 if( NOT( Boost_VERSION LESS 106900 ) )
    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
