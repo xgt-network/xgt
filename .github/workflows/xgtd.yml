@@ -1,0 +1,75 @@
+name: Xgtd
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Cache paths
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.ccache
+          ~/.cache/ccache
+        key: ${{matrix.os}}-ccache
+    - name: Install build dependencies (Ubuntu)
+      run: sudo apt update && sudo apt install -y 
+        autoconf
+        automake
+        cmake
+        g++
+        libbz2-dev
+        libsnappy-dev
+        libssl-dev
+        libtool
+        make
+        pkg-config
+        python3
+        python3-jinja2
+        scrypt
+        dnsutils
+        ccache
+        libboost-all-dev
+        build-essential
+        curl
+        zlib1g-dev
+        libreadline-dev
+        libyaml-dev
+        libxml2-dev
+        libxslt-dev
+        ninja-build
+      if: startsWith(matrix.os, 'ubuntu')
+    - name: Install build dependencies (macOS)
+      run: brew install
+        autoconf
+        automake
+        cmake
+        boost
+        icu4c
+        libtool
+        openssl
+        snappy
+        zlib
+        bzip2
+        ccache
+        python3
+        ninja && python3 -m pip install jinja2
+      if: startsWith(matrix.os, 'macOS')
+    - name: Configure cmake (Ubuntu)
+      # run: cmake -D COLOR_DIAGNOSTICS=ON -D CMAKE_BUILD_TYPE=Debug -D ENABLE_MIRA=ON -G Ninja -B build -S .
+      run: cmake -D COLOR_DIAGNOSTICS=ON -D CMAKE_BUILD_TYPE=Debug -G Ninja -B build -S .
+      if: startsWith(matrix.os, 'ubuntu')
+    - name: Configure cmake (macOS)
+      # run: cmake -D COLOR_DIAGNOSTICS=ON -D CMAKE_BUILD_TYPE=Debug -D ENABLE_MIRA=ON -G Ninja -B build -S . -D OPENSSL_ROOT_DIR=/usr/local/opt/openssl
+      run: cmake -D COLOR_DIAGNOSTICS=ON -D CMAKE_BUILD_TYPE=Debug -G Ninja -B build -S . -D OPENSSL_ROOT_DIR=/usr/local/opt/openssl
+      if: startsWith(matrix.os, 'macOS')
+    - name: Build xgtd
+      run: ninja -C build xgtd
