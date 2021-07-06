@@ -383,21 +383,3 @@ endif(LINUX)
 
  include(CPack)
 endif(ENABLE_INSTALLER)
-
-if( BUILD_XGT_TESTNET )
-  MESSAGE( STATUS "\n\n             CONFIGURED FOR TEST NETWORK             \n\n" )
-else()
-  MESSAGE( STATUS "\n\n             CONFIGURED FOR XGT NETWORK              \n\n" )
-endif()
-
-if( ENABLE_MIRA )
-MESSAGE( STATUS "\n\n             CONFIGURED FOR MIRA                  \n\n" )
-else()
-MESSAGE( STATUS "\n\n             CONFIGURED FOR BMIC MMAP             \n\n" )
-endif()
-
-if( LOW_MEMORY_NODE )
-  MESSAGE( STATUS "\n\n             CONFIGURED FOR LOW MEMORY NODE          \n\n" )
-else()
-  MESSAGE( STATUS "\n\n             CONFIGURED FOR FULL NODE                \n\n" )
-endif()
