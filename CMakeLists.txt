@@ -36,20 +36,6 @@ list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVers
 include( GetGitRevisionDescription )
 get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
 
-SET(BOOST_COMPONENTS)
-LIST(APPEND BOOST_COMPONENTS thread
-                             date_time
-                             system
-                             filesystem
-                             program_options
-                             serialization
-                             chrono
-                             unit_test_framework
-                             context
-                             locale
-                             coroutine)
-SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
-
 OPTION( BUILD_XGT_TESTNET "Build source for test network (ON OR OFF)" OFF )
 MESSAGE( STATUS "BUILD_XGT_TESTNET: ${BUILD_XGT_TESTNET}" )
 if( BUILD_XGT_TESTNET  )
@@ -193,6 +179,21 @@ else()
       message( STATUS "Linting level set to: OFF" )
    endif()
 endif( NOT CLANG_TIDY_EXE )
+
+SET(BOOST_COMPONENTS)
+LIST(APPEND BOOST_COMPONENTS thread
+                             date_time
+                             system
+                             filesystem
+                             program_options
+                             serialization
+                             chrono
+                             unit_test_framework
+                             context
+                             locale
+                             coroutine)
+
+SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
 
 IF( WIN32 )
   SET(BOOST_ROOT $ENV{BOOST_ROOT})
