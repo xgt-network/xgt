@@ -44,7 +44,7 @@ using namespace xgt::chain;
 using namespace xgt::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( basic_tests, clean_database_fixture )
-/*
+
 BOOST_AUTO_TEST_CASE( parse_size_test )
 {
    BOOST_CHECK_THROW( fc::parse_size( "" ), fc::parse_error_exception );
@@ -69,10 +69,6 @@ BOOST_AUTO_TEST_CASE( parse_size_test )
    BOOST_CHECK_EQUAL( fc::parse_size( "32G" ), 34359738368 );
 }
 
-[>*
- * Verify that names are RFC-1035 compliant https://tools.ietf.org/html/rfc1035
- * https://github.com/cryptonomex/graphene/issues/15
- <]
 BOOST_AUTO_TEST_CASE( valid_name_test )
 {
    BOOST_CHECK( !is_valid_wallet_name( "a" ) );
@@ -130,8 +126,8 @@ BOOST_AUTO_TEST_CASE( valid_name_test )
    BOOST_CHECK( !is_valid_wallet_name( "this-label-has-more-than-63-char.act.ers-64-to-be-really-precise" ) );
    BOOST_CHECK( !is_valid_wallet_name( "none.of.these.labels.has.more.than-63.chars--but.still.not.valid" ) );
 }
-*/
-/*
+
+
 BOOST_AUTO_TEST_CASE( merkle_root )
 {
    signed_block block;
@@ -160,7 +156,7 @@ BOOST_AUTO_TEST_CASE( merkle_root )
       );
 
    digest_type dA, dB, dC, dD, dE, dI, dJ, dK, dM, dN, dO;
-   */
+   
 
    /****************
     *              *
@@ -335,7 +331,6 @@ BOOST_AUTO_TEST_CASE( merkle_root )
     *                                                                      *
     ************************************************************************/
 
-   /*
    dE = d(t[8], t[9]);
    dK = dE;
    dN = dK;
@@ -345,8 +340,6 @@ BOOST_AUTO_TEST_CASE( merkle_root )
    BOOST_CHECK( block.calculate_merkle_root() == c(dO) );
 }
 
-   */
-/*
 BOOST_AUTO_TEST_CASE( adjust_balance_test )
 {
    ACTORS( (alice) );
@@ -365,5 +358,5 @@ BOOST_AUTO_TEST_CASE( adjust_balance_test )
    db->adjust_balance( "alice", asset( -20000, XGT_SYMBOL ) );
    BOOST_REQUIRE( db->get_balance( "alice", XGT_SYMBOL ) == asset( 0, XGT_SYMBOL ) );
 }
-*/
+
 BOOST_AUTO_TEST_SUITE_END()

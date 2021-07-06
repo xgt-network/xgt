@@ -387,7 +387,7 @@ void misc_test3( const std::vector< uint64_t >& v )
 }
 
 BOOST_AUTO_TEST_SUITE(bmic_tests)
-/*
+
 BOOST_AUTO_TEST_CASE(basic_tests)
 {
    auto c1 = []( bmic::test_object& obj ) { obj.name = "_name"; };
@@ -443,7 +443,7 @@ BOOST_AUTO_TEST_CASE(modify_tests)
    auto c1b = []( bmic::test_object2& obj ) { obj.val = 889; };
    auto c2b = []( bmic::test_object2& obj ){ obj.val = 2889; };
    auto c3b = []( const bmic::test_object2& obj ){ BOOST_REQUIRE( obj.val == 2889 ); };
-   auto c4b = []( const bmic::test_object2& obj ){ [>empty<] };
+   auto c4b = []( const bmic::test_object2& obj ){};
    auto c5b = []( bool result ){ BOOST_REQUIRE( result == true ); };
 
    modify_test< bmic::test_object_index, bmic::test_object >( { 0, 1, 2, 3 }, c1, c2, c3, c4, c5 );
@@ -458,6 +458,6 @@ BOOST_AUTO_TEST_CASE(misc_tests)
 BOOST_AUTO_TEST_CASE(misc_tests3)
 {
   misc_test3< bmic::test_object_index3, bmic::test_object3, bmic::OrderedIndex3, bmic::CompositeOrderedIndex3a, bmic::CompositeOrderedIndex3b >( { 0, 1, 2 } );
-}*/
+}
 
 BOOST_AUTO_TEST_SUITE_END()
