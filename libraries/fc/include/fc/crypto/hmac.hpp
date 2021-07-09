@@ -1,3 +1,4 @@
+#pragma once
 /* 
  * File:   hmac.hpp
  * Author: Peter Conrad
