@@ -69,7 +69,7 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu')
     - name: Configure cmake (macOS)
       # run: cmake -D COLOR_DIAGNOSTICS=ON -D CMAKE_BUILD_TYPE=Debug -D ENABLE_MIRA=ON -G Ninja -B build -S . -D OPENSSL_ROOT_DIR=/usr/local/opt/openssl
-      run: cmake -D COLOR_DIAGNOSTICS=ON -D CMAKE_BUILD_TYPE=Debug -G Ninja -B build -S . -D OPENSSL_ROOT_DIR=/usr/local/opt/openssl
+      run: CMAKE_PREFIX_PATH=/usr/local/opt/openssl:/usr/local/opt/icu4c cmake -D COLOR_DIAGNOSTICS=ON -D CMAKE_BUILD_TYPE=Debug -G Ninja -B build -S .
       if: startsWith(matrix.os, 'macOS')
     - name: Build xgtd
       run: ninja -C build xgtd
