@@ -1403,7 +1403,7 @@ void database::init_genesis( uint64_t init_supply )
          auth.money.weight_threshold = 0;
       });
 
-      ilog( "!!!!!! Preparing to create genesis account..." );
+      ilog( "Preparing to create genesis account..." );
       create< dynamic_global_property_object >( [&]( dynamic_global_property_object& p )
       {
          p.mining_target = fc::sha256(XGT_MINING_TARGET_START);
@@ -1703,9 +1703,10 @@ void database::_apply_block( const signed_block& next_block )
    // process_optional_actions( opt_actions );
 
    // Ensure no duplicate mining rewards
-   /// @since 1.1.2 reject blocks with duplicate rewards
+   /// @since 1.2.0 reject blocks with duplicate rewards
+   /// @since 1.3.0 deprecated
    uint32_t head_num = head_block_num();
-   if (head_num >= 907200)
+   if (head_num >= 907200 && head_num < 1814400)
    {
       std::set< wallet_name_type > rewarded_wallets;
       for( const auto& trx : next_block.transactions )
@@ -1728,6 +1729,64 @@ void database::_apply_block( const signed_block& next_block )
          }
       }
    }
+
+   /// @since 1.3.0 reward the first miner, on the current ("next") block
+   if (head_num >= 1814400)
+   {
+      optional< wallet_name_type > rewarded_miner;
+      for( const auto& trx : next_block.transactions )
+      {
+         if ( rewarded_miner )
+            break;
+         const auto& operations = trx.operations;
+         for (auto& op : operations)
+         {
+            if ( rewarded_miner )
+               break;
+            if ( !is_pow_operation(op) )
+               continue;
+            const pow_operation& o = op.template get< pow_operation >();
+            const wallet_name_type& wallet_name = o.get_worker_name();
+
+            const auto& dgp = get_dynamic_global_properties();
+            uint32_t target_pow = get_pow_summary_target();
+
+            const auto& work = o.work.get< sha2_pow >();
+            FC_ASSERT( work.pow_summary < target_pow, "Insufficient work difficulty. Work: ${w}, Target: ${t}", ("w",work.pow_summary)("t", target_pow) );
+            FC_ASSERT( work.prev_block < next_block.previous, "Op prev block id ${m} doesn't match prev block id ${n} do not match.", ("m",work.prev_block)("n",next_block.previous) );
+            FC_ASSERT( next_block.witness == wallet_name, "Block miner name ${m} and op miner name (${n}) do not match.", ("m",next_block.witness)("n",wallet_name) );
+            wallet_name_type worker_account = work.input.worker_account;
+
+            // TODO: Check for 0
+            int halvings = (XGT_STARTING_OFFSET + dgp.head_block_number) / XGT_MINING_REWARD_HALVING_INTERVAL;
+            // TODO: Assert no overflow
+            long divisor = 1L << halvings;
+            asset base_reward = XGT_MINING_REWARD;
+            double value = base_reward.amount.value * (1.0 / static_cast<double>(divisor));
+            long price = static_cast<long>(floor(value));
+            asset reward = asset(price, base_reward.symbol);
+            wlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
+
+            const wallet_object* w = find_account( worker_account );
+            const witness_object* cur_witness = find_witness( worker_account );
+            if (w == nullptr)
+            {
+               wlog( "Wallet does not exist for worker account ${w}", ("w",worker_account) );
+               throw operation_validate_exception();
+            }
+            if (cur_witness == nullptr)
+            {
+               wlog( "Witness does not exist for worker account ${w}", ("w",worker_account) );
+               throw operation_validate_exception();
+            }
+
+            adjust_balance(worker_account, reward);
+
+            rewarded_miner = optional< wallet_name_type >(wallet_name);
+         }
+      }
+   }
+
 
    // Adjust mining difficulty
    const uint32_t frequency = XGT_MINING_RECALC_EVERY_N_BLOCKS;
