@@ -1,6 +1,6 @@
-# Defines Xgt library target.
+cmake_minimum_required( VERSION 3.12 )
+
 project( Xgt )
-cmake_minimum_required( VERSION 3.2 )
 
 set( BLOCKCHAIN_NAME "Xgt" )
 set( CMAKE_CXX_STANDARD 14 )
@@ -36,104 +36,52 @@ list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVers
 include( GetGitRevisionDescription )
 get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
 
-SET(BOOST_COMPONENTS)
-LIST(APPEND BOOST_COMPONENTS thread
-                             date_time
-                             system
-                             filesystem
-                             program_options
-                             serialization
-                             chrono
-                             unit_test_framework
-                             context
-                             locale
-                             coroutine)
-SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
-
 OPTION( BUILD_XGT_TESTNET "Build source for test network (ON OR OFF)" OFF )
 MESSAGE( STATUS "BUILD_XGT_TESTNET: ${BUILD_XGT_TESTNET}" )
 if( BUILD_XGT_TESTNET  )
-  MESSAGE( STATUS "     " )
-  MESSAGE( STATUS "             CONFIGURING FOR TEST NET             " )
-  MESSAGE( STATUS "     " )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIS_TEST_NET" )
-  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DIS_TEST_NET" )
+  add_compile_definitions("IS_TEST_NET")
 endif()
 
 OPTION( XGT_MAX_WITNESSES "Number of max witnesses" OFF )
 MESSAGE( STATUS "XGT_MAX_WITNESSES: ${XGT_MAX_WITNESSES}" )
 if( XGT_MAX_WITNESSES )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DXGT_MAX_WITNESSES=${XGT_MAX_WITNESSES}" )
-  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DXGT_MAX_WITNESSES=${XGT_MAX_WITNESSES}" )
+  add_compile_definitions("XGT_MAX_WITNESSES=${XGT_MAX_WITNESSES}")
 endif()
 
 OPTION( XGT_MAX_VOTED_WITNESSES "Number of max voted witnesses" OFF )
 MESSAGE( STATUS "XGT_MAX_VOTED_WITNESSES: ${XGT_MAX_VOTED_WITNESSES}" )
 if( XGT_MAX_VOTED_WITNESSES )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DXGT_MAX_VOTED_WITNESSES=${XGT_MAX_VOTED_WITNESSES}" )
-  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DXGT_MAX_VOTED_WITNESSES=${XGT_MAX_VOTED_WITNESSES}" )
+  add_compile_definitions("XGT_MAX_VOTED_WITNESSES=${XGT_MAX_VOTED_WITNESSES}")
 endif()
 
 OPTION( XGT_MAX_MINER_WITNESSES "Number of max miner witnesses" OFF )
 MESSAGE( STATUS "XGT_MAX_MINER_WITNESSES: ${XGT_MAX_MINER_WITNESSES}" )
 if( XGT_MAX_MINER_WITNESSES )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DXGT_MAX_MINER_WITNESSES=${XGT_MAX_MINER_WITNESSES}" )
-  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DXGT_MAX_MINER_WITNESSES=${XGT_MAX_MINER_WITNESSES}" )
-endif()
-
-OPTION( XGT_EQUIHASH_K "Value of Equihash k" OFF )
-MESSAGE( STATUS "XGT_EQUIHASH_K: ${XGT_EQUIHASH_K}" )
-if( XGT_EQUIHASH_K )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DXGT_EQUIHASH_K=${XGT_EQUIHASH_K}" )
-  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DXGT_EQUIHASH_K=${XGT_EQUIHASH_K}" )
-endif()
-
-OPTION( XGT_EQUIHASH_N "Value of Equihash n" OFF )
-MESSAGE( STATUS "XGT_EQUIHASH_N: ${XGT_EQUIHASH_N}" )
-if( XGT_EQUIHASH_N )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DXGT_EQUIHASH_N=${XGT_EQUIHASH_N}" )
-  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DXGT_EQUIHASH_N=${XGT_EQUIHASH_N}" )
+  add_compile_definitions("XGT_MAX_MINER_WITNESSES=${XGT_MAX_MINER_WITNESSES}")
 endif()
 
 OPTION( ENABLE_MIRA "Build source with MIRA (ON OR OFF)" OFF )
 MESSAGE( STATUS "ENABLE_MIRA: ${ENABLE_MIRA}" )
 if( ENABLE_MIRA )
-  MESSAGE( STATUS "     " )
-  MESSAGE( STATUS "             CONFIGURING FOR MIRA             " )
-  MESSAGE( STATUS "     " )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DENABLE_MIRA" )
-  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DENABLE_MIRA" )
+  add_compile_definitions("ENABLE_MIRA")
 endif()
 
 OPTION( LOW_MEMORY_NODE "Build source for low memory node (ON OR OFF)" OFF )
 MESSAGE( STATUS "LOW_MEMORY_NODE: ${LOW_MEMORY_NODE}" )
 if( LOW_MEMORY_NODE )
-  MESSAGE( STATUS "     " )
-  MESSAGE( STATUS "             CONFIGURING FOR LOW MEMORY NODE      " )
-  MESSAGE( STATUS "     " )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DIS_LOW_MEM" )
-  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DIS_LOW_MEM" )
+  add_compile_definitions("IS_LOW_MEM")
 endif()
 
 OPTION( CHAINBASE_CHECK_LOCKING "Check locks in chainbase (ON or OFF)" ON )
 MESSAGE( STATUS "CHAINBASE_CHECK_LOCKING: ${CHAINBASE_CHECK_LOCKING}" )
 if( CHAINBASE_CHECK_LOCKING )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCHAINBASE_CHECK_LOCKING" )
-  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCHAINBASE_CHECK_LOCKING" )
-endif()
-
-OPTION( CLEAR_VOTES "Build source to clear old votes from memory" ON )
-if( CLEAR_VOTES )
-  MESSAGE( STATUS "   CONFIGURING TO CLEAR OLD VOTES FROM MEMORY" )
-  SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCLEAR_VOTES" )
-  SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DCLEAR_VOTES" )
+  add_compile_definitions("CHAINBASE_CHECK_LOCKING")
 endif()
 
 OPTION( SKIP_BY_TX_ID "Skip ordering operation history by transaction id (ON or OFF)" OFF )
 MESSAGE( STATUS "SKIP_BY_TX_ID: ${SKIP_BY_TX_ID}" )
 if( SKIP_BY_TX_ID )
-   SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSKIP_BY_TX_ID" )
-   SET( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DSKIP_BY_TX_ID" )
+  add_compile_definitions("SKIP_BY_TX_ID")
 endif()
 
 OPTION( XGT_STATIC_BUILD "Build xgtd as a static library (ON or OFF)" OFF )
@@ -194,13 +142,26 @@ else()
    endif()
 endif( NOT CLANG_TIDY_EXE )
 
+
+SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
+
 IF( WIN32 )
   SET(BOOST_ROOT $ENV{BOOST_ROOT})
   set(Boost_USE_MULTITHREADED ON)
   set(BOOST_ALL_DYN_LINK OFF) # force dynamic linking for all libraries
 ENDIF(WIN32)
 
-FIND_PACKAGE(Boost 1.58 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
+FIND_PACKAGE(Boost 1.58 REQUIRED COMPONENTS thread
+                                            date_time
+                                            system
+                                            filesystem
+                                            program_options
+                                            serialization
+                                            chrono
+                                            unit_test_framework
+                                            context
+                                            locale
+                                            coroutine)
 
 if( NOT( Boost_VERSION LESS 106900 ) )
    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden")
@@ -299,10 +260,8 @@ if(ENABLE_COVERAGE_TESTING)
     SET(CMAKE_CXX_FLAGS "--coverage ${CMAKE_CXX_FLAGS}")
 endif()
 
-# fc/src/compress/miniz.c breaks strict aliasing. The Linux kernel builds with no strict aliasing
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-strict-aliasing -DBOOST_THREAD_DONT_PROVIDE_PROMISE_LAZY" )
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=sign-compare")
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-strict-aliasing -Werror -DBOOST_THREAD_DONT_PROVIDE_PROMISE_LAZY" )
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=sign-compare -DBOOST_THREAD_DONT_PROVIDE_PROMISE_LAZY")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror -DBOOST_THREAD_DONT_PROVIDE_PROMISE_LAZY" )
 
 # supress unwanted warnings:
 include(CheckCXXCompilerFlag)
@@ -384,21 +343,3 @@ endif(LINUX)
 
  include(CPack)
 endif(ENABLE_INSTALLER)
-
-if( BUILD_XGT_TESTNET )
-  MESSAGE( STATUS "\n\n             CONFIGURED FOR TEST NETWORK             \n\n" )
-else()
-  MESSAGE( STATUS "\n\n             CONFIGURED FOR XGT NETWORK              \n\n" )
-endif()
-
-if( ENABLE_MIRA )
-MESSAGE( STATUS "\n\n             CONFIGURED FOR MIRA                  \n\n" )
-else()
-MESSAGE( STATUS "\n\n             CONFIGURED FOR BMIC MMAP             \n\n" )
-endif()
-
-if( LOW_MEMORY_NODE )
-  MESSAGE( STATUS "\n\n             CONFIGURED FOR LOW MEMORY NODE          \n\n" )
-else()
-  MESSAGE( STATUS "\n\n             CONFIGURED FOR FULL NODE                \n\n" )
-endif()
