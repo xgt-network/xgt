@@ -4741,6 +4741,7 @@ namespace graphene { namespace net {
     {
       new_peer->get_socket().open();
       new_peer->get_socket().set_reuse_address();
+      new_peer->get_socket().set_no_delay();
       new_peer->connection_initiation_time = fc::time_point::now();
       _handshaking_connections.insert(new_peer);
       _rate_limiter.add_tcp_socket(&new_peer->get_socket());
