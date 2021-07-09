@@ -276,10 +276,9 @@ void wallet_by_key_plugin_impl::on_pre_apply_transaction( const transaction_noti
 
 vector<wallet_name_type> wallet_by_key_plugin_impl::get_key_references( const flat_set<public_key_type> key_set )const
 {
-   const auto key_idx = _db.get_index< wallet_by_key::key_lookup_index >().indices().get< wallet_by_key::by_key >();
    vector<wallet_name_type> wallets;
    for (auto& key : key_set) {
-      wallets.push_back(key_idx.find(key)->account);
+      wallets.push_back(_db.find< key_lookup_object, by_key >(  key )->account);
    }
    return wallets;
 }
