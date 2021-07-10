@@ -16,9 +16,6 @@
 #include <fc/io/json.hpp>
 #include <fc/macros.hpp>
 #include <fc/smart_ref_impl.hpp>
-#include <fc/network/ntp.hpp>
-
-#include <graphene/time/time.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
