@@ -11,7 +11,6 @@ const std::vector< std::string > default_seeds;
 const std::vector< std::string > default_seeds = {
     "xgt.rag.pub",
     "xgt2.rag.pub",
-    "45.138.27.42",
     "68.129.31.2",
     "95.216.69.92",
     "95.216.71.199"
