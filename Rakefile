@@ -6,13 +6,14 @@ require 'bigdecimal'
 require 'shellwords'
 require 'rake/testtask'
 autoload :Xgt, 'xgt/ruby'
+autoload :Etc, 'etc'
 
 def mining_disabled?
   ENV['MINING_DISABLED']&.upcase == 'TRUE'
 end
 
 def mining_threads
-  ENV['MINING_THREADS'] || 1
+  ENV['MINING_THREADS'] || Etc.nprocessors
 end
 
 def flush_testnet?
@@ -62,7 +63,7 @@ def chain_id
 end
 
 def address_prefix
-  config['XGT_ADDRESS_PREFIX']
+  config['XGT_ADDRESS_PREFIX'] || 'XGT'
 end
 
 def fee
@@ -77,7 +78,7 @@ def unindent(str)
 end
 
 def rpc
-  Xgt::Ruby::Rpc.new(host || 'http://localhost:8751')
+  Xgt::Ruby::Rpc.new(host)
 end
 
 desc 'Removes build artifacts'
