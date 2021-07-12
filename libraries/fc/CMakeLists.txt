@@ -26,6 +26,9 @@ SET( CMAKE_DEBUG_POSTFIX _debug )
 SET( BUILD_SHARED_LIBS NO )
 SET( ECC_IMPL secp256k1 CACHE STRING "secp256k1 or openssl or mixed" )
 
+# Boost locale needs icudata
+find_package(ICU REQUIRED data)
+
 set(platformBitness 32)
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
   set(platformBitness 64)
@@ -340,11 +343,12 @@ target_include_directories(fc
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/bitcoin/src
   )
 
-#target_link_libraries( fc PUBLIC ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB} )
-IF(NOT WIN32)
-  set(LINK_USR_LOCAL_LIB -L/usr/local/lib)
-ENDIF()
-target_link_libraries( fc PUBLIC ${LINK_USR_LOCAL_LIB} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${Boost_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB} )
+# FindICU doesn't seem to expose a library directory, which is a pain with homebrew. Use find_library to dig it back up.
+find_library(ICU_DATA_LIB NAMES icudata REQUIRED)
+get_filename_component(ICU_LIBRARY_DIRECTORY ${ICU_DATA_LIB} DIRECTORY)
+target_link_directories( fc PUBLIC ${ICU_LIBRARY_DIRECTORY} )
+
+target_link_libraries( fc PUBLIC ICU::data ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${Boost_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB})
 
 
 IF(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY MATCHES "\\.(a|lib)$")
