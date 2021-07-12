@@ -535,3 +535,19 @@ namespace :contracts do
     p response
   end
 end
+
+namespace :machine do
+  src_dir = File.join(File.dirname(__FILE__), %(../xgtvm))
+  dest_dir = File.join(File.dirname(__FILE__), %(libraries/vendor/xgtvm))
+  dest_git_dir = File.join(dest_dir, '.git')
+
+  task :clean do
+    FileUtils.rm_r(dest_dir) if Dir.exist?(dest_dir)
+  end
+
+  task :vendor => [:clean] do
+    raise %(Directory #{src_dir} doesn't exist!) unless Dir.exist?(src_dir)
+    FileUtils.cp_r(src_dir, dest_dir)
+    FileUtils.rm_r(dest_git_dir) if File.exists?(dest_git_dir)
+  end
+end
