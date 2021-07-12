@@ -6,14 +6,14 @@ require 'bigdecimal'
 require 'shellwords'
 require 'rake/testtask'
 autoload :Xgt, 'xgt/ruby'
-autoload :Etc, 'etc'
 
 def mining_disabled?
   ENV['MINING_DISABLED']&.upcase == 'TRUE'
 end
 
 def mining_threads
-  ENV['MINING_THREADS'] || Etc.nprocessors
+  # 0 set in the config will make xgtd use max logical CPUs
+  ENV['MINING_THREADS'] || 0
 end
 
 def flush_testnet?
