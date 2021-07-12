@@ -27,7 +27,7 @@ SET( BUILD_SHARED_LIBS NO )
 SET( ECC_IMPL secp256k1 CACHE STRING "secp256k1 or openssl or mixed" )
 
 # Boost locale needs icudata
-find_package(ICU REQUIRED data)
+# find_package(ICU REQUIRED data)
 
 set(platformBitness 32)
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -338,11 +338,11 @@ target_include_directories(fc
   )
 
 # FindICU doesn't seem to expose a library directory, which is a pain with homebrew. Use find_library to dig it back up.
-find_library(ICU_DATA_LIB NAMES icudata REQUIRED)
-get_filename_component(ICU_LIBRARY_DIRECTORY ${ICU_DATA_LIB} DIRECTORY)
-target_link_directories( fc PUBLIC ${ICU_LIBRARY_DIRECTORY} )
+# find_library(ICU_DATA_LIB NAMES icudata REQUIRED)
+# get_filename_component(ICU_LIBRARY_DIRECTORY ${ICU_DATA_LIB} DIRECTORY)
+# target_link_directories( fc PUBLIC ${ICU_LIBRARY_DIRECTORY} )
 
-target_link_libraries( fc PUBLIC ICU::data ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${Boost_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB})
+target_link_libraries( fc PUBLIC ${ICU_LIBRARIES} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${Boost_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB})
 
 
 IF(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY MATCHES "\\.(a|lib)$")
