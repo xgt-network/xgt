@@ -241,11 +241,11 @@ class machine
   size_t pc = 0;
   std::deque<stack_variant> stack;
   machine_state state = machine_state::running;
-  std::vector<word> memory;
-  std::vector<word> return_value;
   context ctx;
   std::vector<word> code;
   message msg;
+  std::vector<word> memory;
+  std::vector<word> return_value;
   boost::optional<std::string> error_message;
   std::stringstream logger;
 
