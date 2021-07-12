@@ -12,27 +12,34 @@ def mining_disabled?
 end
 
 def mining_threads
-  ENV['MINING_THREADS'] || 1
+  # 0 set in the config will make xgtd use max logical CPUs
+  ENV['MINING_THREADS'] || 0
 end
 
 def flush_testnet?
   ENV['FLUSH_TESTNET']&.upcase == 'TRUE'
 end
 
+def mining_error(message)
+  return if mining_disabled?
+  STDERR.puts("ABORT: #{message}")
+  exit(2)
+end
+
 def wallet
-  ENV['XGT_WALLET'] || 'XGT0000000000000000000000000000000000000000'
+  ENV['XGT_WALLET'] || mining_error("Wallet not specificed, please specify a wallet with 'XGT_WALLET'")
 end
 
 def wif
-  ENV['XGT_WIF'] || '5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n'
+  ENV['XGT_WIF'] || mining_error("XGT_WIF not specified")
 end
 
 def recovery_private_key
-  ENV['XGT_RECOVERY_PRIVATE_KEY'] || '5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n'
+  ENV['XGT_RECOVERY_PRIVATE_KEY'] || mining_error("XGT_RECOVERY_PRIVATE_KEY not specified")
 end
 
 def witness_private_key
-  ENV['XGT_WITNESS_PRIVATE_KEY'] || '5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n'
+  ENV['XGT_WITNESS_PRIVATE_KEY'] || mining_error("XGT_WITNESS_PRIVATE_KEY not specified")
 end
 
 def host
@@ -40,7 +47,7 @@ def host
 end
 
 def seed_hosts
-  (ENV['XGT_SEED_HOST'] || "").split(",")
+  Array((ENV['XGT_SEED_HOST'] || "").split(","))
 end
 
 def instance_index
@@ -56,7 +63,7 @@ def chain_id
 end
 
 def address_prefix
-  config['XGT_ADDRESS_PREFIX']
+  config['XGT_ADDRESS_PREFIX'] || 'XGT'
 end
 
 def fee
@@ -71,7 +78,7 @@ def unindent(str)
 end
 
 def rpc
-  Xgt::Ruby::Rpc.new(host || 'http://localhost:8751')
+  Xgt::Ruby::Rpc.new(host)
 end
 
 desc 'Removes build artifacts'
