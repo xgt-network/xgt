@@ -21,6 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include <graphene/net/core_messages.hpp>
 #include <graphene/net/peer_connection.hpp>
 #include <graphene/net/exceptions.hpp>
 #include <graphene/net/config.hpp>
@@ -126,6 +127,8 @@ namespace graphene { namespace net
 
       try
       {
+        closing_connection_message message = closing_connection_message();
+        send_message(message);
         dlog("calling close_connection()");
         close_connection();
         dlog("close_connection completed normally");

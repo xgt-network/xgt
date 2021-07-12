@@ -236,6 +236,11 @@ namespace fc {
 #endif // __APPLE__
   }
 
+  void tcp_socket::set_no_delay(bool enable) {
+    FC_ASSERT(my->_sock.is_open());
+    boost::asio::ip::tcp::no_delay option(enable);
+    my->_sock.set_option(option);
+  }
 
   class tcp_server::impl {
     public:
