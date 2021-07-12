@@ -11,6 +11,7 @@ struct votable_asset_info_v1;
 #include <xgt/schema/schema_types.hpp>
 
 #include <xgt/chain/schema_types/oid.hpp>
+#include <xgt/protocol/schema_types/wallet_name_type.hpp>
 #include <xgt/protocol/schema_types/asset_symbol_type.hpp>
 
 #include <iostream>
@@ -18,6 +19,7 @@ struct votable_asset_info_v1;
 #include <string>
 #include <vector>
 
+#include <xgt/chain/wallet_object.hpp>
 #include <xgt/chain/xgt_objects.hpp>
 
 using namespace xgt::schema;
@@ -59,7 +61,7 @@ int main( int argc, char** argv, char** envp )
    std::vector< std::shared_ptr< abstract_schema > > schemas;
 
    schemas.push_back( get_schema_for_type< mystruct >() );
-   schemas.push_back( get_schema_for_type< xgt::chain::account_object >() );
+   schemas.push_back( get_schema_for_type< xgt::chain::wallet_object >() );
    schemas.push_back( get_schema_for_type< xgt::chain::comment_object >() );
    add_dependent_schemas( schemas );
 

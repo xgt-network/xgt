@@ -110,7 +110,6 @@ IF( WIN32 )
   SET(BOOST_ROOT $ENV{BOOST_ROOT})
 #  set(Boost_USE_DEBUG_PYTHON ON)
   set(Boost_USE_MULTITHREADED ON)
-  set(BOOST_ALL_DYN_LINK OFF) # force dynamic linking for all libraries
 
   FIND_PACKAGE(Boost 1.53 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
   # For Boost 1.53 on windows, coroutine was not in BOOST_LIBRARYDIR and do not need it to build,  but if boost versin >= 1.54, find coroutine otherwise will cause link errors
@@ -203,7 +202,6 @@ set( fc_sources
      src/crypto/aes.cpp
      src/crypto/crc.cpp
      src/crypto/city.cpp
-     src/crypto/base32.cpp
      src/crypto/base36.cpp
      src/crypto/base58.cpp
      src/crypto/base64.cpp
@@ -222,15 +220,11 @@ set( fc_sources
      src/network/udp_socket.cpp
      src/network/http/http_connection.cpp
      src/network/http/http_server.cpp
-     src/network/ntp.cpp
      src/network/ip.cpp
      src/network/rate_limiting.cpp
      src/network/resolve.cpp
      src/network/url.cpp
-     src/network/gntp.cpp
      src/reflect/typename.cpp
-     vendor/cyoencode-1.0.2/src/CyoDecode.c
-     vendor/cyoencode-1.0.2/src/CyoEncode.c
      )
 
 file( GLOB_RECURSE fc_headers ${CMAKE_CURRENT_SOURCE_DIR} *.hpp *.h )
@@ -335,16 +329,11 @@ target_include_directories(fc
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp
 
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/cyoencode-1.0.2/src
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/secp256k1-zkp
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/bitcoin/src
   )
 
-#target_link_libraries( fc PUBLIC ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB} )
-IF(NOT WIN32)
-  set(LINK_USR_LOCAL_LIB -L/usr/local/lib)
-ENDIF()
-target_link_libraries( fc PUBLIC ${LINK_USR_LOCAL_LIB} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${Boost_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB} )
+target_link_libraries( fc PUBLIC ${ICU_LIBRARIES} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${Boost_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB})
 
 
 IF(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY MATCHES "\\.(a|lib)$")

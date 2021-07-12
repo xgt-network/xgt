@@ -32,7 +32,7 @@ list(APPEND sources "${CMAKE_CURRENT_BINARY_DIR}/git_revision.cpp")
 add_library( xgt_utilities
              ${sources}
              ${HEADERS} )
-target_link_libraries( xgt_utilities fc )
+target_link_libraries( xgt_utilities PUBLIC fc )
 target_include_directories( xgt_utilities
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
 if (USE_PCH)

@@ -6,33 +6,45 @@ require 'bigdecimal'
 require 'shellwords'
 require 'rake/testtask'
 autoload :Xgt, 'xgt/ruby'
+autoload :Etc, 'etc'
 
 def mining_disabled?
   ENV['MINING_DISABLED']&.upcase == 'TRUE'
 end
 
 def mining_threads
-  ENV['MINING_THREADS'] || 1
+  # 0 set in the config will make xgtd use max logical CPUs
+  ENV['MINING_THREADS'] || 0
+end
+
+def thread_count
+  (ENV['THREAD_COUNT'] || Etc.nprocessors).to_i
 end
 
 def flush_testnet?
   ENV['FLUSH_TESTNET']&.upcase == 'TRUE'
 end
 
+def mining_error(message)
+  return if mining_disabled?
+  STDERR.puts("ABORT: #{message}")
+  exit(2)
+end
+
 def wallet
-  ENV['XGT_WALLET'] || 'XGT0000000000000000000000000000000000000000'
+  ENV['XGT_WALLET'] || mining_error("Wallet not specificed, please specify a wallet with 'XGT_WALLET'")
 end
 
 def wif
-  ENV['XGT_WIF'] || '5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n'
+  ENV['XGT_WIF'] || mining_error("XGT_WIF not specified")
 end
 
 def recovery_private_key
-  ENV['XGT_RECOVERY_PRIVATE_KEY'] || '5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n'
+  ENV['XGT_RECOVERY_PRIVATE_KEY'] || mining_error("XGT_RECOVERY_PRIVATE_KEY not specified")
 end
 
 def witness_private_key
-  ENV['XGT_WITNESS_PRIVATE_KEY'] || '5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n'
+  ENV['XGT_WITNESS_PRIVATE_KEY'] || mining_error("XGT_WITNESS_PRIVATE_KEY not specified")
 end
 
 def host
@@ -40,7 +52,7 @@ def host
 end
 
 def seed_hosts
-  (ENV['XGT_SEED_HOST'] || "").split(",")
+  Array((ENV['XGT_SEED_HOST'] || "").split(","))
 end
 
 def instance_index
@@ -56,7 +68,7 @@ def chain_id
 end
 
 def address_prefix
-  config['XGT_ADDRESS_PREFIX']
+  config['XGT_ADDRESS_PREFIX'] || 'XGT'
 end
 
 def fee
@@ -71,12 +83,21 @@ def unindent(str)
 end
 
 def rpc
-  Xgt::Ruby::Rpc.new(host || 'http://localhost:8751')
+  Xgt::Ruby::Rpc.new(host)
 end
 
 desc 'Removes build artifacts'
 task :clean do
   sh 'rm -rf ../xgt-build'
+end
+
+desc 'List available targets'
+task :targets do
+  sh %(
+    mkdir -p ../xgt-build \
+      && cd ../xgt-build \
+      && cmake --build .  --target help
+  )
 end
 
 desc 'Runs CMake to prepare the project'
@@ -85,17 +106,141 @@ task :configure do
     mkdir -p ../xgt-build \
       && cd ../xgt-build \
       && cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo \
-               --target xgtd \
                ../xgt
+  )
+end
+
+task :test do
+  sh %(
+    rm -rf ../xgt-tests-build \
+    && mkdir -p ../xgt-tests-build \
+    && cmake \
+      -D BUILD_XGT_TESTNET=ON \
+      -D BUILD_TESTING=TRUE \
+      -D COLOR_DIAGNOSTICS=ON \
+      -D CMAKE_BUILD_TYPE=Debug \
+      -G Ninja \
+      -B ../xgt-tests-build \
+      -S . \
+    && ninja -C ../xgt-tests-build chain_test
   )
 end
 
 desc 'Builds the project'
 task :make do
-  count = ENV['THREAD_COUNT'].to_i
-  count = 2 if count == 0
-  sh %(cd ../xgt-build && cmake --build . --target xgtd -- -j#{count})
+  sh %(cd ../xgt-build && cmake --build . --target xgtd -- -j#{thread_count})
 end
+
+desc 'Build all targets'
+task :make_all do
+
+  tlibs = %w(
+    rocksdb
+    rocksdb-shared
+    core_tools
+    ldb
+    project_secp256k1
+    bip_lock
+    rebuild_cache
+    edit_cache
+    fc
+    sst_dump
+    xgt_schema
+    db_fixture
+    dump_xgt_schema
+    get_dev_key
+    sign_digest
+    sign_transaction
+    js_operation_serializer
+    size_checker
+    xgtd
+    cat-parts
+    graphene_net
+    mira
+
+    appbase
+    appbase_example
+    chainbase
+
+    hash_table_bench
+    range_del_aggregator_bench
+    db_bench
+    cache_bench
+    filter_bench
+    memtablerep_bench
+    table_reader_bench
+
+    webserver_plugin
+    witness_plugin
+    wallet_by_key_plugin
+    wallet_history_plugin
+    wallet_history_rocksdb_plugin
+    block_api_plugin
+    chain_api_plugin
+    contract_api_plugin
+    database_api_plugin
+    test_api_plugin
+    transaction_api_plugin
+    wallet_by_key_api_plugin
+    wallet_history_api_plugin
+    chain_plugin
+    debug_node_plugin
+    json_rpc_plugin
+    p2p_plugin
+    transaction_status_plugin
+
+    gtest
+    test_sqrt
+    testharness
+    test_fixed_string
+    test_shared_mem
+    ecc_test
+    log_test
+    ecdsa_canon_test
+    saturation_test
+    chainbase_test
+    schema_test
+    chain_test
+    test_block_log
+
+    xgt_plugins
+    xgt_utilities
+    xgt_protocol
+    xgt_chain
+    xgtd
+  )
+
+  borked = %w(
+    bloom_test
+    plugin_test
+    inflation_model
+    serialize_set_properties
+    real128_test
+    all_tests
+    blind
+    hmac_test
+    thread_test
+    task_cancel_test
+  )
+
+  sh %(cd ../xgt-build && cmake --build . --target #{tlibs.join(" ")} -- -j#{thread_count})
+end
+
+task :bin_tests do
+  xrun = Proc.new() { |command| sh "cd ../xgt-build && ./programs/util/#{command}" }
+  xrun.call "schema_test"
+  xrun.call "test_block_log"
+  xrun.call "test_fixed_string"
+  xrun.call "test_shared_mem"
+  xrun.call "test_sqrt"
+end
+
+desc 'Strip the binary of unneeded symbols'
+task :strip do
+  sh %(cd ../xgt-build && strip --strip-unneeded ./programs/xgtd/xgtd)
+end
+
+task :build_release => [:clean, :configure, :make, :strip]
 
 desc 'Runs a basic example instance locally'
 task :run do
@@ -148,20 +293,6 @@ task :run do
   $stderr.puts(File.read("#{data_dir}/config.ini"))
 
   sh %(cd #{data_dir} && ../programs/xgtd/xgtd --data-dir=.)
-end
-
-desc 'Builds the tests'
-task :make_tests do
-  count = ENV['THREAD_COUNT'].to_i
-  count = 2 if count == 0
-  # TODO: XXX: Gradually expand tests
-  sh %(cd ../xgt-build && cmake --build . --target chain_test -- -j#{count})
-end
-
-desc 'Runs the tests'
-task :run_tests do
-  sh 'cd ../xgt-build && ./tests/chain_test'
-  # TODO: Identify other tests
 end
 
 desc 'Get approximate C++ LoC'

@@ -55,7 +55,6 @@ libraries/fc/tests/ecc_test
 libraries/fc/tests/ecdsa_canon_test
 libraries/fc/tests/hmac_test
 libraries/fc/tests/log_test
-libraries/fc/tests/ntp_test
 libraries/fc/tests/real128_test
 libraries/fc/tests/saturation_test
 libraries/fc/tests/sha_test
