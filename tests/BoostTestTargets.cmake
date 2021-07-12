@@ -131,7 +131,7 @@ function(add_boost_test _name)
 			"Syntax error in use of add_boost_test: at least one source file required!")
 	endif()
 
-	if(Boost_FOUND AND NOT "${Boost_VERSION}0" LESS "1034000")
+	if(Boost_FOUND)
 
 		include_directories(${Boost_INCLUDE_DIRS})
 

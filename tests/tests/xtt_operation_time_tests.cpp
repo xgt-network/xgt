@@ -15,10 +15,10 @@
 #include <xgt/chain/xgt_objects.hpp>
 #include <xgt/chain/xtt_objects.hpp>
 
-#include <xgt/chain/util/reward.hpp>
-#include <xgt/plugins/rc/rc_objects.hpp>
-#include <xgt/plugins/rc/rc_operations.hpp>
-#include <xgt/plugins/rc/rc_plugin.hpp>
+// #include <xgt/chain/util/reward.hpp>
+// #include <xgt/plugins/rc/rc_objects.hpp>
+// #include <xgt/plugins/rc/rc_operations.hpp>
+// #include <xgt/plugins/rc/rc_plugin.hpp>
 #include <xgt/plugins/debug_node/debug_node_plugin.hpp>
 
 #include <fc/crypto/digest.hpp>
@@ -32,7 +32,7 @@ using namespace xgt::chain;
 using namespace xgt::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( xtt_operation_time_tests, clean_database_fixture )
-
+/*
 BOOST_AUTO_TEST_CASE( xtt_refunds )
 {
    try
@@ -348,8 +348,8 @@ BOOST_AUTO_TEST_CASE( xtt_ico_payouts )
       BOOST_REQUIRE( contribution_idx.find( boost::make_tuple( symbol, 0 ) ) == contribution_idx.end() );
    }
    FC_LOG_AND_RETHROW()
-}
-
+}*/
+/*
 BOOST_AUTO_TEST_CASE( xtt_ico_payouts_special_destinations )
 {
    try
@@ -527,8 +527,8 @@ BOOST_AUTO_TEST_CASE( xtt_ico_payouts_special_destinations )
       BOOST_REQUIRE( contribution_idx.find( boost::make_tuple( symbol, 0 ) ) == contribution_idx.end() );
    }
    FC_LOG_AND_RETHROW()
-}
-
+}*/
+/*
 BOOST_AUTO_TEST_CASE( xt_vesting_withdrawals )
 {
    BOOST_TEST_MESSAGE( "Testing: XTT vesting withdrawals" );
@@ -619,7 +619,8 @@ BOOST_AUTO_TEST_CASE( xt_vesting_withdrawals )
 
    validate_database();
 }
-
+*/
+/*
 BOOST_AUTO_TEST_CASE( recent_claims_decay )
 {
    try
@@ -806,8 +807,8 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
       }
    }
    FC_LOG_AND_RETHROW()
-}
-
+}*/
+/*
 BOOST_AUTO_TEST_CASE( xtt_rewards )
 {
    try
@@ -1637,7 +1638,7 @@ BOOST_AUTO_TEST_CASE( xtt_without_ico )
 
 BOOST_AUTO_TEST_CASE( xtt_action_delay )
 { try {
-   /* This test case is a little complicated.
+   [> This test case is a little complicated.
     *
     * If block generation is delayed, there are pending required actions that
     * cascade and are delayed, block generation can fail to include the
@@ -1690,7 +1691,7 @@ BOOST_AUTO_TEST_CASE( xtt_action_delay )
     *
     * TL;DR This passes if generate_block and push_block have the same block
     * time mechanics.
-    */
+    <]
    ACTORS( (alice) );
    generate_block();
 
@@ -1741,6 +1742,6 @@ BOOST_AUTO_TEST_CASE( xtt_action_delay )
 
    generate_blocks( setup_op.launch_time, true );
 } FC_LOG_AND_RETHROW() }
-
+*/
 BOOST_AUTO_TEST_SUITE_END()
 #endif

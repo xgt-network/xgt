@@ -11,11 +11,11 @@
 #include <xgt/chain/history_object.hpp>
 #include <xgt/chain/xgt_objects.hpp>
 
-#include <xgt/chain/util/reward.hpp>
+// #include <xgt/chain/util/reward.hpp>
 
 #include <xgt/plugins/debug_node/debug_node_plugin.hpp>
-#include <xgt/plugins/rc/rc_objects.hpp>
-#include <xgt/plugins/rc/resource_count.hpp>
+// #include <xgt/plugins/rc/rc_objects.hpp>
+// #include <xgt/plugins/rc/resource_count.hpp>
 
 #include <fc/crypto/digest.hpp>
 
@@ -30,6 +30,7 @@ using namespace xgt::protocol;
 
 BOOST_FIXTURE_TEST_SUITE( operation_time_tests, clean_database_fixture )
 
+/*
 BOOST_AUTO_TEST_CASE( comment_payout_equalize )
 {
    try
@@ -133,7 +134,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
       //idump( (rf) );
 
       generate_blocks( db->get_comment( "alice", string( "mypost" ) ).cashout_time, true );
-      /*
+      [>
       for( const auto& author : authors )
       {
          const account_object& a = db->get_account(author.name);
@@ -144,7 +145,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_equalize )
          const account_object& a = db->get_account(voter.name);
          ilog( "${n} : ${xgt} ${sbd}", ("n", voter.name)("xgt", a.reward_xgt_balance)("sbd", a.reward_sbd_balance) );
       }
-      */
+      <]
 
       const account_object& alice_account = db->get_account("alice");
       const account_object& bob_account   = db->get_account("bob");
@@ -234,7 +235,7 @@ BOOST_AUTO_TEST_CASE( comment_payout_dust )
    FC_LOG_AND_RETHROW()
 }
 
-/*
+[>
 BOOST_AUTO_TEST_CASE( reward_funds )
 {
    try
@@ -306,7 +307,7 @@ BOOST_AUTO_TEST_CASE( reward_funds )
    }
    FC_LOG_AND_RETHROW()
 }
-*/
+<]
 
 BOOST_AUTO_TEST_CASE( recent_claims_decay )
 {
@@ -391,7 +392,7 @@ BOOST_AUTO_TEST_CASE( recent_claims_decay )
    FC_LOG_AND_RETHROW()
 }
 
-/*
+[>
 BOOST_AUTO_TEST_CASE( comment_payout )
 {
    try
@@ -557,9 +558,9 @@ BOOST_AUTO_TEST_CASE( comment_payout )
       validate_database();
    }
    FC_LOG_AND_RETHROW()
-}*/
+}<]
 
-/*
+[>
 BOOST_AUTO_TEST_CASE( comment_payout )
 {
    try
@@ -1191,7 +1192,7 @@ OOST_AUTO_TEST_CASE( nested_comments )
    }
    FC_LOG_AND_RETHROW()
 }
-*/
+<]
 
 
 BOOST_AUTO_TEST_CASE( vesting_withdrawals )
@@ -1563,7 +1564,7 @@ BOOST_AUTO_TEST_CASE( xgt_inflation )
 {
    try
    {
-   /*
+   [>
       BOOST_TEST_MESSAGE( "Testing XGT Inflation until the vesting start block" );
 
       auto gpo = db->get_dynamic_global_properties();
@@ -1738,7 +1739,7 @@ BOOST_AUTO_TEST_CASE( xgt_inflation )
       BOOST_REQUIRE_EQUAL( db->get_account( witness_name ).vesting_shares.amount.value,
          old_witness_shares.amount.value + ( asset( ( ( virtual_supply.amount.value / XGT_BLOCKS_PER_YEAR ) * XGT_1_PERCENT ) / XGT_100_PERCENT, XGT_SYMBOL ) * ( vesting_shares / vesting_xgt ) ).amount.value );
       validate_database();
-      */
+      <]
    }
    FC_LOG_AND_RETHROW();
 }
@@ -2477,6 +2478,6 @@ BOOST_AUTO_TEST_CASE( account_subsidy_witness_limits )
    }
    FC_LOG_AND_RETHROW()
 }
-
+*/
 BOOST_AUTO_TEST_SUITE_END()
 #endif
