@@ -1,18 +1,14 @@
-cmake_minimum_required( VERSION 3.2 )
+cmake_minimum_required(VERSION 2.8.9)
 project(Xgtvm)
-
-#set(CMAKE_CXX_STANDARD 14)
-#set(CMAKE_CXX_STANDARD_REQUIRED ON)
-#set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package( Boost REQUIRED )
 include_directories( ${Boost_INCLUDE_DIR} )
 
 # Library
-add_library(xgtvm libraries/machine.cpp libraries/machine.hpp)
+add_library(xgtvm programs/xgtvm.cpp libraries/machine.cpp libraries/machine.hpp)
 target_link_libraries( xgtvm LINK_PUBLIC ${Boost_LIBRARIES} )
 target_include_directories(xgtvm PRIVATE libraries)
-# Executable
+# Binary
 add_executable(xgtvmd programs/xgtvm.cpp libraries/machine.cpp libraries/machine.hpp)
 target_link_libraries( xgtvmd LINK_PUBLIC ${Boost_LIBRARIES} )
 target_include_directories(xgtvmd PRIVATE libraries)
