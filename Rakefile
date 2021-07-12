@@ -6,6 +6,7 @@ require 'bigdecimal'
 require 'shellwords'
 require 'rake/testtask'
 autoload :Xgt, 'xgt/ruby'
+autoload :Etc, 'etc'
 
 def mining_disabled?
   ENV['MINING_DISABLED']&.upcase == 'TRUE'
@@ -14,6 +15,10 @@ end
 def mining_threads
   # 0 set in the config will make xgtd use max logical CPUs
   ENV['MINING_THREADS'] || 0
+end
+
+def thread_count
+  (ENV['THREAD_COUNT'] || Etc.nprocessors).to_i
 end
 
 def flush_testnet?
@@ -86,7 +91,7 @@ task :clean do
   sh 'rm -rf ../xgt-build'
 end
 
-desc 'Runs CMake to prepare the project'
+desc 'List available targets'
 task :targets do
   sh %(
     mkdir -p ../xgt-build \
@@ -105,34 +110,137 @@ task :configure do
   )
 end
 
-desc 'Runs CMake to prepare the project using target UNIT_TESTS'
-task :configure_tests do
+task :test do
   sh %(
-    mkdir -p ../xgt-build \
-      && cd ../xgt-build \
-      && cmake -DCMAKE_BUILD_TYPE=Debug \
-               -D CMAKE_CXX_COMPILER="ccache" \
-               -D CMAKE_CXX_COMPILER_ARG1="g++" \
-               -D CMAKE_C_COMPILER="ccache" \
-               -D CMAKE_C_COMPILER_ARG1="gcc" \
-               --target UNIT_TESTS \
-               ../xgt
+    rm -rf ../xgt-tests-build \
+    && mkdir -p ../xgt-tests-build \
+    && cmake \
+      -D BUILD_XGT_TESTNET=ON \
+      -D BUILD_TESTING=TRUE \
+      -D COLOR_DIAGNOSTICS=ON \
+      -D CMAKE_BUILD_TYPE=Debug \
+      -G Ninja \
+      -B ../xgt-tests-build \
+      -S . \
+    && ninja -C ../xgt-tests-build chain_test
   )
 end
 
 desc 'Builds the project'
 task :make do
-  count = ENV['THREAD_COUNT'].to_i
-  count = 2 if count == 0
-  sh %(cd ../xgt-build && cmake --build . --target xgtd -- -j#{count})
+  sh %(cd ../xgt-build && cmake --build . --target xgtd -- -j#{thread_count})
 end
 
-desc 'Builds the project with target UNIT_TESTS'
-task :make_tests do
-  count = ENV['THREAD_COUNT'].to_i
-  count = 2 if count == 0
-  sh %(cd ../xgt-build && cmake --build . --target UNIT_TESTS -- -j#{count})
+desc 'Build all targets'
+task :make_all do
+
+  tlibs = %w(
+    rocksdb
+    rocksdb-shared
+    core_tools
+    ldb
+    project_secp256k1
+    bip_lock
+    rebuild_cache
+    edit_cache
+    fc
+    sst_dump
+    xgt_schema
+    db_fixture
+    dump_xgt_schema
+    get_dev_key
+    sign_digest
+    sign_transaction
+    js_operation_serializer
+    size_checker
+    xgtd
+    cat-parts
+    graphene_net
+    mira
+
+    appbase
+    appbase_example
+    chainbase
+
+    hash_table_bench
+    range_del_aggregator_bench
+    db_bench
+    cache_bench
+    filter_bench
+    memtablerep_bench
+    table_reader_bench
+
+    webserver_plugin
+    witness_plugin
+    wallet_by_key_plugin
+    wallet_history_plugin
+    wallet_history_rocksdb_plugin
+    block_api_plugin
+    chain_api_plugin
+    contract_api_plugin
+    database_api_plugin
+    test_api_plugin
+    transaction_api_plugin
+    wallet_by_key_api_plugin
+    wallet_history_api_plugin
+    chain_plugin
+    debug_node_plugin
+    json_rpc_plugin
+    p2p_plugin
+    transaction_status_plugin
+
+    gtest
+    test_sqrt
+    testharness
+    test_fixed_string
+    test_shared_mem
+    ecc_test
+    log_test
+    ecdsa_canon_test
+    saturation_test
+    chainbase_test
+    schema_test
+    chain_test
+    test_block_log
+
+    xgt_plugins
+    xgt_utilities
+    xgt_protocol
+    xgt_chain
+    xgtd
+  )
+
+  borked = %w(
+    bloom_test
+    plugin_test
+    inflation_model
+    serialize_set_properties
+    real128_test
+    all_tests
+    blind
+    hmac_test
+    thread_test
+    task_cancel_test
+  )
+
+  sh %(cd ../xgt-build && cmake --build . --target #{tlibs.join(" ")} -- -j#{thread_count})
 end
+
+task :bin_tests do
+  xrun = Proc.new() { |command| sh "cd ../xgt-build && ./programs/util/#{command}" }
+  xrun.call "schema_test"
+  xrun.call "test_block_log"
+  xrun.call "test_fixed_string"
+  xrun.call "test_shared_mem"
+  xrun.call "test_sqrt"
+end
+
+desc 'Strip the binary of unneeded symbols'
+task :strip do
+  sh %(cd ../xgt-build && strip --strip-unneeded ./programs/xgtd/xgtd)
+end
+
+task :build_release => [:clean, :configure, :make, :strip]
 
 desc 'Runs a basic example instance locally'
 task :run do
@@ -185,56 +293,6 @@ task :run do
   $stderr.puts(File.read("#{data_dir}/config.ini"))
 
   sh %(cd #{data_dir} && ../programs/xgtd/xgtd --data-dir=.)
-end
-
-namespace :tests do
-  def run_target(target, executable = "./programs/util/#{target}")
-    sh %(
-    mkdir -p ../xgt-build \
-      && cd ../xgt-build \
-      && cmake -DCMAKE_BUILD_TYPE=Debug \
-               -D CMAKE_CXX_COMPILER="ccache" \
-               -D CMAKE_CXX_COMPILER_ARG1="g++" \
-               -D CMAKE_C_COMPILER="ccache" \
-               -D CMAKE_C_COMPILER_ARG1="gcc" \
-               -DBUILD_XGT_TESTNET=ON \
-               --target #{target} \
-               ../xgt
-    )
-
-    count = ENV['THREAD_COUNT'].to_i
-    count = 2 if count == 0
-
-    puts %(cd ../xgt-build && cmake --build . --target #{target} -- -j#{count})
-    sh %(cd ../xgt-build && cmake --build . --target #{target} -- -j#{count})
-    puts "cd ../xgt-build && #{executable}"
-    sh "cd ../xgt-build && #{executable}"
-  end
-  
-  desc 'Build and run test_sqrt'
-  task :sqrt do
-    run_target('test_sqrt')
-  end
-
-  desc 'Build and run test_block_log'
-  task :block_log do
-    run_target('test_block_log')
-  end
-
-  desc 'Build and run schema_test'
-  task :schema_test do
-    run_target('schema_test')
-  end
-
-  desc 'Build and run witness_plugin'
-  task :witness_plugin do
-    run_target('witness_plugin')
-  end
-
-  desc 'Build and run chain_test'
-  task :chain_test do
-    run_target('chain_test', './tests/chain_test')
-  end
 end
 
 desc 'Get approximate C++ LoC'
