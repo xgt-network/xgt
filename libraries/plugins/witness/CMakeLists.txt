@@ -1,5 +1,6 @@
 file(GLOB HEADERS "include/xgt/plugins/witness/*.hpp")
 
+
 add_library( witness_plugin
              witness_plugin.cpp
              block_producer.cpp
@@ -13,9 +14,12 @@ target_link_libraries( witness_plugin
                        xgt_chain
                        xgt_utilities
                        graphene_time
+                       xgtvm
                      )
 target_include_directories( witness_plugin
-                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+                                   "${CMAKE_CURRENT_SOURCE_DIR}/../../vendor/xgtvm/libraries"
+                          )
 
 if( CLANG_TIDY_EXE )
    set_target_properties(
