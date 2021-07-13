@@ -99,6 +99,13 @@ end
 
 desc 'Runs a basic example instance locally'
 task :run do
+
+  plugins = %w(
+    chain p2p webserver witness database_api network_broadcast_api block_api
+    account_by_key account_history account_history_api condenser_api
+    transaction_status_api account_by_key_api rc_api machine_api
+  )
+
   data_dir = "../xgt-build/chain-data-#{instance_index}"
 
   if flush_testnet?
