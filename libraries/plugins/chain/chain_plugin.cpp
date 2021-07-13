@@ -37,7 +37,13 @@ namespace asio = boost::asio;
 
 struct generate_block_request
 {
-   generate_block_request( const fc::time_point_sec w, const wallet_name_type& wo, const fc::ecc::private_key& priv_key, const xgt::chain::signed_transaction& br, uint32_t s ) :
+   generate_block_request(
+      const fc::time_point_sec w,
+      const wallet_name_type& wo,
+      const fc::ecc::private_key& priv_key,
+      fc::optional< xgt::chain::signed_transaction > br,
+      uint32_t s
+   ) :
       when( w ),
       witness_recovery( wo ),
       block_signing_private_key( priv_key ),
@@ -47,7 +53,7 @@ struct generate_block_request
    const fc::time_point_sec when;
    const wallet_name_type& witness_recovery;
    const fc::ecc::private_key& block_signing_private_key;
-   const xgt::chain::signed_transaction block_reward;
+   fc::optional< xgt::chain::signed_transaction > block_reward;
    uint32_t skip;
    signed_block block;
 };
@@ -185,7 +191,7 @@ struct write_request_visitor
             req->when,
             req->witness_recovery,
             req->block_signing_private_key,
-	    req->block_reward,
+            fc::optional< xgt::chain::signed_transaction >(req->block_reward),
             req->skip
             );
 
@@ -736,7 +742,7 @@ xgt::chain::signed_block chain_plugin::generate_block(
    const fc::time_point_sec when,
    const wallet_name_type& witness_recovery,
    const fc::ecc::private_key& block_signing_private_key,
-   const xgt::chain::signed_transaction& block_reward,
+   fc::optional< xgt::chain::signed_transaction > block_reward,
    uint32_t skip )
 {
    generate_block_request req( when, witness_recovery, block_signing_private_key, block_reward, skip );

@@ -16,7 +16,13 @@
 
 namespace xgt { namespace plugins { namespace witness {
 
-chain::signed_block block_producer::generate_block(fc::time_point_sec when, const chain::wallet_name_type& witness_recovery, const fc::ecc::private_key& block_signing_private_key, const xgt::chain::signed_transaction& trx, uint32_t skip)
+chain::signed_block block_producer::generate_block(
+   fc::time_point_sec when,
+   const chain::wallet_name_type& witness_recovery,
+   const fc::ecc::private_key& block_signing_private_key,
+   fc::optional< xgt::chain::signed_transaction > trx,
+   uint32_t skip
+)
 {
    chain::signed_block result;
    try
@@ -44,7 +50,12 @@ chain::signed_block block_producer::generate_block(fc::time_point_sec when, cons
    return result;
 }
 
-chain::signed_block block_producer::_generate_block(fc::time_point_sec when, const chain::wallet_name_type& witness, const fc::ecc::private_key& block_signing_private_key, const xgt::chain::signed_transaction& block_reward)
+chain::signed_block block_producer::_generate_block(
+   fc::time_point_sec when,
+   const chain::wallet_name_type& witness,
+   const fc::ecc::private_key& block_signing_private_key,
+   fc::optional< xgt::chain::signed_transaction > block_reward
+)
 { try {
    uint32_t skip = _db.get_node_properties().skip_flags;
    // const auto& witness_obj = _db.get_witness( witness );
@@ -118,10 +129,11 @@ void block_producer::adjust_hardfork_version_vote(const chain::witness_object& w
 }
 
 void block_producer::apply_pending_transactions(
-        const chain::wallet_name_type& witness_recovery,
-        fc::time_point_sec when,
-        chain::signed_block& pending_block,
-	const xgt::chain::signed_transaction& block_reward )
+   const chain::wallet_name_type& witness_recovery,
+   fc::time_point_sec when,
+   chain::signed_block& pending_block,
+   fc::optional< xgt::chain::signed_transaction > block_reward
+)
 {
    size_t total_block_size = fc::raw::pack_size( pending_block );
    total_block_size += sizeof( uint32_t ); // Transaction vector length
@@ -158,9 +170,11 @@ void block_producer::apply_pending_transactions(
    uint64_t postponed_tx_count = 0;
 
 
-      // postpone transaction if it would make block too big
+   // postpone transaction if it would make block too big
 
-      uint64_t new_total_size = total_block_size + fc::raw::pack_size( block_reward );
+   if (block_reward)
+   {
+      uint64_t new_total_size = total_block_size + fc::raw::pack_size( *block_reward );
       if (new_total_size >= maximum_transaction_partition_size)
       {
           postponed_tx_count++;
@@ -170,11 +184,11 @@ void block_producer::apply_pending_transactions(
           try
           {
               auto temp_session = _db.start_undo_session();
-              _db.apply_transaction(block_reward, _db.get_node_properties().skip_flags);
+              _db.apply_transaction(*block_reward, _db.get_node_properties().skip_flags);
               temp_session.squash();
 
               total_block_size = new_total_size;
-              pending_block.transactions.push_back(block_reward);
+              pending_block.transactions.push_back(*block_reward);
           }
           catch (const fc::exception& e)
           {
@@ -183,6 +197,7 @@ void block_producer::apply_pending_transactions(
               //wlog( "The transaction was ${t}", ("t", tx) );
           }
       }
+   }
 
    // pop pending state (reset to head block state)
    for( const chain::signed_transaction& tx : _db._pending_tx )
