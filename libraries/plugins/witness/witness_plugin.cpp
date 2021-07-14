@@ -314,19 +314,37 @@ namespace detail {
                {
                   wlog("Mined block proceeding #${n} with timestamp ${t} at time ${c}", ("n", block_num)("t", head_block_time)("c", fc::time_point::now()));
                   fc::time_point now = fc::time_point::now();
-                  auto block = _chain_plugin.generate_block(
-                     now,
-                     miner,
-                     pk,
-                     fc::optional< protocol::signed_transaction >(trx),
-                     _production_skip_flags
-                  );
-                  _db.push_block(block, (uint32_t)0);
-                  appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
-
-                  wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
-                  // _db.push_transaction( trx );
-                  // appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
+                  uint32_t head_num = _db.head_block_num();
+                  if (head_num < 1814400)
+                  {
+                     auto block_reward = fc::optional< protocol::signed_transaction >();
+                     auto block = _chain_plugin.generate_block(
+                        now,
+                        miner,
+                        pk,
+                        block_reward,
+                        _production_skip_flags
+                     );
+                     _db.push_block(block, (uint32_t)0);
+                     appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
+                     wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
+                     _db.push_transaction( trx );
+                     appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
+                  }
+                  else
+                  {
+                     auto block_reward = fc::optional< protocol::signed_transaction >(trx);
+                     auto block = _chain_plugin.generate_block(
+                        now,
+                        miner,
+                        pk,
+                        block_reward,
+                        _production_skip_flags
+                     );
+                     _db.push_block(block, (uint32_t)0);
+                     appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
+                     wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
+                  }
 
                   ++this->_head_block_num;
                   wlog( "Broadcast succeeded!" );
@@ -401,11 +419,12 @@ namespace detail {
          {
             wlog("Generating genesis block...");
             auto pair = _private_keys.begin();
+            auto block_reward = fc::optional< xgt::chain::signed_transaction >();
             auto block = _chain_plugin.generate_block(
                now,
                XGT_INIT_MINER_NAME,
                pair->second,
-               fc::optional< xgt::chain::signed_transaction >(),
+               block_reward,
                _production_skip_flags
             );
             _db.push_block(block, (uint32_t)0);

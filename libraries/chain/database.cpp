@@ -1702,7 +1702,7 @@ void database::_apply_block( const signed_block& next_block )
    // process_required_actions( req_actions );
    // process_optional_actions( opt_actions );
 
-   // Ensure no duplicate mining rewards
+   /// Ensure no duplicate mining rewards
    /// @since 1.2.0 reject blocks with duplicate rewards
    /// @since 1.3.0 deprecated
    uint32_t head_num = head_block_num();
@@ -1753,7 +1753,7 @@ void database::_apply_block( const signed_block& next_block )
 
             const auto& work = o.work.get< sha2_pow >();
             FC_ASSERT( work.pow_summary < target_pow, "Insufficient work difficulty. Work: ${w}, Target: ${t}", ("w",work.pow_summary)("t", target_pow) );
-            FC_ASSERT( work.prev_block < next_block.previous, "Op prev block id ${m} doesn't match prev block id ${n} do not match.", ("m",work.prev_block)("n",next_block.previous) );
+            FC_ASSERT( work.prev_block == next_block.previous, "Op prev block id ${m} doesn't match prev block id ${n} do not match.", ("m",work.prev_block)("n",next_block.previous) );
             FC_ASSERT( next_block.witness == wallet_name, "Block miner name ${m} and op miner name (${n}) do not match.", ("m",next_block.witness)("n",wallet_name) );
             wallet_name_type worker_account = work.input.worker_account;
 
@@ -1765,7 +1765,7 @@ void database::_apply_block( const signed_block& next_block )
             double value = base_reward.amount.value * (1.0 / static_cast<double>(divisor));
             long price = static_cast<long>(floor(value));
             asset reward = asset(price, base_reward.symbol);
-            wlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
+            ilog("Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
 
             const wallet_object* w = find_account( worker_account );
             const witness_object* cur_witness = find_witness( worker_account );
@@ -1786,7 +1786,6 @@ void database::_apply_block( const signed_block& next_block )
          }
       }
    }
-
 
    // Adjust mining difficulty
    const uint32_t frequency = XGT_MINING_RECALC_EVERY_N_BLOCKS;

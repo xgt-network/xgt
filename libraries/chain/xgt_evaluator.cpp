@@ -920,9 +920,7 @@ void pow_evaluator::do_apply( const pow_operation& o )
 
    uint32_t head_num = db.head_block_num();
    if (head_num >= 181440)
-   {
       return;
-   }
 
    const auto& dgp = db.get_dynamic_global_properties();
    uint32_t target_pow = db.get_pow_summary_target();
