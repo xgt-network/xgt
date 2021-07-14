@@ -8,6 +8,17 @@ require 'rake/testtask'
 autoload :Xgt, 'xgt/ruby'
 autoload :Etc, 'etc'
 
+case RUBY_PLATFORM
+when /darwin/
+  unless ENV['NO_HOMEBREW']
+    `brew` rescue raise "This build requires homebrew presently. Set $NO_HOMEBREW and $CMAKE_PREFIX_PATH to manually bypass."
+  end
+  cmake_prefix_paths = (ENV["CMAKE_PREFIX_PATH"] || "").split(":")
+  ENV['CMAKE_PREFIX_PATH'] = (cmake_prefix_paths + ["/usr/local/opt/openssl", "/usr/local/opt/icu4c"]).join(":")
+end
+
+directory "../xgt-build"
+
 def mining_disabled?
   ENV['MINING_DISABLED']&.upcase == 'TRUE'
 end
@@ -88,51 +99,41 @@ end
 
 desc 'Removes build artifacts'
 task :clean do
-  sh 'rm -rf ../xgt-build'
+  rm_rf "../xgt-build"
+  rm_rf "../xgt-tests-build"
 end
 
 desc 'List available targets'
-task :targets do
-  sh %(
-    mkdir -p ../xgt-build \
-      && cd ../xgt-build \
-      && cmake --build .  --target help
-  )
+task :targets => "../xgt-build" do
+  sh %( cmake --build .  --target help )
 end
 
 desc 'Runs CMake to prepare the project'
-task :configure do
-  sh %(
-    mkdir -p ../xgt-build \
-      && cd ../xgt-build \
-      && cmake -D CMAKE_BUILD_TYPE=RelWithDebInfo \
-               ../xgt
-  )
+task :configure => "../xgt-build" do
+  sh %( cmake -G Ninja -B ../xgt-build -S . -D CMAKE_BUILD_TYPE=RelWithDebInfo )
 end
 
 task :test do
   sh %(
-    rm -rf ../xgt-tests-build \
-    && mkdir -p ../xgt-tests-build \
-    && cmake \
-      -D BUILD_XGT_TESTNET=ON \
-      -D BUILD_TESTING=TRUE \
-      -D COLOR_DIAGNOSTICS=ON \
-      -D CMAKE_BUILD_TYPE=Debug \
-      -G Ninja \
-      -B ../xgt-tests-build \
-      -S . \
-    && ninja -C ../xgt-tests-build chain_test
-  )
+    cmake
+      -D BUILD_XGT_TESTNET=ON
+      -D BUILD_TESTING=TRUE
+      -D COLOR_DIAGNOSTICS=ON
+      -D CMAKE_BUILD_TYPE=Debug
+      -G Ninja
+      -B ../xgt-tests-build
+      -S .
+  ) 
+  sh %( ninja -C ../xgt-tests-build chain_test )
 end
 
 desc 'Builds the project'
 task :make do
-  sh %(cd ../xgt-build && cmake --build . --target xgtd -- -j#{thread_count})
+  sh %( ninja -C ../xgt-build xgtd )
 end
 
 desc 'Build all targets'
-task :make_all do
+task :make_all => :configure do
 
   tlibs = %w(
     rocksdb
@@ -223,7 +224,7 @@ task :make_all do
     task_cancel_test
   )
 
-  sh %(cd ../xgt-build && cmake --build . --target #{tlibs.join(" ")} -- -j#{thread_count})
+  sh %( ninja -C ../xgt-build #{tlibs.join(" ")} )
 end
 
 task :bin_tests do
