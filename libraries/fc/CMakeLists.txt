@@ -333,7 +333,15 @@ target_include_directories(fc
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/bitcoin/src
   )
 
-target_link_libraries( fc PUBLIC ${ICU_LIBRARIES} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${Boost_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB})
+
+# Boost locale needs icudata
+find_package(ICU REQUIRED data)
+# FindICU doesn't seem to expose a library directory, which is a pain with homebrew unlinked installs. Use find_library to dig it back up.
+find_library(ICU_DATA_LIB NAMES icudata REQUIRED)
+get_filename_component(ICU_LIBRARY_DIRECTORY ${ICU_DATA_LIB} DIRECTORY)
+target_link_directories( fc PUBLIC ${ICU_LIBRARY_DIRECTORY} )
+
+target_link_libraries( fc PUBLIC ICU::data ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${Boost_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB})
 
 
 IF(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY MATCHES "\\.(a|lib)$")
