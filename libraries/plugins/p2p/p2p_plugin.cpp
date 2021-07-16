@@ -576,8 +576,6 @@ void p2p_plugin::plugin_initialize(const boost::program_options::variables_map& 
 {
    my = std::make_unique< detail::p2p_plugin_impl >( appbase::app().get_plugin< plugins::chain::chain_plugin >() );
 
-   my->ready_to_mine = false;
-
    if( options.count( "p2p-endpoint" ) )
       my->endpoint = fc::ip::endpoint::from_string( options.at( "p2p-endpoint" ).as< string >() );
 
@@ -631,6 +629,9 @@ void p2p_plugin::plugin_initialize(const boost::program_options::variables_map& 
          }
       }
    }
+
+   // If there are no needs, we will never become "in-sync", we're ready to mine.
+   my->ready_to_mine = my->seeds.empty();
 
    my->force_validate = options.at( "p2p-force-validate" ).as< bool >();
 
@@ -787,6 +788,8 @@ void p2p_plugin::set_block_production( bool producing_blocks )
 }
 
 bool p2p_plugin::ready_to_mine() {
+   if (my->ready_to_mine) return true;
+
    return my->ready_to_mine;
 }
 
