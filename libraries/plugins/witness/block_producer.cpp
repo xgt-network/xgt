@@ -16,7 +16,13 @@
 
 namespace xgt { namespace plugins { namespace witness {
 
-chain::signed_block block_producer::generate_block(fc::time_point_sec when, const chain::wallet_name_type& witness_recovery, const fc::ecc::private_key& block_signing_private_key, uint32_t skip)
+chain::signed_block block_producer::generate_block(
+   fc::time_point_sec when,
+   const chain::wallet_name_type& witness_recovery,
+   const fc::ecc::private_key& block_signing_private_key,
+   fc::optional< xgt::chain::signed_transaction > trx,
+   uint32_t skip
+)
 {
    chain::signed_block result;
    try
@@ -29,7 +35,7 @@ chain::signed_block block_producer::generate_block(fc::time_point_sec when, cons
          {
             try
             {
-               result = _generate_block( when, witness_recovery, block_signing_private_key );
+               result = _generate_block( when, witness_recovery, block_signing_private_key, trx );
             }
             FC_CAPTURE_AND_RETHROW( (witness_recovery) )
          });
@@ -44,7 +50,12 @@ chain::signed_block block_producer::generate_block(fc::time_point_sec when, cons
    return result;
 }
 
-chain::signed_block block_producer::_generate_block(fc::time_point_sec when, const chain::wallet_name_type& witness, const fc::ecc::private_key& block_signing_private_key)
+chain::signed_block block_producer::_generate_block(
+   fc::time_point_sec when,
+   const chain::wallet_name_type& witness,
+   const fc::ecc::private_key& block_signing_private_key,
+   fc::optional< xgt::chain::signed_transaction > block_reward
+)
 { try {
    uint32_t skip = _db.get_node_properties().skip_flags;
    // const auto& witness_obj = _db.get_witness( witness );
@@ -70,7 +81,7 @@ chain::signed_block block_producer::_generate_block(fc::time_point_sec when, con
 
    adjust_hardfork_version_vote( _db.get_witness( witness ), pending_block );
 
-   apply_pending_transactions( witness, when, pending_block );
+   apply_pending_transactions( witness, when, pending_block, block_reward );
 
    // We have temporarily broken the invariant that
    // _pending_tx_session is the result of applying _pending_tx, as
@@ -118,9 +129,11 @@ void block_producer::adjust_hardfork_version_vote(const chain::witness_object& w
 }
 
 void block_producer::apply_pending_transactions(
-        const chain::wallet_name_type& witness_recovery,
-        fc::time_point_sec when,
-        chain::signed_block& pending_block)
+   const chain::wallet_name_type& witness_recovery,
+   fc::time_point_sec when,
+   chain::signed_block& pending_block,
+   fc::optional< xgt::chain::signed_transaction > block_reward
+)
 {
    size_t total_block_size = fc::raw::pack_size( pending_block );
    total_block_size += sizeof( uint32_t ); // Transaction vector length
@@ -153,7 +166,39 @@ void block_producer::apply_pending_transactions(
              dgp.current_witness = witness_recovery;
           });
 
+
    uint64_t postponed_tx_count = 0;
+
+
+   // postpone transaction if it would make block too big
+
+   if (block_reward)
+   {
+      uint64_t new_total_size = total_block_size + fc::raw::pack_size( *block_reward );
+      if (new_total_size >= maximum_transaction_partition_size)
+      {
+          postponed_tx_count++;
+      }
+      else
+      {
+          try
+          {
+              auto temp_session = _db.start_undo_session();
+              _db.apply_transaction(*block_reward, _db.get_node_properties().skip_flags);
+              temp_session.squash();
+
+              total_block_size = new_total_size;
+              pending_block.transactions.push_back(*block_reward);
+          }
+          catch (const fc::exception& e)
+          {
+              // Do nothing, transaction will not be re-applied
+              //wlog( "Transaction was not processed while generating block due to ${e}", ("e", e) );
+              //wlog( "The transaction was ${t}", ("t", tx) );
+          }
+      }
+   }
+
    // pop pending state (reset to head block state)
    for( const chain::signed_transaction& tx : _db._pending_tx )
    {
