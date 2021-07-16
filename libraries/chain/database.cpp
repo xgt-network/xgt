@@ -1706,7 +1706,7 @@ void database::_apply_block( const signed_block& next_block )
    /// @since 1.2.0 reject blocks with duplicate rewards
    /// @since 1.3.0 deprecated
    uint32_t head_num = head_block_num();
-   if (head_num >= 907200 && head_num < 1814400)
+   if (head_num >= 907200 && head_num < 2116800)
    {
       std::set< wallet_name_type > rewarded_wallets;
       for( const auto& trx : next_block.transactions )
@@ -1731,7 +1731,7 @@ void database::_apply_block( const signed_block& next_block )
    }
 
    /// @since 1.3.0 reward the first miner, on the current ("next") block
-   if (head_num >= 1814400)
+   if (head_num >= 2116800)
    {
       optional< wallet_name_type > rewarded_miner;
       for( const auto& trx : next_block.transactions )

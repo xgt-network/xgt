@@ -315,7 +315,7 @@ namespace detail {
                   wlog("Mined block proceeding #${n} with timestamp ${t} at time ${c}", ("n", block_num)("t", head_block_time)("c", fc::time_point::now()));
                   fc::time_point now = fc::time_point::now();
                   uint32_t head_num = _db.head_block_num();
-                  if (head_num < 1814400)
+                  if (head_num < 2116800)
                   {
                      auto block_reward = fc::optional< protocol::signed_transaction >();
                      auto block = _chain_plugin.generate_block(
