@@ -26,6 +26,7 @@ RUN apt-get clean \
     ccache \
     libboost-all-dev \
     build-essential \
+    ninja-build \
     curl \
   && rm -rf /var/lib/apt/lists/* \
   && gem install --no-document bundler rake xgt-ruby
