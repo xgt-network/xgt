@@ -88,6 +88,7 @@ namespace detail {
       boost::signals2::connection   _post_apply_block_conn;
       boost::signals2::connection   _pre_apply_operation_conn;
       boost::signals2::connection   _post_apply_operation_conn;
+      boost::signals2::connection   _chain_sync;
 
       std::shared_ptr< witness::block_producer >                       _block_producer;
 
@@ -359,7 +360,7 @@ namespace detail {
    }
 
    void witness_plugin_impl::schedule_production_loop() {
-      if (!appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().ready_to_mine()) {
+      if (_db.head_block_num() != 0 && !appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().ready_to_mine()) {
          _timer.expires_from_now( boost::posix_time::milliseconds( 1000 ) );
          _timer.async_wait( boost::bind( &witness_plugin_impl::schedule_production_loop, this ) );
          return;
@@ -579,7 +580,10 @@ void witness_plugin::plugin_startup()
             new_chain_banner( d );
          my->_production_skip_flags |= chain::database::skip_undo_history_check;
 
-         my->schedule_production_loop();
+         plugins::chain::chain_plugin* chain = appbase::app().find_plugin< plugins::chain::chain_plugin >();
+         my->_chain_sync = chain->on_sync.connect( 0, [this]() {
+            my->schedule_production_loop();
+         });
       } else
          elog("No witnesses configured! Please add witness IDs and private keys to configuration.");
       }
