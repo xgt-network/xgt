@@ -919,7 +919,7 @@ void pow_evaluator::do_apply( const pow_operation& o )
    database& db = this->db();
 
    uint32_t head_num = db.head_block_num();
-   if (head_num >= 181440)
+   if (head_num >= 2116800)
       return;
 
    const auto& dgp = db.get_dynamic_global_properties();
