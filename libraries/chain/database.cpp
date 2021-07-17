@@ -834,7 +834,9 @@ bool database::_push_block(const signed_block& new_block)
 
    try
    {
-      ilog("Pushing new block #${n} from ${w} with timestamp ${t} at time ${c}", ("n", new_block.block_num())("w", new_block.witness)("t", new_block.timestamp)("c", fc::time_point::now()));
+      if (new_block.block_num() % 10000 == 0) {
+        ilog("Pushing new block #${n} from ${w} with timestamp ${t} at time ${c}", ("n", new_block.block_num())("w", new_block.witness)("t", new_block.timestamp)("c", fc::time_point::now()));
+      }
       auto session = start_undo_session();
       apply_block(new_block, skip);
       session.push();
@@ -1722,7 +1724,7 @@ void database::_apply_block( const signed_block& next_block )
             auto it = rewarded_wallets.find(wallet_name);
             if (it != rewarded_wallets.end())
             {
-               wlog("!!!!!! Wallet ${w} already rewarded, discarding duplicate operation!", ("w", wallet_name));
+               // Wallet already rewarded, discarding duplicate operation
                continue;
             }
             rewarded_wallets.insert(wallet_name);
