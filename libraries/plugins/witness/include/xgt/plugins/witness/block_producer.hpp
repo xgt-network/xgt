@@ -22,7 +22,9 @@ public:
       fc::time_point_sec when,
       const chain::wallet_name_type& witness_recovery,
       const fc::ecc::private_key& block_signing_private_key,
-      uint32_t skip = chain::database::skip_nothing);
+      fc::optional< xgt::chain::signed_transaction > trx,
+      uint32_t skip = chain::database::skip_nothing
+   );
 
 private:
    chain::database& _db;
@@ -30,14 +32,18 @@ private:
    chain::signed_block _generate_block(
       fc::time_point_sec when,
       const chain::wallet_name_type& witness_recovery,
-      const fc::ecc::private_key& block_signing_private_key);
+      const fc::ecc::private_key& block_signing_private_key,
+      fc::optional< xgt::chain::signed_transaction > block_reward
+   );
 
    void adjust_hardfork_version_vote( const chain::witness_object& witness, chain::signed_block& pending_block );
 
    void apply_pending_transactions(
       const chain::wallet_name_type& witness_recovery,
       fc::time_point_sec when,
-      chain::signed_block& pending_block);
+      chain::signed_block& pending_block,
+      fc::optional< xgt::chain::signed_transaction > trx
+   );
 };
 
 } } } // xgt::plugins::witness
