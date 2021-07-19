@@ -1,0 +1,1 @@
+cmd='/home/lnoroian/xgt/libraries/fc/vendor/secp256k1-zkp/configure;--prefix=/home/lnoroian/xgt/xgt-tests-build/libraries/fc/vendor/secp256k1-zkp;--with-bignum=no'
