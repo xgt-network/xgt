@@ -1,5 +1,4 @@
-#ifndef _FC_PRIORITY_HPP_
-#define  _FC_PRIORITY_HPP_
+#pragma once
 
 namespace fc {
   /**
@@ -19,4 +18,3 @@ namespace fc {
     int value;
   };
 }
-#endif //  _FC_PRIORITY_HPP_

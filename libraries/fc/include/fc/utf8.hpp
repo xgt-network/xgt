@@ -1,5 +1,4 @@
-#ifndef __UTF8_HPP
-#define __UTF8_HPP
+#pragma once
 
 #include <string>
 
@@ -25,6 +24,4 @@ namespace fc
    void encodeUtf8(const std::wstring& input, std::string* storage);
 
 } /// namespace fc
-
-#endif ///__UTF8_HPP
 

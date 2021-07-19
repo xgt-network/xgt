@@ -1,5 +1,4 @@
-#ifndef _FC_VECTOR_FWD_HPP_
-#define _FC_VECTOR_FWD_HPP_
+#pragma once
 #if 0
 #include <fc/vector.hpp>
 #else
@@ -8,4 +7,3 @@ namespace fc {
 };
 #endif
 
-#endif // _FC_VECTOR_FWD_HPP_

@@ -1,3 +1,4 @@
+#pragma once
 #include <xgt/protocol/types.hpp>
 
 namespace xgt { namespace chain {

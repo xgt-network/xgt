@@ -834,7 +834,9 @@ bool database::_push_block(const signed_block& new_block)
 
    try
    {
-      ilog("Pushing new block #${n} from ${w} with timestamp ${t} at time ${c}", ("n", new_block.block_num())("w", new_block.witness)("t", new_block.timestamp)("c", fc::time_point::now()));
+      if (new_block.block_num() % 10000 == 0) {
+        ilog("Pushing new block #${n} from ${w} with timestamp ${t} at time ${c}", ("n", new_block.block_num())("w", new_block.witness)("t", new_block.timestamp)("c", fc::time_point::now()));
+      }
       auto session = start_undo_session();
       apply_block(new_block, skip);
       session.push();
@@ -1403,7 +1405,7 @@ void database::init_genesis( uint64_t init_supply )
          auth.money.weight_threshold = 0;
       });
 
-      ilog( "!!!!!! Preparing to create genesis account..." );
+      ilog( "Preparing to create genesis account..." );
       create< dynamic_global_property_object >( [&]( dynamic_global_property_object& p )
       {
          p.mining_target = fc::sha256(XGT_MINING_TARGET_START);
@@ -1560,9 +1562,6 @@ void database::check_free_memory( bool force_print, uint32_t current_block_num )
       {
          uint32_t free_mb = uint32_t( free_mem / (1024*1024) );
 
-   #ifdef IS_TEST_NET
-      if( !disable_low_mem_warning )
-   #endif
          if( free_mb <= 100 && head_block_num() % 10 == 0 )
             elog( "Free memory is now ${n}M. Increase shared file size immediately!" , ("n", free_mb) );
       }
@@ -1705,10 +1704,11 @@ void database::_apply_block( const signed_block& next_block )
    // process_required_actions( req_actions );
    // process_optional_actions( opt_actions );
 
-   // Ensure no duplicate mining rewards
-   /// @since 1.1.2 reject blocks with duplicate rewards
+   /// Ensure no duplicate mining rewards
+   /// @since 1.2.0 reject blocks with duplicate rewards
+   /// @since 1.3.0 deprecated
    uint32_t head_num = head_block_num();
-   if (head_num >= 907200)
+   if (head_num >= 907200 && head_num < 2116800)
    {
       std::set< wallet_name_type > rewarded_wallets;
       for( const auto& trx : next_block.transactions )
@@ -1724,10 +1724,67 @@ void database::_apply_block( const signed_block& next_block )
             auto it = rewarded_wallets.find(wallet_name);
             if (it != rewarded_wallets.end())
             {
-               wlog("!!!!!! Wallet ${w} already rewarded, discarding duplicate operation!", ("w", wallet_name));
+               // Wallet already rewarded, discarding duplicate operation
                continue;
             }
             rewarded_wallets.insert(wallet_name);
+         }
+      }
+   }
+
+   /// @since 1.3.0 reward the first miner, on the current ("next") block
+   if (head_num >= 2116800)
+   {
+      optional< wallet_name_type > rewarded_miner;
+      for( const auto& trx : next_block.transactions )
+      {
+         if ( rewarded_miner )
+            break;
+         const auto& operations = trx.operations;
+         for (auto& op : operations)
+         {
+            if ( rewarded_miner )
+               break;
+            if ( !is_pow_operation(op) )
+               continue;
+            const pow_operation& o = op.template get< pow_operation >();
+            const wallet_name_type& wallet_name = o.get_worker_name();
+
+            const auto& dgp = get_dynamic_global_properties();
+            uint32_t target_pow = get_pow_summary_target();
+
+            const auto& work = o.work.get< sha2_pow >();
+            FC_ASSERT( work.pow_summary < target_pow, "Insufficient work difficulty. Work: ${w}, Target: ${t}", ("w",work.pow_summary)("t", target_pow) );
+            FC_ASSERT( work.prev_block == next_block.previous, "Op prev block id ${m} doesn't match prev block id ${n} do not match.", ("m",work.prev_block)("n",next_block.previous) );
+            FC_ASSERT( next_block.witness == wallet_name, "Block miner name ${m} and op miner name (${n}) do not match.", ("m",next_block.witness)("n",wallet_name) );
+            wallet_name_type worker_account = work.input.worker_account;
+
+            // TODO: Check for 0
+            int halvings = (XGT_STARTING_OFFSET + dgp.head_block_number) / XGT_MINING_REWARD_HALVING_INTERVAL;
+            // TODO: Assert no overflow
+            long divisor = 1L << halvings;
+            asset base_reward = XGT_MINING_REWARD;
+            double value = base_reward.amount.value * (1.0 / static_cast<double>(divisor));
+            long price = static_cast<long>(floor(value));
+            asset reward = asset(price, base_reward.symbol);
+            ilog("Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
+
+            const wallet_object* w = find_account( worker_account );
+            const witness_object* cur_witness = find_witness( worker_account );
+            if (w == nullptr)
+            {
+               wlog( "Wallet does not exist for worker account ${w}", ("w",worker_account) );
+               throw operation_validate_exception();
+            }
+            if (cur_witness == nullptr)
+            {
+               wlog( "Witness does not exist for worker account ${w}", ("w",worker_account) );
+               throw operation_validate_exception();
+            }
+
+            adjust_balance(worker_account, reward);
+
+            rewarded_miner = optional< wallet_name_type >(wallet_name);
          }
       }
    }

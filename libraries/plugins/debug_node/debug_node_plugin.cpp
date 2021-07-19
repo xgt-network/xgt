@@ -218,6 +218,7 @@ void debug_node_plugin::debug_generate_blocks(
       return;
    }
 
+   // TODO possibly remove -- schedule related
    chain::database& db = database();
    witness::block_producer bp( db );
    uint32_t slot = args.miss_blocks+1, produced = 0;
@@ -238,6 +239,7 @@ void debug_node_plugin::debug_generate_blocks(
          if( args.edit_if_needed )
          {
             if( logging ) wlog( "Modified key for witness ${w}", ("w", scheduled_witness_name) );
+            /*
             debug_update( [=]( chain::database& db )
             {
                db.modify( db.get_witness( scheduled_witness_name ), [&]( chain::witness_object& w )
@@ -245,12 +247,17 @@ void debug_node_plugin::debug_generate_blocks(
                   w.signing_key = debug_public_key;
                });
             }, args.skip );
+            */
          }
          else
             break;
       }
 
-      bp.generate_block( scheduled_time, scheduled_witness_name, *debug_private_key, args.skip );
+      // For expediency, this is just a hacked together block; a less-fake version would be a 
+      // PoW operation.
+      protocol::signed_transaction fake_block_reward;
+
+      bp.generate_block( scheduled_time, scheduled_witness_name, *debug_private_key, fake_block_reward, args.skip );
       ++produced;
       slot = new_slot;
    }

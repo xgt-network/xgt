@@ -278,6 +278,7 @@ namespace graphene { namespace net {
     void message_oriented_connection_impl::close_connection()
     {
       VERIFY_CORRECT_THREAD();
+      _sock.flush();
       _sock.close();
     }
 
