@@ -41,10 +41,7 @@ adjure_return machine_api_impl::adjure( const adjure_args& args )const
    // }
    // std::cout << std::endl;
 
-   ctx = {}
-   msg = {}
-
-   machine m(ctx, args.bytecode, msg);
+   machine m(args.bytecode);
    // m.register_listener(std::move(std::unique_ptr<listener>(new stub_listener())));
    m.register_instruction(noop_opcode, std::move(std::unique_ptr<instruction>(new noop_instruction())));
    m.register_instruction(push_opcode, std::move(std::unique_ptr<instruction>(new push_instruction())));
