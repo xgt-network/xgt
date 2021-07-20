@@ -7,8 +7,6 @@ add_library( xgt_chain
              database.cpp
              index.cpp
 
-             machine.cpp
-
              xtt_evaluator.cpp
 
              xtt_objects/nai_pool.cpp

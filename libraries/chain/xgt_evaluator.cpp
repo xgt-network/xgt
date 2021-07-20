@@ -9,7 +9,6 @@
 #include <xgt/chain/contract_objects.hpp>
 #include <xgt/chain/block_summary_object.hpp>
 #include <xgt/chain/xtt_objects/account_balance_object.hpp>
-#include <xgt/chain/machine.hpp>
 
 #include <xgt/chain/util/energybar.hpp>
 

@@ -25,6 +25,8 @@
 #include <limits>
 #include <random>
 
+#include <machine.hpp>
+
 
 #define DISTANCE_CALC_PRECISION (10000)
 #define BLOCK_PRODUCING_LAG_TIME (750)
@@ -517,6 +519,9 @@ void witness_plugin::set_program_options(
 
 void witness_plugin::plugin_initialize(const boost::program_options::variables_map& options)
 { try {
+   machine::message msg = {};
+   ilog( "machine::message msg.flags ${f}", ("f",msg.flags) );
+
    ilog( "Initializing witness plugin" );
    my = std::make_unique< detail::witness_plugin_impl >( appbase::app().get_io_service() );
 
