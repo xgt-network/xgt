@@ -372,17 +372,13 @@ namespace detail {
             this->_head_block_num = head_block_num;
             break;
          }
-         if (this->_is_braking) {
-            break;
-         }
-      }
-      if (!this->_is_braking)
-      {
-         schedule_production_loop();
       }
    }
 
    void witness_plugin_impl::schedule_production_loop() {
+      if (this->_is_braking) {
+         return;
+      }
       if (!appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().ready_to_mine()) {
          _timer.expires_from_now( boost::posix_time::milliseconds( 1000 ) );
          _timer.async_wait( boost::bind( &witness_plugin_impl::schedule_production_loop, this ) );
@@ -394,8 +390,6 @@ namespace detail {
 
    void witness_plugin_impl::block_production_loop()
    {
-      _is_braking = false;
-
       fc::time_point now = fc::time_point::now();
 
       if( now < fc::time_point(XGT_GENESIS_TIME) )
@@ -461,6 +455,7 @@ namespace detail {
       {
          auto pair = _private_keys.begin();
          start_mining(pair->first, pair->second, *name_ptr);
+         schedule_production_loop();
       }
       catch( const fc::canceled_exception& )
       {
