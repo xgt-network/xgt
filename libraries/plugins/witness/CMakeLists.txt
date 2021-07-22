@@ -13,7 +13,6 @@ target_link_libraries( witness_plugin
                        appbase
                        xgt_chain
                        xgt_utilities
-                       graphene_time
                        xgtvm
                      )
 target_include_directories( witness_plugin

@@ -5,8 +5,8 @@ add_library( machine_api_plugin
              ${HEADERS}
            )
 
-target_link_libraries( machine_api_plugin chain_plugin json_rpc_plugin )
-target_include_directories( machine_api_plugin PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+target_link_libraries( machine_api_plugin chain_plugin json_rpc_plugin xgtvm )
+target_include_directories( machine_api_plugin PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_SOURCE_DIR}/../../../vendor/xgtvm/libraries" )
 
 if( CLANG_TIDY_EXE )
    set_target_properties(

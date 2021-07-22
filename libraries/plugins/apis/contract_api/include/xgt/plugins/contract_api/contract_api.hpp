@@ -36,6 +36,19 @@ struct list_owner_contracts_return
 };
 
 
+struct invoke_args
+{
+   protocol::wallet_name_type owner;
+   vector< uint8_t > code;
+};
+
+
+struct invoke_return
+{
+   protocol::wallet_name_type owner;
+}; 
+
+
 class contract_api
 {
    public:
@@ -44,7 +57,8 @@ class contract_api
 
       DECLARE_API(
          (get_contract)
-         (list_owner_contracts) )
+         (list_owner_contracts)
+         (invoke) )
    private:
       std::unique_ptr< detail::contract_api_impl > my;
 };
@@ -55,3 +69,5 @@ FC_REFLECT( xgt::plugins::contract::get_contract_args, (example) )
 FC_REFLECT( xgt::plugins::contract::get_contract_return, (example) )
 FC_REFLECT( xgt::plugins::contract::list_owner_contracts_args, (owner) )
 FC_REFLECT( xgt::plugins::contract::list_owner_contracts_return, (contracts) )
+FC_REFLECT( xgt::plugins::contract::invoke_args, (owner) (code) )
+FC_REFLECT( xgt::plugins::contract::invoke_return, (owner) )

@@ -536,6 +536,26 @@ namespace :contracts do
     $stderr.puts(%(Received response contract... #{response}))
   end
 
+  desc 'Invoke a sample contract'
+  task :invoke do
+    txn = {
+      'extensions' => [],
+      'operations' => [
+        {
+          'type' => 'contract_invoke_operation',
+          'value' => {
+            'owner' => wallet,
+            'code' => [0x00],
+          }
+        }
+      ]
+    }
+    signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
+    $stderr.puts(%(Registering contract... #{signed.to_json}))
+    response = rpc.call('transaction_api.broadcast_transaction', [signed])
+    $stderr.puts(%(Received response contract... #{response}))
+  end
+
   desc 'View sample contracts'
   task :list do
     response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}

@@ -21,7 +21,8 @@ class contract_api_impl
 
       DECLARE_API_IMPL(
          (get_contract)
-         (list_owner_contracts) )
+         (list_owner_contracts)
+         (invoke) )
 
       chain::database& _db;
 };
@@ -56,6 +57,49 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
    return result;
 }
 
+machine::chain_adapter make_chain_adapter()
+{
+  std::function< uint64_t(std::string) > get_balance = [](std::string wallet_name) -> uint64_t
+  {
+    return 0;
+  };
+
+  machine::chain_adapter adapter = {
+    get_balance
+  };
+
+  return adapter;
+}
+
+DEFINE_API_IMPL( contract_api_impl, invoke )
+{
+   // TODO: Temporary
+   machine::message msg = {};
+   ilog( "machine::message msg.flags ${f}", ("f",msg.flags) );
+
+   machine::context ctx = {true, 0x5c477758};
+   machine::chain_adapter adapter = make_chain_adapter();
+   machine::machine m(ctx, args.code, msg, adapter);
+   m.print_stack();
+
+   std::string line;
+   while (m.is_running())
+   {
+     std::cerr << "step\n";
+     m.step();
+     // Print out any logging that was generated
+     while ( std::getline(m.get_logger(), line) )
+       std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
+   }
+   while ( std::getline(m.get_logger(), line) )
+     std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
+   std::cout << m.to_json() << std::endl;
+
+   invoke_return result;
+
+   return result;
+}
+
 } // detail
 
 contract_api::contract_api(): my( new detail::contract_api_impl() )
@@ -68,6 +112,7 @@ contract_api::~contract_api() {}
 DEFINE_LOCKLESS_APIS( contract_api,
    (get_contract)
    (list_owner_contracts)
+   (invoke)
 )
 
 } } } //xgt::plugins::contract

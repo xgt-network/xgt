@@ -9,6 +9,7 @@
 
 // TODO: Remove this later
 #include "iomanip"
+#include <machine.hpp>
 
 namespace xgt { namespace plugins { namespace machine {
 
@@ -41,14 +42,14 @@ adjure_return machine_api_impl::adjure( const adjure_args& args )const
    // }
    // std::cout << std::endl;
 
-   machine m(args.bytecode);
+   // machine::machine m(args.bytecode);
    // m.register_listener(std::move(std::unique_ptr<listener>(new stub_listener())));
-   m.register_instruction(noop_opcode, std::move(std::unique_ptr<instruction>(new noop_instruction())));
-   m.register_instruction(push_opcode, std::move(std::unique_ptr<instruction>(new push_instruction())));
-   m.register_instruction(add_opcode, std::move(std::unique_ptr<instruction>(new add_instruction())));
-   m.register_instruction(display_opcode, std::move(std::unique_ptr<instruction>(new display_instruction())));
-   while (m.is_running())
-      m.step();
+   // m.register_instruction(noop_opcode, std::move(std::unique_ptr<instruction>(new noop_instruction())));
+   // m.register_instruction(push_opcode, std::move(std::unique_ptr<instruction>(new push_instruction())));
+   // m.register_instruction(add_opcode, std::move(std::unique_ptr<instruction>(new add_instruction())));
+   // m.register_instruction(display_opcode, std::move(std::unique_ptr<instruction>(new display_instruction())));
+   // while (m.is_running())
+   //    m.step();
 
    final_result.return_code = 0;
    return final_result;
