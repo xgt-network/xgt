@@ -16,7 +16,7 @@ namespace machine
 typedef uint8_t word;
 typedef boost::multiprecision::uint256_t big_word;
 typedef boost::multiprecision::int256_t signed_big_word;
-typedef boost::variant<big_word> stack_variant;
+typedef boost::variant<big_word, std::string> stack_variant;
 
 enum opcode
 {
@@ -236,6 +236,11 @@ struct context
    }
  */
 
+struct chain_adapter
+{
+  std::function< uint64_t(std::string) > get_balance;
+};
+
 class machine
 {
   size_t pc = 0;
@@ -248,23 +253,26 @@ class machine
   std::vector<word> return_value;
   boost::optional<std::string> error_message;
   std::stringstream logger;
+  chain_adapter adapter;
 
   void push_word(stack_variant v);
   big_word pop_word();
   void log(std::string output);
 
   public:
-  machine(context ctx, std::vector<word> code, message msg)
-    : ctx(ctx), code(code), msg(msg)
+  machine(context ctx, std::vector<word> code, message msg, chain_adapter adapter)
+    : ctx(ctx), code(code), msg(msg), adapter(adapter)
   {
   }
 
   big_word peek_word();
+  void push_string(std::string s);
   void print_stack();
   size_t stack_length();
   void step();
   bool is_running();
   machine_state get_state();
+  boost::optional<std::string> get_error_message();
   std::stringstream& get_logger();
   std::string to_json();
 

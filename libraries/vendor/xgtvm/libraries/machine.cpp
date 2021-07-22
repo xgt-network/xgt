@@ -181,6 +181,11 @@ namespace machine
     }
   }
 
+  void machine::push_string(std::string s)
+  {
+    stack.push_front(s);
+  }
+
   // TODO: Make better
   // TODO: Return string instead?
   void machine::print_stack()
@@ -221,6 +226,7 @@ namespace machine
     big_word va, vb, vc, vd, ve, vf, vg, vh, vi, vj, vk, vl, vm, vn, vo, vp, vq;
     stack_variant sv;
     signed_big_word sa, sb, sc;
+    std::string* ss;
     switch (op)
     {
       case stop_opcode:
@@ -439,8 +445,22 @@ namespace machine
         push_word( msg.destination );
         break;
       case balance_opcode:
+        std::cout << 1 << std::endl;
         logger << "op balance" << std::endl;
-        // TODO
+        {
+          sv = stack.front(); // wallet_name
+          stack.pop_front();
+          ss = boost::get<std::string>(&sv);
+          if (ss)
+          {
+            push_word( adapter.get_balance(*ss) );
+          }
+          else
+          {
+            state = machine_state::error;
+            error_message.emplace("Balance operation type error");
+          }
+        }
         break;
       case origin_opcode:
         logger << "op origin" << std::endl;
@@ -2456,6 +2476,11 @@ namespace machine
   machine_state machine::get_state()
   {
     return state;
+  }
+
+  boost::optional<std::string> machine::get_error_message()
+  {
+    return error_message;
   }
 
   std::stringstream& machine::get_logger()
