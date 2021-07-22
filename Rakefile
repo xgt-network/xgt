@@ -416,10 +416,12 @@ namespace :machine do
   dest_dir = File.join(File.dirname(__FILE__), %(libraries/vendor/xgtvm))
   dest_git_dir = File.join(dest_dir, '.git')
 
+  desc 'Remove machine-related files'
   task :clean do
     FileUtils.rm_r(dest_dir) if Dir.exist?(dest_dir)
   end
 
+  desc 'Vendor machine-related files'
   task :vendor => [:clean] do
     raise %(Directory #{src_dir} doesn't exist!) unless Dir.exist?(src_dir)
     FileUtils.cp_r(src_dir, dest_dir)

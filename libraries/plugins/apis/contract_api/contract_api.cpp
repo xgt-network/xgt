@@ -7,6 +7,8 @@
 #include <xgt/chain/database.hpp>
 #include <xgt/chain/index.hpp>
 
+#include <machine.hpp>
+
 namespace xgt { namespace plugins { namespace contract {
 
 namespace detail {
@@ -26,6 +28,10 @@ class contract_api_impl
 
 DEFINE_API_IMPL( contract_api_impl, get_contract )
 {
+   // TODO: Temporary
+   machine::message msg = {};
+   ilog( "machine::message msg.flags ${f}", ("f",msg.flags) );
+
    get_contract_return result;
    result.example = true;
    return result;

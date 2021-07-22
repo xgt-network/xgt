@@ -52,6 +52,20 @@ static struct option long_options[] = {
   {0, 0, 0, 0}
 };
 
+machine::chain_adapter make_chain_adapter()
+{
+  std::function< uint64_t(std::string) > get_balance = [](std::string wallet_name) -> uint64_t
+  {
+    return 0;
+  };
+
+  machine::chain_adapter adapter = {
+    get_balance
+  };
+
+  return adapter;
+}
+
 int main(int argc, char** argv)
 {
   int c;
@@ -88,7 +102,8 @@ int main(int argc, char** argv)
     machine::context ctx = {true, 0x5c477758};
     machine::message msg = {};
     std::vector<machine::word> code = process_eval(input);
-    machine::machine m(ctx, code, msg);
+    machine::chain_adapter adapter = make_chain_adapter();
+    machine::machine m(ctx, code, msg, adapter);
     std::string line;
     while (m.is_running())
     {
