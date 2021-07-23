@@ -129,7 +129,7 @@ end
 
 desc 'Builds the project'
 task :make do
-  sh %( ninja -C ../xgt-build xgtd )
+  sh %( ninja -C ../xgt-build xgtd -j#{thread_count} )
 end
 
 desc 'Build all targets'
