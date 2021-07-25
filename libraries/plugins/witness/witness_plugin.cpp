@@ -1,3 +1,4 @@
+#include "fc/time.hpp"
 #include <xgt/chain/xgt_fwd.hpp>
 
 #include <xgt/plugins/witness/witness_plugin.hpp>
@@ -47,7 +48,7 @@ void new_chain_banner( const chain::database& db )
       "********************************\n"
       "*                              *\n"
       "*   ------- NEW CHAIN ------   *\n"
-      "*   -   Welcome to Xgt!  -   *\n"
+      "*   -   Welcome to Xgt!    -   *\n"
       "*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
@@ -93,12 +94,7 @@ namespace detail {
 
       bool _is_braking = false;
       std::vector<std::shared_ptr<fc::thread>> _threads;
-      std::map<chain::public_key_type, fc::ecc::private_key> _mining_private_keys;
       xgt::chain::legacy_chain_properties _miner_prop_vote;
-      uint64_t _head_block_num = 0;
-      block_id_type _head_block_id = block_id_type();
-      uint64_t _total_hashes = 0;
-      fc::time_point _hash_start_time;
    };
 
    void check_memo( const string& memo, const chain::wallet_object& account, const account_authority_object& auth )
@@ -266,8 +262,10 @@ namespace detail {
       uint32_t target = _db.get_pow_summary_target();
       wlog( "Miner has started work ${o} at block ${b} target ${t}", ("o", miner)("b", block_num)("t", target));
 
-      _total_hashes = 0;
-      _hash_start_time = fc::time_point::now();
+      uint64_t total_hashes = 0;
+      fc::time_point hash_start_time = fc::time_point::now();
+      fc::time_point_sec last_report_time = hash_start_time;
+
       const auto& acct_idx  = _db.get_index< chain::wallet_index >().indices().get< chain::by_name >();
       auto acct_it = acct_idx.find( miner );
       bool has_account = (acct_it != acct_idx.end());
@@ -288,7 +286,7 @@ namespace detail {
          }
 
          for(auto f : tasks) {
-            this->_total_hashes += f.wait();
+            total_hashes += f.wait();
          }
 
          for(auto& work : works) {
@@ -349,7 +347,6 @@ namespace detail {
                      wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
                   }
 
-                  ++this->_head_block_num;
                   wlog( "Broadcast succeeded!" );
                }
                catch( const fc::exception& e )
@@ -361,17 +358,18 @@ namespace detail {
             }
          }
 
-         if (this->_total_hashes % 1000000 == 0) {
-            uint64_t micros = (fc::time_point::now() - _hash_start_time).count();
-            uint64_t hashrate = (this->_total_hashes * 1000000) / micros;
+         fc::time_point now = fc::time_point::now();
+         if (last_report_time + 3 < now) {
+            last_report_time = now;
+            uint64_t micros = (now - hash_start_time).count();
+            uint64_t hashrate = (total_hashes * 1000000) / micros;
             wlog("Miner working at block ${b} rate: ${r}H/s", ("b", block_num)("r",hashrate));
          }
 
          auto head_block_num = _db.head_block_num();
-         if( this->_head_block_num != head_block_num )
+         if( block_num != head_block_num )
          {
-            wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("o",this->_head_block_num)("p",head_block_num) );
-            this->_head_block_num = head_block_num;
+            wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("o",block_num)("p",head_block_num) );
             break;
          }
       }
@@ -424,7 +422,6 @@ namespace detail {
                _production_skip_flags
             );
             _db.push_block(block, (uint32_t)0);
-            this->_head_block_num++;
          }
          schedule_production_loop();
          return;
