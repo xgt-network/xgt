@@ -305,8 +305,11 @@ namespace detail {
                trx.operations.push_back( op );
                trx.ref_block_num = block_num;
                trx.ref_block_prefix = work->input.prev_block._hash[1];
-               fc::time_point_sec now_sec = fc::time_point::now();
-               trx.set_expiration( now_sec + XGT_MAX_TIME_UNTIL_EXPIRATION );
+
+               // Subtle: this must not exceed head_block_time + XGT_MAX_TIME_UNTIL_EXPIRATION or it will be
+               // rejected by the expiration validation.
+               trx.set_expiration( head_block_time + XGT_MAX_TIME_UNTIL_EXPIRATION );
+
                trx.sign( pk, XGT_CHAIN_ID, fc::ecc::fc_canonical );
 
                wlog( "Broadcasting..." );
@@ -354,7 +357,6 @@ namespace detail {
                   wlog( "Broadcast failed!" );
                   wdump((e.to_detail_string()));
                }
-               schedule_production_loop();
                return;
             }
          }
@@ -423,8 +425,6 @@ namespace detail {
             );
             _db.push_block(block, (uint32_t)0);
             this->_head_block_num++;
-            schedule_production_loop();
-            return;
          }
          schedule_production_loop();
          return;
