@@ -63,6 +63,7 @@ namespace graphene { namespace net {
 
     public:
       void open(const fc::path& databaseFilename);
+      void save();
       void close();
       void clear();
       void erase(const fc::ip::endpoint& endpointToErase);
@@ -113,8 +114,7 @@ namespace graphene { namespace net {
       }
     }
 
-    void peer_database_impl::close()
-    {
+    void peer_database_impl::save() {
       std::vector<potential_peer_record> peer_records;
       peer_records.reserve(_potential_peer_set.size());
       std::copy(_potential_peer_set.begin(), _potential_peer_set.end(), std::back_inserter(peer_records));
@@ -131,7 +131,11 @@ namespace graphene { namespace net {
         elog("error saving peer database to file ${peer_database_filename}", 
              ("peer_database_filename", _peer_database_filename));
       }
-      _potential_peer_set.clear();
+    }
+
+    void peer_database_impl::close()
+    {
+      save();
     }
 
     void peer_database_impl::clear()
@@ -144,6 +148,7 @@ namespace graphene { namespace net {
       auto iter = _potential_peer_set.get<endpoint_index>().find(endpointToErase);
       if (iter != _potential_peer_set.get<endpoint_index>().end())
         _potential_peer_set.get<endpoint_index>().erase(iter);
+      save();
     }
 
     void peer_database_impl::update_entry(const potential_peer_record& updatedRecord)
@@ -153,6 +158,7 @@ namespace graphene { namespace net {
         _potential_peer_set.get<endpoint_index>().modify(iter, [&updatedRecord](potential_peer_record& record) { record = updatedRecord; });
       else
         _potential_peer_set.get<endpoint_index>().insert(updatedRecord);
+      save();
     }
 
     potential_peer_record peer_database_impl::lookup_or_create_entry_for_endpoint(const fc::ip::endpoint& endpointToLookup)
