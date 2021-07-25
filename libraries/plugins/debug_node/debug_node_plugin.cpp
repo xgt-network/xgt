@@ -253,7 +253,11 @@ void debug_node_plugin::debug_generate_blocks(
             break;
       }
 
-      bp.generate_block( scheduled_time, scheduled_witness_name, *debug_private_key, args.skip );
+      // For expediency, this is just a hacked together block; a less-fake version would be a 
+      // PoW operation.
+      protocol::signed_transaction fake_block_reward;
+
+      bp.generate_block( scheduled_time, scheduled_witness_name, *debug_private_key, fake_block_reward, args.skip );
       ++produced;
       slot = new_slot;
    }
