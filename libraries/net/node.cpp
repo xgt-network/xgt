@@ -31,6 +31,7 @@
 #include <iostream>
 #include <algorithm>
 #include <tuple>
+#include <vector>
 #include <boost/tuple/tuple.hpp>
 #include <boost/circular_buffer.hpp>
 
@@ -2216,12 +2217,23 @@ namespace graphene { namespace net {
     void node_impl::on_address_message(peer_connection* originating_peer, const address_message& address_message_received)
     {
       VERIFY_CORRECT_THREAD();
+
+      std::vector<address_info> public_addresses;
+      for (const address_info& info : address_message_received.addresses) {
+        if (info.remote_endpoint.get_address().is_public_address()) {
+          public_addresses.push_back(info);
+        } else {
+          wlog("Peer ${p} sent us non-public address: ${a}", ("p", originating_peer->get_remote_endpoint()->get_address())("a", info.remote_endpoint.get_address()));
+        }
+      }
+
       dlog("Received an address message containing ${size} addresses", ("size", address_message_received.addresses.size()));
       for (const address_info& address : address_message_received.addresses)
       {
         dlog("    ${endpoint} last seen ${time}", ("endpoint", address.remote_endpoint)("time", address.last_seen_time));
       }
-      std::vector<graphene::net::address_info> updated_addresses = address_message_received.addresses;
+
+      std::vector<address_info> updated_addresses = public_addresses;
       for (address_info& address : updated_addresses)
         address.last_seen_time = fc::time_point_sec(fc::time_point::now());
       bool new_information_received = merge_address_info_with_potential_peer_database(updated_addresses);
