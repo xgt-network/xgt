@@ -32,8 +32,12 @@ def thread_count
   (ENV['THREAD_COUNT'] || Etc.nprocessors).to_i
 end
 
-def flush_testnet?
-  ENV['FLUSH_TESTNET']&.upcase == 'TRUE'
+def flush_chainstate?
+  if ENV['FLUSH_TESTNET']
+    STDERR.puts("FLUSH_TESTNET is deprecated, please use FLUSH_CHAINSTATE instead.")
+  end
+  ENV['FLUSH_CHAINSTATE']&.upcase == 'TRUE' || 
+    ENV['FLUSH_TESTNET']&.upcase == 'TRUE'
 end
 
 def mining_error(message)
@@ -129,7 +133,7 @@ end
 
 desc 'Builds the project'
 task :make do
-  sh %( ninja -C ../xgt-build xgtd )
+  sh %( ninja -C ../xgt-build xgtd -j#{thread_count})
 end
 
 desc 'Build all targets'
@@ -245,9 +249,9 @@ task :build_release => [:clean, :configure, :make, :strip]
 
 desc 'Runs a basic example instance locally'
 task :run do
-  data_dir = "../xgt-build/chain-data-#{instance_index}"
+  data_dir = "../xgt-chainstate-#{instance_index}"
 
-  if flush_testnet?
+  if flush_chainstate?
     sh "rm -rf #{data_dir}"
   end
   sh "mkdir -p #{data_dir}"
