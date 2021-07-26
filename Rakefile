@@ -297,7 +297,7 @@ task :run do
   end
   $stderr.puts(File.read("#{data_dir}/config.ini"))
 
-  sh %(cd #{data_dir} && ../programs/xgtd/xgtd --data-dir=.)
+  sh %(cd #{data_dir} && ../xgt-build/programs/xgtd/xgtd --data-dir=.)
 end
 
 desc 'Get approximate C++ LoC'
