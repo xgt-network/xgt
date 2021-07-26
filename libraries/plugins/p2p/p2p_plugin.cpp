@@ -661,20 +661,6 @@ void p2p_plugin::plugin_startup()
          my->node->listen_on_endpoint(*my->endpoint, true);
       }
 
-      for( const auto& seed : my->seeds )
-      {
-         try
-         {
-            ilog("P2P adding seed node ${s}", ("s", seed));
-            my->node->add_node(seed);
-            my->node->connect_to_endpoint(seed);
-         }
-         catch( graphene::net::already_connected_to_requested_peer& )
-         {
-            wlog( "Already connected to seed node ${s}. Is it specified twice in config?", ("s", seed) );
-         }
-      }
-
       if( my->max_connections )
       {
          if( my->config.find( "maximum_number_of_connections" ) != my->config.end() )
@@ -690,6 +676,20 @@ void p2p_plugin::plugin_startup()
 
       ilog("Connecting to P2P network...");
       my->node->connect_to_p2p_network();
+
+      for( const auto& seed : my->seeds )
+      {
+         try
+         {
+            ilog("P2P adding seed node ${s}", ("s", seed));
+            my->node->add_node(seed);
+            my->node->connect_to_endpoint(seed);
+         }
+         catch( graphene::net::already_connected_to_requested_peer& )
+         {
+            wlog( "Already connected to seed node ${s}. Is it specified twice in config?", ("s", seed) );
+         }
+      }
 
       block_id_type block_id;
       my->chain.db().with_read_lock( [&]()
