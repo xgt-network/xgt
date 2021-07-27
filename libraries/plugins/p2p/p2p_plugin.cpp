@@ -246,6 +246,25 @@ bool p2p_plugin_impl::handle_block( const graphene::net::block_message& blk_msg,
 
 void p2p_plugin_impl::handle_transaction( const graphene::net::trx_message& trx_msg )
 {
+   // Do not accept pow operations from peers anymore.
+   const uint32_t head_block_num = chain.db().head_block_num();
+   const uint32_t max_block_num_age = 10;
+   for (auto& op : trx_msg.trx.operations)
+   {
+      if (protocol::is_pow_operation(op))
+      {
+         xgt::protocol::pow_operation o = op.get< xgt::protocol::pow_operation >();
+         ilog("Found a POW op");
+         const auto& work = o.work.get< xgt::protocol::sha2_pow >();
+         const auto block = chain.db().fetch_block_by_id(work.prev_block);
+         if (head_block_num - block->block_num() > max_block_num_age)
+         {
+            ilog("POW op is too old. Rejecting transaction");
+            return;
+         }
+      }
+   }
+
    if(running.load())
    {
       try
