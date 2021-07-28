@@ -1,5 +1,6 @@
 #pragma once
 
+#include "xgt/protocol/operations.hpp"
 #include <xgt/chain/database.hpp>
 
 /*
@@ -58,9 +59,9 @@ struct pending_transactions_restorer
       uint32_t applied_txs = 0;
       uint32_t postponed_txs = 0;
 
-      for( const auto& tx : _db._popped_tx )
-      {
-         if( apply_trxs && fc::time_point::now() - start > XGT_PENDING_TRANSACTION_EXECUTION_LIMIT ) apply_trxs = false;
+      for( const auto& tx : _db._popped_tx ) {
+         if( apply_trxs && fc::time_point::now() - start > XGT_PENDING_TRANSACTION_EXECUTION_LIMIT ) 
+           apply_trxs = false;
 
          if( apply_trxs )
          {
@@ -75,8 +76,21 @@ struct pending_transactions_restorer
          }
          else
          {
-            _db._pending_tx.push_back( tx );
-            postponed_txs++;
+            // Do not retain tx's containing pending pow ops after reward block inlining.
+            bool contains_pow = false;
+            if (_db.head_block_num() > 2116800) {
+               for (auto& op : tx.operations) {
+                  if (is_pow_operation(op)) {
+                     contains_pow = true;
+                  }
+               }
+            }
+            if (contains_pow) {
+               wlog("Discarding pow tx from pending queue");
+            } else {
+               _db._pending_tx.push_back( tx );
+               postponed_txs++;
+            }
          }
       }
       _db._popped_tx.clear();
