@@ -76,13 +76,17 @@ struct pending_transactions_restorer
          }
          else
          {
+// Testnets necessarily broadcast PoW ops until head_block_num() is deprecated 
+// for fork versions.
+#ifdef IS_TEST_NET
+           _db._pending_tx.push_back( tx );
+           postponed_txs++;
+#else
             // Do not retain tx's containing pending pow ops after reward block inlining.
             bool contains_pow = false;
-            if (_db.head_block_num() > 2116800) {
-               for (auto& op : tx.operations) {
-                  if (is_pow_operation(op)) {
-                     contains_pow = true;
-                  }
+            for (auto& op : tx.operations) {
+               if (is_pow_operation(op)) {
+                  contains_pow = true;
                }
             }
             if (contains_pow) {
@@ -91,6 +95,7 @@ struct pending_transactions_restorer
                _db._pending_tx.push_back( tx );
                postponed_txs++;
             }
+#endif
          }
       }
       _db._popped_tx.clear();
