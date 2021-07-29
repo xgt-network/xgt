@@ -219,8 +219,8 @@ void block_producer::apply_pending_transactions(
             }
          }
          if (contains_pow) {
-            wlog("Skipping pow tx's from others");
-            continue;
+            wlog("Attempting to flush pow tx's from others");
+            // continue;
          }
       }
 
@@ -245,8 +245,8 @@ void block_producer::apply_pending_transactions(
       catch ( const fc::exception& e )
       {
          // Do nothing, transaction will not be re-applied
-         //wlog( "Transaction was not processed while generating block due to ${e}", ("e", e) );
-         //wlog( "The transaction was ${t}", ("t", tx) );
+         wlog( "Transaction was not processed while generating block due to ${e}", ("e", e) );
+         wlog( "The transaction was ${t}", ("t", tx) );
       }
    }
    if( postponed_tx_count > 0 )
