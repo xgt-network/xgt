@@ -28,10 +28,7 @@ struct skip_flags_restorer
       : _npo( npo ), _old_skip_flags( old_skip_flags )
    {}
 
-   ~skip_flags_restorer()
-   {
-      _npo.skip_flags = _old_skip_flags;
-   }
+   ~skip_flags_restorer() { _npo.skip_flags = _old_skip_flags; }
 
    node_property_object& _npo;
    uint32_t _old_skip_flags;      // initialized in ctor
