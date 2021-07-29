@@ -6,7 +6,7 @@
 #include <xgt/chain/custom_operation_interpreter.hpp>
 #include <xgt/chain/database.hpp>
 #include <xgt/chain/database_exceptions.hpp>
-#include <xgt/chain/db_with.hpp>
+#include <xgt/chain/with_skip_flags.hpp>
 #include <xgt/chain/evaluator_registry.hpp>
 #include <xgt/chain/global_property_object.hpp>
 #include <xgt/chain/history_object.hpp>
