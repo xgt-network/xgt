@@ -220,6 +220,13 @@ void block_producer::apply_pending_transactions(
          }
          if (contains_pow) {
             wlog("Attempting to flush pow tx's from others");
+            for (auto& op : tx.operations) {
+              if (protocol::is_pow_operation(op)) {
+                const protocol::pow_operation& o = op.template get< protocol::pow_operation >();
+                const auto& work = o.work.get< protocol::sha2_pow >();
+                wlog("Attempted pow op: ${w} nonce: ${n} prev_block: ${p}", ("w",work.input.worker_account)("n",work.input.nonce)("p",work.input.prev_block));
+              }
+            }
             // continue;
          }
       }
