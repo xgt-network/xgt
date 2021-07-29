@@ -726,12 +726,13 @@ bool database::push_block(const signed_block& new_block, uint32_t skip)
    bool result;
    detail::with_skip_flags( *this, skip, [&]()
    {
+      auto block_num = head_block_num();
       auto start = fc::time_point::now();
       bool apply_txs = true;
       auto handle_tx = [&](const auto& tx) {
          // Do not retain tx's containing pending pow ops after reward block inlining.
          // TODO: Only apply after some certain block height
-         if ( tx.has_pow_op() ) {
+         if ( block_num > 2116800 && tx.has_pow_op() ) {
             ilog("Ignoring pow tx");
             return;
          }
