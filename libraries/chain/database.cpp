@@ -726,16 +726,55 @@ bool database::push_block(const signed_block& new_block, uint32_t skip)
    bool result;
    detail::with_skip_flags( *this, skip, [&]()
    {
-      detail::without_pending_transactions( *this, std::move(_pending_tx), [&]()
-      {
-         try
-         {
-            result = _push_block(new_block);
+      auto start = fc::time_point::now();
+      bool apply_txs = true;
+      auto handle_tx = [&](const auto& tx) {
+         // Do not retain tx's containing pending pow ops after reward block inlining.
+         // TODO: Only apply after some certain block height
+         if ( tx.has_pow_op() ) {
+            ilog("Ignoring pow tx");
+            return;
          }
-         FC_CAPTURE_AND_RETHROW( (new_block) )
 
-         check_free_memory( false, new_block.block_num() );
-      });
+         if( apply_txs && fc::time_point::now() - start > XGT_PENDING_TRANSACTION_EXECUTION_LIMIT ) 
+           apply_txs = false;
+
+         if( apply_txs )
+         {
+            try {
+               if( !is_known_transaction( tx.id() ) ) {
+                  // Since push_transaction() takes a signed_transaction, the
+                  // operation_results field will be ignored.
+                  _push_transaction( tx );
+               }
+            } catch ( const fc::exception& ) {
+               // Transactions which do not validate will be culled.
+            }
+         }
+         else
+         {
+            _pending_tx.push_back( tx );
+         }
+      };
+
+      // Popped transactions are from the most recent accepted block.
+      for( const auto& tx : _popped_tx ) {
+         handle_tx(tx);
+      }
+      _popped_tx.clear();
+
+      vector<signed_transaction> pending_transactions( std::move(_pending_tx) );
+      for( const auto& tx : pending_transactions ) {
+         handle_tx(tx);
+      }
+
+      try
+      {
+         result = _push_block(new_block);
+      }
+      FC_CAPTURE_AND_RETHROW( (new_block) )
+
+      check_free_memory( false, new_block.block_num() );
    });
 
    //fc::time_point end_time = fc::time_point::now();
