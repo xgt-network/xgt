@@ -273,8 +273,8 @@ task :run do
       log-logger = {"name":"default","level":"debug","appender":"logfile"}
       #log-logger = {"name":"sync","level":"debug","appender":"stderr"}
       #log-logger = {"name":"sync","level":"debug","appender":"logfile"}
-      #log-logger = {"name":"p2p","level":"debug","appender":"stderr"}
-      #log-logger = {"name":"p2p","level":"debug","appender":"logfile"}
+      log-logger = {"name":"p2p","level":"info","appender":"stderr"}
+      log-logger = {"name":"p2p","level":"info","appender":"logfile"}
 
       backtrace = yes
 
