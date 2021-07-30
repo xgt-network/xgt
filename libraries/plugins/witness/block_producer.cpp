@@ -6,7 +6,7 @@
 #include <xgt/protocol/operations.hpp>
 
 #include <xgt/chain/database_exceptions.hpp>
-#include <xgt/chain/db_with.hpp>
+#include <xgt/chain/with_skip_flags.hpp>
 #include <xgt/chain/pending_required_action_object.hpp>
 #include <xgt/chain/pending_optional_action_object.hpp>
 #include <xgt/chain/witness_objects.hpp>
@@ -219,8 +219,15 @@ void block_producer::apply_pending_transactions(
             }
          }
          if (contains_pow) {
-            wlog("Skipping pow tx's from others");
-            continue;
+            wlog("Attempting to flush pow tx's from others");
+            for (auto& op : tx.operations) {
+              if (protocol::is_pow_operation(op)) {
+                const protocol::pow_operation& o = op.template get< protocol::pow_operation >();
+                const auto& work = o.work.get< protocol::sha2_pow >();
+                wlog("Attempted pow op: ${w} nonce: ${n} prev_block: ${p}", ("w",work.input.worker_account)("n",work.input.nonce)("p",work.input.prev_block));
+              }
+            }
+            // continue;
          }
       }
 
@@ -245,8 +252,8 @@ void block_producer::apply_pending_transactions(
       catch ( const fc::exception& e )
       {
          // Do nothing, transaction will not be re-applied
-         //wlog( "Transaction was not processed while generating block due to ${e}", ("e", e) );
-         //wlog( "The transaction was ${t}", ("t", tx) );
+         wlog( "Transaction was not processed while generating block due to ${e}", ("e", e) );
+         wlog( "The transaction was ${t}", ("t", tx) );
       }
    }
    if( postponed_tx_count > 0 )
