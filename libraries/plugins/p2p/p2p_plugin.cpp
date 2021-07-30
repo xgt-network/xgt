@@ -247,19 +247,20 @@ bool p2p_plugin_impl::handle_block( const graphene::net::block_message& blk_msg,
 void p2p_plugin_impl::handle_transaction( const graphene::net::trx_message& trx_msg )
 {
 
-// Testnets necessarily broadcast PoW ops until head_block_num() is deprecated 
-// for fork versions.
-#ifndef IS_TEST_NET
-   // Do not accept pow operations from peers anymore.
-   for (auto& op : trx_msg.trx.operations)
+   // Testnets necessarily broadcast PoW ops until head_block_num() is deprecated 
+   // for fork versions.
+   if (chain.db().head_block_num() > 2116800) 
    {
-      if (protocol::is_pow_operation(op))
+      // Do not accept pow operations from peers anymore.
+      for (auto& op : trx_msg.trx.operations)
       {
-         ilog("Rejecting an old POW op");
-         return;
+         if (protocol::is_pow_operation(op))
+         {
+            wlog("Rejecting an old POW op");
+            return;
+         }
       }
    }
-#endif
 
    if(running.load())
    {
