@@ -83,6 +83,7 @@ namespace detail {
       std::map< xgt::protocol::public_key_type, fc::ecc::private_key > _private_keys;
       std::set< xgt::protocol::wallet_name_type >                      _witnesses;
       boost::asio::deadline_timer                                      _timer;
+      boost::mutex                                                     _broadcast_mtx;
 
       plugins::chain::chain_plugin& _chain_plugin;
       chain::database&              _db;
@@ -334,17 +335,32 @@ namespace detail {
                   }
                   else
                   {
-                     auto block_reward = fc::optional< protocol::signed_transaction >(trx);
-                     auto block = _chain_plugin.generate_block(
-                        now,
-                        miner,
-                        pk,
-                        block_reward,
-                        _production_skip_flags
-                     );
-                     _db.push_block(block, (uint32_t)0);
-                     appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
-                     wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
+                     ilog( "Attempting to acquire lock" );
+                     _broadcast_mtx.lock();
+                     ilog( "Acquired lock" );
+
+                     try
+                     {
+                        auto block_reward = fc::optional< protocol::signed_transaction >(trx);
+                        auto block = _chain_plugin.generate_block(
+                           now,
+                           miner,
+                           pk,
+                           block_reward,
+                           _production_skip_flags
+                        );
+                        _db.push_block(block, (uint32_t)0);
+                        appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
+                        wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
+                     }
+                     catch( const fc::exception& e )
+                     {
+                        ilog( "Broadcast failed, releasing lock" );
+                        _broadcast_mtx.unlock();
+                        throw e;
+                     }
+
+                     _broadcast_mtx.unlock();
                   }
 
                   wlog( "Broadcast succeeded!" );
