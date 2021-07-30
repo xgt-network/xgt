@@ -357,8 +357,8 @@ namespace xgt { namespace chain {
 
          /** when popping a block, the transactions that were removed get cached here so they
           * can be reapplied at the proper time */
-         std::deque< signed_transaction >       _popped_tx;
-         vector< signed_transaction >           _pending_tx;
+         std::deque< signed_transaction >               _popped_tx;
+         vector< signed_transaction >                   _pending_tx;
 
          void retally_comment_children();
 

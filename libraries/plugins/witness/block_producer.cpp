@@ -6,7 +6,7 @@
 #include <xgt/protocol/operations.hpp>
 
 #include <xgt/chain/database_exceptions.hpp>
-#include <xgt/chain/db_with.hpp>
+#include <xgt/chain/with_skip_flags.hpp>
 #include <xgt/chain/pending_required_action_object.hpp>
 #include <xgt/chain/pending_optional_action_object.hpp>
 #include <xgt/chain/witness_objects.hpp>
