@@ -3100,7 +3100,6 @@ namespace graphene { namespace net {
       dlog("in send_sync_block_to_node_delegate()");
 
       bool client_accepted_block = false;
-      bool discontinue_fetching_blocks_from_peer = false;
 
       fc::oexception handle_message_exception;
 
@@ -3139,7 +3138,6 @@ namespace graphene { namespace net {
              ("id", block_message_to_send.block_id)
              ("e", (fc::exception)e));
         handle_message_exception = e;
-        discontinue_fetching_blocks_from_peer = true;
       }
       catch (const fc::canceled_exception&)
       {
@@ -3242,35 +3240,14 @@ namespace graphene { namespace net {
       }
       else
       {
-        // invalid message received
-        for (const peer_connection_ptr& peer : _active_connections)
-        {
-          ASSERT_TASK_NOT_PREEMPTED(); // don't yield while iterating over _active_connections
-
-          if (peer->ids_of_items_being_processed.find(block_message_to_send.block_id) != peer->ids_of_items_being_processed.end())
-          {
-            if (discontinue_fetching_blocks_from_peer)
-            {
-              wlog("inhibiting fetching sync blocks from peer ${endpoint} because it is on a fork that's too old",
-                   ("endpoint", peer->get_remote_endpoint()));
-              peer->inhibit_fetching_sync_blocks = true;
-            }
-            else
-              peers_to_disconnect[peer] = std::make_pair(std::string("You offered us a block that we reject as invalid"), fc::oexception(handle_message_exception));
-          }
-        }
+         // Invalid message received
+         for (const peer_connection_ptr& peer : _active_connections)
+         {
+            wlog("Invalid message received from peer ${endpoint}, ignoring",
+               ("endpoint", peer->get_remote_endpoint()));
+         }
       }
 
-      for (auto& peer_to_disconnect : peers_to_disconnect)
-      {
-        const peer_connection_ptr& peer = peer_to_disconnect.first;
-        std::string reason_string;
-        fc::oexception reason_exception;
-        std::tie(reason_string, reason_exception) = peer_to_disconnect.second;
-        wlog("disconnecting client ${endpoint} because it offered us the rejected block",
-             ("endpoint", peer->get_remote_endpoint()));
-        disconnect_from_peer(peer.get(), reason_string, true, reason_exception);
-      }
       for (const peer_connection_ptr& peer : peers_with_newly_empty_item_lists)
         fetch_next_batch_of_item_ids_from_peer(peer.get());
 
