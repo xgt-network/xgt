@@ -701,6 +701,8 @@ bool database::push_block(const signed_block& new_block, uint32_t skip)
 {
    //fc::time_point begin_time = fc::time_point::now();
 
+   _push_block_mtx.lock();
+
    auto block_num = new_block.block_num();
    if( _checkpoints.size() && _checkpoints.rbegin()->second != block_id_type() )
    {
@@ -777,6 +779,8 @@ bool database::push_block(const signed_block& new_block, uint32_t skip)
 
       check_free_memory( false, new_block.block_num() );
    });
+
+   _push_block_mtx.unlock();
 
    //fc::time_point end_time = fc::time_point::now();
    //fc::microseconds dt = end_time - begin_time;
