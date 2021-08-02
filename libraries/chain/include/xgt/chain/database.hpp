@@ -90,7 +90,7 @@ namespace xgt { namespace chain {
 
          bool _log_hardforks = true;
 
-         boost::mutex _push_block_mutex;
+         boost::mutex _push_block_mtx;
 
          enum validation_steps
          {
