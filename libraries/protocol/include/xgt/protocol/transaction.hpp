@@ -48,8 +48,6 @@ using fc::ecc::canonical_signature_type;
                                      flat_set< wallet_name_type >& recovery,
                                      flat_set< wallet_name_type >& social,
                                      vector< authority >& other )const;
-
-      bool has_pow_op()const;
    };
 
    struct signed_transaction : public transaction
