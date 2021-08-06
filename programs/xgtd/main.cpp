@@ -27,7 +27,6 @@
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/interprocess/signals.hpp>
-#include <fc/git_revision.hpp>
 #include <fc/stacktrace.hpp>
 
 #include <boost/exception/diagnostic_information.hpp>
@@ -45,9 +44,9 @@ using std::vector;
 string& version_string()
 {
    static string v_str =
+      "xgt_version: " + fc::string( xgt::utilities::git_revision_description ) + "\n" +
       "xgt_blockchain_version: " + fc::string( XGT_BLOCKCHAIN_VERSION ) + "\n" +
-      "xgt_git_revision:       " + fc::string( xgt::utilities::git_revision_sha ) + "\n" +
-      "fc_git_revision:          " + fc::string( fc::git_revision_sha ) + "\n";
+      "xgt_git_revision:       " + fc::string( xgt::utilities::git_revision_sha ) + "\n";
    return v_str;
 }
 
