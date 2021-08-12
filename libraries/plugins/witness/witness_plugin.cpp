@@ -1,3 +1,4 @@
+#include "fc/time.hpp"
 #include <xgt/chain/xgt_fwd.hpp>
 
 #include <xgt/plugins/witness/witness_plugin.hpp>
@@ -16,9 +17,6 @@
 #include <fc/io/json.hpp>
 #include <fc/macros.hpp>
 #include <fc/smart_ref_impl.hpp>
-#include <fc/network/ntp.hpp>
-
-#include <graphene/time/time.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -50,7 +48,7 @@ void new_chain_banner( const chain::database& db )
       "********************************\n"
       "*                              *\n"
       "*   ------- NEW CHAIN ------   *\n"
-      "*   -   Welcome to Xgt!  -   *\n"
+      "*   -   Welcome to Xgt!    -   *\n"
       "*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
@@ -96,12 +94,7 @@ namespace detail {
 
       bool _is_braking = false;
       std::vector<std::shared_ptr<fc::thread>> _threads;
-      std::map<chain::public_key_type, fc::ecc::private_key> _mining_private_keys;
       xgt::chain::legacy_chain_properties _miner_prop_vote;
-      uint64_t _head_block_num = 0;
-      block_id_type _head_block_id = block_id_type();
-      uint64_t _total_hashes = 0;
-      fc::time_point _hash_start_time;
    };
 
    void check_memo( const string& memo, const chain::wallet_object& account, const account_authority_object& auth )
@@ -269,8 +262,10 @@ namespace detail {
       uint32_t target = _db.get_pow_summary_target();
       wlog( "Miner has started work ${o} at block ${b} target ${t}", ("o", miner)("b", block_num)("t", target));
 
-      _total_hashes = 0;
-      _hash_start_time = fc::time_point::now();
+      uint64_t total_hashes = 0;
+      fc::time_point hash_start_time = fc::time_point::now();
+      fc::time_point_sec last_report_time = hash_start_time;
+
       const auto& acct_idx  = _db.get_index< chain::wallet_index >().indices().get< chain::by_name >();
       auto acct_it = acct_idx.find( miner );
       bool has_account = (acct_it != acct_idx.end());
@@ -291,7 +286,7 @@ namespace detail {
          }
 
          for(auto f : tasks) {
-            this->_total_hashes += f.wait();
+            total_hashes += f.wait();
          }
 
          for(auto& work : works) {
@@ -308,8 +303,11 @@ namespace detail {
                trx.operations.push_back( op );
                trx.ref_block_num = block_num;
                trx.ref_block_prefix = work->input.prev_block._hash[1];
-               fc::time_point_sec now_sec = fc::time_point::now();
-               trx.set_expiration( now_sec + XGT_MAX_TIME_UNTIL_EXPIRATION );
+
+               // Subtle: this must not exceed head_block_time + XGT_MAX_TIME_UNTIL_EXPIRATION or it will be
+               // rejected by the expiration validation.
+               trx.set_expiration( head_block_time + XGT_MAX_TIME_UNTIL_EXPIRATION );
+
                trx.sign( pk, XGT_CHAIN_ID, fc::ecc::fc_canonical );
 
                wlog( "Broadcasting..." );
@@ -317,15 +315,38 @@ namespace detail {
                {
                   wlog("Mined block proceeding #${n} with timestamp ${t} at time ${c}", ("n", block_num)("t", head_block_time)("c", fc::time_point::now()));
                   fc::time_point now = fc::time_point::now();
-                  auto block = _chain_plugin.generate_block( now, miner, pk, _production_skip_flags);
-                  _db.push_block(block, (uint32_t)0);
-                  appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
+                  uint32_t head_num = _db.head_block_num();
+                  if (head_num < 2116800)
+                  {
+                     auto block_reward = fc::optional< protocol::signed_transaction >();
+                     auto block = _chain_plugin.generate_block(
+                        now,
+                        miner,
+                        pk,
+                        block_reward,
+                        _production_skip_flags
+                     );
+                     _db.push_block(block, (uint32_t)0);
+                     appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
+                     wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
+                     _db.push_transaction( trx );
+                     appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
+                  }
+                  else
+                  {
+                     auto block_reward = fc::optional< protocol::signed_transaction >(trx);
+                     auto block = _chain_plugin.generate_block(
+                        now,
+                        miner,
+                        pk,
+                        block_reward,
+                        _production_skip_flags
+                     );
+                     _db.push_block(block, (uint32_t)0);
+                     appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
+                     wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
+                  }
 
-                  wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
-                  _db.push_transaction( trx );
-                  appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
-
-                  ++this->_head_block_num;
                   wlog( "Broadcast succeeded!" );
                }
                catch( const fc::exception& e )
@@ -333,35 +354,31 @@ namespace detail {
                   wlog( "Broadcast failed!" );
                   wdump((e.to_detail_string()));
                }
-               schedule_production_loop();
                return;
             }
          }
 
-         if (this->_total_hashes % 1000000 == 0) {
-            uint64_t micros = (fc::time_point::now() - _hash_start_time).count();
-            uint64_t hashrate = (this->_total_hashes * 1000000) / micros;
+         fc::time_point now = fc::time_point::now();
+         if (last_report_time + 3 < now) {
+            last_report_time = now;
+            uint64_t micros = (now - hash_start_time).count();
+            uint64_t hashrate = (total_hashes * 1000000) / micros;
             wlog("Miner working at block ${b} rate: ${r}H/s", ("b", block_num)("r",hashrate));
          }
 
          auto head_block_num = _db.head_block_num();
-         if( this->_head_block_num != head_block_num )
+         if( block_num != head_block_num )
          {
-            wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("o",this->_head_block_num)("p",head_block_num) );
-            this->_head_block_num = head_block_num;
+            wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("o",block_num)("p",head_block_num) );
             break;
          }
-         if (this->_is_braking) {
-            break;
-         }
-      }
-      if (!this->_is_braking)
-      {
-         schedule_production_loop();
       }
    }
 
    void witness_plugin_impl::schedule_production_loop() {
+      if (this->_is_braking) {
+         return;
+      }
       if (!appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().ready_to_mine()) {
          _timer.expires_from_now( boost::posix_time::milliseconds( 1000 ) );
          _timer.async_wait( boost::bind( &witness_plugin_impl::schedule_production_loop, this ) );
@@ -373,8 +390,6 @@ namespace detail {
 
    void witness_plugin_impl::block_production_loop()
    {
-      _is_braking = false;
-
       fc::time_point now = fc::time_point::now();
 
       if( now < fc::time_point(XGT_GENESIS_TIME) )
@@ -397,13 +412,16 @@ namespace detail {
          if (*name_ptr == XGT_INIT_MINER_NAME)
          {
             wlog("Generating genesis block...");
-
             auto pair = _private_keys.begin();
-            auto block = _chain_plugin.generate_block( now, XGT_INIT_MINER_NAME, pair->second, _production_skip_flags );
+            auto block_reward = fc::optional< xgt::chain::signed_transaction >();
+            auto block = _chain_plugin.generate_block(
+               now,
+               XGT_INIT_MINER_NAME,
+               pair->second,
+               block_reward,
+               _production_skip_flags
+            );
             _db.push_block(block, (uint32_t)0);
-            this->_head_block_num++;
-            schedule_production_loop();
-            return;
          }
          schedule_production_loop();
          return;
@@ -434,6 +452,7 @@ namespace detail {
       {
          auto pair = _private_keys.begin();
          start_mining(pair->first, pair->second, *name_ptr);
+         schedule_production_loop();
       }
       catch( const fc::canceled_exception& )
       {

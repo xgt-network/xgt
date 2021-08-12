@@ -42,13 +42,13 @@ int main( int argc, char** argv, char** envp )
 
       auto r2 = log.read_block( r1.second );
       idump( (r2) );
-      idump( (fc::raw::pack_size(r2.first)) );
+      // idump( (fc::raw::pack_size(r2.first)) );
 
-      idump( (log.read_head()) );
-      idump( (fc::raw::pack_size(log.read_head())));
+      // idump( (log.read_head()) );
+      // idump( (fc::raw::pack_size(log.read_head())));
 
-      auto r3 = log.read_block( r2.second );
-      idump( (r3) );
+      // auto r3 = log.read_block( r2.second );
+      // idump( (r3) );
    }
    catch ( const std::exception& e )
    {

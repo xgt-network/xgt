@@ -1,3 +1,4 @@
+#pragma once
 #include <fc/thread/thread.hpp>
 #include <fc/string.hpp>
 #include <fc/time.hpp>

@@ -14,6 +14,7 @@ public:
       fc::time_point_sec when,
       const xgt::chain::wallet_name_type& witness_recovery,
       const fc::ecc::private_key& block_signing_private_key,
+      fc::optional< xgt::chain::signed_transaction > block_reward,
       uint32_t skip = xgt::chain::database::skip_nothing) = 0;
 };
 

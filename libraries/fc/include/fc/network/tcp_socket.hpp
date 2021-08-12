@@ -20,6 +20,7 @@ namespace fc {
       void     enable_keep_alives(const fc::microseconds& interval);
       void set_io_hooks(tcp_socket_io_hooks* new_hooks);
       void set_reuse_address(bool enable = true); // set SO_REUSEADDR
+      void set_no_delay(bool enable = true); // set TCP_NODELAY
       fc::ip::endpoint remote_endpoint() const;
       fc::ip::endpoint local_endpoint() const;
 

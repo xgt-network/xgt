@@ -7,9 +7,6 @@ if( ECC_IMPL STREQUAL secp256k1 )
     target_link_libraries( blind fc )
 endif()
 
-add_executable( ntp_test all_tests.cpp network/ntp_test.cpp )
-target_link_libraries( ntp_test fc )
-
 add_executable( task_cancel_test all_tests.cpp thread/task_cancel.cpp )
 target_link_libraries( task_cancel_test fc )
 
@@ -44,19 +41,13 @@ target_link_libraries( ecdsa_canon_test fc )
 #add_executable( test_rate_limiting rate_limiting.cpp )
 #target_link_libraries( test_rate_limiting fc )
 
-add_executable( sha_test sha_test.cpp )
-target_link_libraries( sha_test fc )
-
 add_executable( all_tests all_tests.cpp
-                          compress/compress.cpp
                           crypto/aes_test.cpp
                           crypto/base_n_tests.cpp
                           crypto/bigint_test.cpp
                           crypto/blind.cpp
-                          crypto/blowfish_test.cpp
                           crypto/rand_test.cpp
                           crypto/sha_tests.cpp
-                          network/ntp_test.cpp
                           thread/task_cancel.cpp
                           thread/thread_tests.cpp
                           bloom_test.cpp

@@ -28,6 +28,7 @@ if( XGT_STATIC_BUILD )
       appbase
       xgt_utilities
       xgt_plugins
+      ${Boost_LIBRARIES}
       ${CMAKE_DL_LIBS}
       ${PLATFORM_SPECIFIC_LIBS}
    )
@@ -36,6 +37,7 @@ else( XGT_STATIC_BUILD )
       appbase
       xgt_utilities
       xgt_plugins
+      ${Boost_LIBRARIES}
       ${CMAKE_DL_LIBS}
       ${PLATFORM_SPECIFIC_LIBS}
    )

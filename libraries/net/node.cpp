@@ -31,6 +31,7 @@
 #include <iostream>
 #include <algorithm>
 #include <tuple>
+#include <vector>
 #include <boost/tuple/tuple.hpp>
 #include <boost/circular_buffer.hpp>
 
@@ -2216,12 +2217,23 @@ namespace graphene { namespace net {
     void node_impl::on_address_message(peer_connection* originating_peer, const address_message& address_message_received)
     {
       VERIFY_CORRECT_THREAD();
+
+      std::vector<address_info> public_addresses;
+      for (const address_info& info : address_message_received.addresses) {
+        if (info.remote_endpoint.get_address().is_public_address()) {
+          public_addresses.push_back(info);
+        } else {
+          wlog("Peer ${p} sent us non-public address: ${a}", ("p", originating_peer->get_remote_endpoint()->get_address())("a", info.remote_endpoint.get_address()));
+        }
+      }
+
       dlog("Received an address message containing ${size} addresses", ("size", address_message_received.addresses.size()));
       for (const address_info& address : address_message_received.addresses)
       {
         dlog("    ${endpoint} last seen ${time}", ("endpoint", address.remote_endpoint)("time", address.last_seen_time));
       }
-      std::vector<graphene::net::address_info> updated_addresses = address_message_received.addresses;
+
+      std::vector<address_info> updated_addresses = public_addresses;
       for (address_info& address : updated_addresses)
         address.last_seen_time = fc::time_point_sec(fc::time_point::now());
       bool new_information_received = merge_address_info_with_potential_peer_database(updated_addresses);
@@ -3088,7 +3100,6 @@ namespace graphene { namespace net {
       dlog("in send_sync_block_to_node_delegate()");
 
       bool client_accepted_block = false;
-      bool discontinue_fetching_blocks_from_peer = false;
 
       fc::oexception handle_message_exception;
 
@@ -3127,7 +3138,6 @@ namespace graphene { namespace net {
              ("id", block_message_to_send.block_id)
              ("e", (fc::exception)e));
         handle_message_exception = e;
-        discontinue_fetching_blocks_from_peer = true;
       }
       catch (const fc::canceled_exception&)
       {
@@ -3230,35 +3240,14 @@ namespace graphene { namespace net {
       }
       else
       {
-        // invalid message received
-        for (const peer_connection_ptr& peer : _active_connections)
-        {
-          ASSERT_TASK_NOT_PREEMPTED(); // don't yield while iterating over _active_connections
-
-          if (peer->ids_of_items_being_processed.find(block_message_to_send.block_id) != peer->ids_of_items_being_processed.end())
-          {
-            if (discontinue_fetching_blocks_from_peer)
-            {
-              wlog("inhibiting fetching sync blocks from peer ${endpoint} because it is on a fork that's too old",
-                   ("endpoint", peer->get_remote_endpoint()));
-              peer->inhibit_fetching_sync_blocks = true;
-            }
-            else
-              peers_to_disconnect[peer] = std::make_pair(std::string("You offered us a block that we reject as invalid"), fc::oexception(handle_message_exception));
-          }
-        }
+         // Invalid message received
+         for (const peer_connection_ptr& peer : _active_connections)
+         {
+            wlog("Invalid message received from peer ${endpoint}, ignoring",
+               ("endpoint", peer->get_remote_endpoint()));
+         }
       }
 
-      for (auto& peer_to_disconnect : peers_to_disconnect)
-      {
-        const peer_connection_ptr& peer = peer_to_disconnect.first;
-        std::string reason_string;
-        fc::oexception reason_exception;
-        std::tie(reason_string, reason_exception) = peer_to_disconnect.second;
-        wlog("disconnecting client ${endpoint} because it offered us the rejected block",
-             ("endpoint", peer->get_remote_endpoint()));
-        disconnect_from_peer(peer.get(), reason_string, true, reason_exception);
-      }
       for (const peer_connection_ptr& peer : peers_with_newly_empty_item_lists)
         fetch_next_batch_of_item_ids_from_peer(peer.get());
 
@@ -4660,7 +4649,7 @@ namespace graphene { namespace net {
                 error_message_stream << "\nStill waiting for port " << listen_endpoint.port() << " to become available\n";
               }
               std::string error_message = error_message_stream.str();
-              ulog(error_message);
+              wlog(error_message);
               _delegate->error_encountered( error_message, fc::oexception() );
               fc::usleep( fc::seconds(GRAPHENE_NET_PORT_WAIT_DELAY_SECONDS) );
             }
@@ -4741,6 +4730,7 @@ namespace graphene { namespace net {
     {
       new_peer->get_socket().open();
       new_peer->get_socket().set_reuse_address();
+      new_peer->get_socket().set_no_delay();
       new_peer->connection_initiation_time = fc::time_point::now();
       _handshaking_connections.insert(new_peer);
       _rate_limiter.add_tcp_socket(&new_peer->get_socket());

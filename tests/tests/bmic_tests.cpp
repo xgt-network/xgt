@@ -443,7 +443,7 @@ BOOST_AUTO_TEST_CASE(modify_tests)
    auto c1b = []( bmic::test_object2& obj ) { obj.val = 889; };
    auto c2b = []( bmic::test_object2& obj ){ obj.val = 2889; };
    auto c3b = []( const bmic::test_object2& obj ){ BOOST_REQUIRE( obj.val == 2889 ); };
-   auto c4b = []( const bmic::test_object2& obj ){ /*empty*/ };
+   auto c4b = []( const bmic::test_object2& obj ){};
    auto c5b = []( bool result ){ BOOST_REQUIRE( result == true ); };
 
    modify_test< bmic::test_object_index, bmic::test_object >( { 0, 1, 2, 3 }, c1, c2, c3, c4, c5 );

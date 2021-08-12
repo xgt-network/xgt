@@ -110,7 +110,6 @@ IF( WIN32 )
   SET(BOOST_ROOT $ENV{BOOST_ROOT})
 #  set(Boost_USE_DEBUG_PYTHON ON)
   set(Boost_USE_MULTITHREADED ON)
-  set(BOOST_ALL_DYN_LINK OFF) # force dynamic linking for all libraries
 
   FIND_PACKAGE(Boost 1.53 REQUIRED COMPONENTS ${BOOST_COMPONENTS})
   # For Boost 1.53 on windows, coroutine was not in BOOST_LIBRARYDIR and do not need it to build,  but if boost versin >= 1.54, find coroutine otherwise will cause link errors
@@ -203,7 +202,6 @@ set( fc_sources
      src/crypto/aes.cpp
      src/crypto/crc.cpp
      src/crypto/city.cpp
-     src/crypto/base32.cpp
      src/crypto/base36.cpp
      src/crypto/base58.cpp
      src/crypto/base64.cpp
@@ -214,9 +212,7 @@ set( fc_sources
      src/crypto/sha256.cpp
      src/crypto/sha224.cpp
      src/crypto/sha512.cpp
-     src/crypto/blowfish.cpp
      src/crypto/elliptic_common.cpp
-     src/crypto/restartable_sha256.cpp
      ${ECC_REST}
      src/crypto/elliptic_${ECC_IMPL}.cpp
      src/crypto/rand.cpp
@@ -224,17 +220,11 @@ set( fc_sources
      src/network/udp_socket.cpp
      src/network/http/http_connection.cpp
      src/network/http/http_server.cpp
-     src/network/ntp.cpp
      src/network/ip.cpp
      src/network/rate_limiting.cpp
      src/network/resolve.cpp
      src/network/url.cpp
-     src/network/gntp.cpp
-     src/compress/smaz.cpp
-     src/compress/zlib.cpp
      src/reflect/typename.cpp
-     vendor/cyoencode-1.0.2/src/CyoDecode.c
-     vendor/cyoencode-1.0.2/src/CyoEncode.c
      )
 
 file( GLOB_RECURSE fc_headers ${CMAKE_CURRENT_SOURCE_DIR} *.hpp *.h )
@@ -339,16 +329,19 @@ target_include_directories(fc
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/websocketpp
 
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/vendor/cyoencode-1.0.2/src
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/secp256k1-zkp
     ${CMAKE_CURRENT_SOURCE_DIR}/vendor/bitcoin/src
   )
 
-#target_link_libraries( fc PUBLIC ${Boost_LIBRARIES} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB} )
-IF(NOT WIN32)
-  set(LINK_USR_LOCAL_LIB -L/usr/local/lib)
-ENDIF()
-target_link_libraries( fc PUBLIC ${LINK_USR_LOCAL_LIB} ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${Boost_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB} )
+
+# Boost locale needs icudata
+find_package(ICU REQUIRED data)
+# FindICU doesn't seem to expose a library directory, which is a pain with homebrew unlinked installs. Use find_library to dig it back up.
+find_library(ICU_DATA_LIB NAMES icudata REQUIRED)
+get_filename_component(ICU_LIBRARY_DIRECTORY ${ICU_DATA_LIB} DIRECTORY)
+target_link_directories( fc PUBLIC ${ICU_LIBRARY_DIRECTORY} )
+
+target_link_libraries( fc PUBLIC ICU::data ${OPENSSL_LIBRARIES} ${ZLIB_LIBRARIES} ${BZIP2_LIBRARIES} ${Boost_LIBRARIES} ${PLATFORM_SPECIFIC_LIBS} ${RPCRT4} ${CMAKE_DL_LIBS} ${rt_library} ${ECC_LIB})
 
 
 IF(NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY MATCHES "\\.(a|lib)$")

@@ -1,3 +1,4 @@
+#pragma once
 #include <fc/io/json.hpp>
 
 namespace xgt { namespace plugins {
