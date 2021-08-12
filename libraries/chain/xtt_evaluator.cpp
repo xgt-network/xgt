@@ -91,7 +91,7 @@ void xtt_create_evaluator::do_apply( const xtt_create_operation& o )
 
    remove_from_nai_pool( _db, o.symbol );
 
-   if ( !_db.is_pending_tx() )
+   if ( !_db.processor.is_pending_tx() )
       replenish_nai_pool( _db );
 }
 

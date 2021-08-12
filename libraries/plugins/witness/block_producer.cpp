@@ -28,7 +28,7 @@ chain::signed_block block_producer::generate_block(
    chain::signed_block result;
    try
    {
-      _db.set_producing( true );
+      _db.processor.set_producing( true );
       xgt::chain::detail::with_skip_flags(
          _db,
          skip,
@@ -40,11 +40,11 @@ chain::signed_block block_producer::generate_block(
             }
             FC_CAPTURE_AND_RETHROW( (witness_recovery) )
          });
-      _db.set_producing( false );
+      _db.processor.set_producing( false );
    }
    catch( fc::exception& e )
    {
-      _db.set_producing( false );
+      _db.processor.set_producing( false );
       throw e;
    }
 
@@ -85,10 +85,10 @@ chain::signed_block block_producer::_generate_block(
    apply_pending_transactions( witness, when, pending_block, block_reward );
 
    // We have temporarily broken the invariant that
-   // _pending_tx_session is the result of applying _pending_tx, as
+   // processor._pending_tx_session is the result of applying _pending_tx, as
    // _pending_tx now consists of the set of postponed transactions.
    // However, the push_block() call below will re-create the
-   // _pending_tx_session.
+   // processor._pending_tx_session.
 
    if( !(skip & chain::database::skip_witness_signature) )
       pending_block.sign( block_signing_private_key, fc::ecc::bip_0062 );
@@ -155,8 +155,8 @@ void block_producer::apply_pending_transactions(
    // the value of the "when" variable is known, which means we need to
    // re-apply pending transactions in this method.
    //
-   _db.pending_transaction_session().reset();
-   _db.pending_transaction_session() = _db.start_undo_session();
+   _db.processor.pending_transaction_session().reset();
+   _db.processor.pending_transaction_session() = _db.start_undo_session();
 
    FC_TODO( "Safe to remove after HF20 occurs because no more pre HF20 blocks will be generated" );
    /// modify current witness so transaction evaluators can know who included the transaction
@@ -200,11 +200,11 @@ void block_producer::apply_pending_transactions(
    }
 
    // pop pending state (reset to head block state)
-   for( const chain::signed_transaction& tx : _db._pending_tx )
+   for( std::pair< const std::tuple<fc::time_point_sec, fc::ripemd160>, xgt::protocol::signed_transaction> pair : _db.processor._pending_tx )
    {
       // Only include transactions that have not expired yet for currently generating block,
       // this should clear problem transactions and allow block production to continue
-
+      auto& tx = std::get<1>(pair);
       if( postponed_tx_count > XGT_BLOCK_GENERATION_POSTPONED_TX_LIMIT )
          break;
 
@@ -251,7 +251,7 @@ void block_producer::apply_pending_transactions(
    }
    if( postponed_tx_count > 0 )
    {
-      wlog( "Postponed ${n} transactions due to block size limit", ("n", _db._pending_tx.size() - pending_block.transactions.size()) );
+      wlog( "Postponed ${n} transactions due to block size limit", ("n", _db.processor._pending_tx.size() - pending_block.transactions.size()) );
    }
 
    _db.update_global_dynamic_data( pending_block );
@@ -336,7 +336,7 @@ void block_producer::apply_pending_transactions(
       pending_block.extensions.insert( optional_actions );
    }
 
-   _db.pending_transaction_session().reset();
+   _db.processor.pending_transaction_session().reset();
 
    pending_block.transaction_merkle_root = pending_block.calculate_merkle_root();
 }

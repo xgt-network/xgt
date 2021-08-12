@@ -172,7 +172,7 @@ namespace detail {
 
    void witness_plugin_impl::on_pre_apply_operation( const chain::operation_notification& note )
    {
-      if( _db.is_producing() )
+      if( _db.processor.is_producing() )
       {
          note.op.visit( operation_visitor( _db ) );
       }
@@ -184,7 +184,7 @@ namespace detail {
       {
          case operation::tag< custom_operation >::value:
          case operation::tag< custom_json_operation >::value:
-            if( _db.is_producing() )
+            if( _db.processor.is_producing() )
             {
                flat_set< wallet_name_type > impacted;
                app::operation_get_impacted_accounts( note.op, impacted );

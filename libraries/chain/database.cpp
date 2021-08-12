@@ -92,7 +92,7 @@ database::database()
 
 database::~database()
 {
-   clear_pending();
+   processor.clear_pending_tx();
 }
 
 fc::sha256 bigint_to_hash(boost::multiprecision::uint256_t b)
@@ -726,22 +726,111 @@ bool database::push_block(const signed_block& new_block, uint32_t skip)
    bool result;
    detail::with_skip_flags( *this, skip, [&]()
    {
-      detail::without_pending_transactions( *this, std::move(_pending_tx), [&]()
+      try
       {
-         try
-         {
-            result = _push_block(new_block);
-         }
-         FC_CAPTURE_AND_RETHROW( (new_block) )
+         result = _push_block(new_block);
+      }
+      FC_CAPTURE_AND_RETHROW( (new_block) )
 
-         check_free_memory( false, new_block.block_num() );
-      });
+      check_free_memory( false, new_block.block_num() );
+
+      std::map<std::tuple<fc::time_point_sec, transaction_id_type>, signed_transaction> pending_transactions( processor._pending_tx );
+      processor.clear_pending_tx();
+
+      auto start = fc::time_point::now();
+      bool apply_trxs = true;
+      uint32_t applied_txs = 0;
+      uint32_t postponed_txs = 0;
+
+      for( const auto& tx : processor._popped_tx )
+      {
+         if ( head_block_num() > 2116800 && tx.has_pow_op() ) {
+            ilog("Ignoring pow tx");
+            continue;
+         }
+
+         auto& trx_idx = get_index<xgt::chain::transaction_index>();
+         bool is_new = trx_idx.indices().get<xgt::chain::by_trx_id>().find(tx.id()) ==
+            trx_idx.indices().get<xgt::chain::by_trx_id>().end();
+         if ( !is_new ) {
+            ilog("Ignoring dupe tx");
+            continue;
+         }
+
+         if( apply_trxs && fc::time_point::now() - start > XGT_PENDING_TRANSACTION_EXECUTION_LIMIT )
+            apply_trxs = false;
+
+         if( apply_trxs )
+         {
+            try {
+               if( !is_known_transaction( tx.id() ) ) {
+                  // since push_transaction() takes a signed_transaction,
+                  // the operation_results field will be ignored.
+                  _push_transaction( tx );
+                  applied_txs++;
+               }
+            } catch ( const fc::exception&  ) {}
+         }
+         else
+         {
+            processor.push_pending_tx( tx );
+            postponed_txs++;
+         }
+      }
+      processor._popped_tx.clear();
+      for( const signed_transaction& tx : processor._pending_transactions )
+      {
+         if ( head_block_num() > 2116800 && tx.has_pow_op() ) {
+            ilog("Ignoring pow tx");
+            continue;
+         }
+
+         auto& trx_idx = get_index<xgt::chain::transaction_index>();
+         bool is_new = trx_idx.indices().get<xgt::chain::by_trx_id>().find(tx.id()) ==
+            trx_idx.indices().get<xgt::chain::by_trx_id>().end();
+         if ( !is_new ) {
+            ilog("Ignoring dupe tx");
+            continue;
+         }
+
+         if( apply_trxs && fc::time_point::now() - start > XGT_PENDING_TRANSACTION_EXECUTION_LIMIT )
+            apply_trxs = false;
+
+         if( apply_trxs )
+         {
+            try
+            {
+               if( !is_known_transaction( tx.id() ) ) {
+                  // since push_transaction() takes a signed_transaction,
+                  // the operation_results field will be ignored.
+                  _push_transaction( tx );
+                  applied_txs++;
+               }
+            }
+            catch( const transaction_exception& e )
+            {
+               dlog( "Pending transaction became invalid after switching to block ${b} ${n} ${t}",
+                  ("b", head_block_id())("n", head_block_num())("t", head_block_time()) );
+               dlog( "The invalid transaction caused exception ${e}", ("e", e.to_detail_string()) );
+               dlog( "${t}", ("t", tx) );
+            }
+            catch( const fc::exception& e )
+            {
+            }
+         }
+         else
+         {
+            processor.push_pending_tx( tx );
+            postponed_txs++;
+         }
+      }
+
+      if( postponed_txs++ )
+      {
+         wlog( "Postponed ${p} pending transactions. ${a} were applied.", ("p", postponed_txs)("a", applied_txs) );
+      }
    });
 
-   //fc::time_point end_time = fc::time_point::now();
-   //fc::microseconds dt = end_time - begin_time;
-   //if( ( new_block.block_num() % 10000 ) == 0 )
-   //   ilog( "push_block ${b} took ${t} microseconds", ("b", new_block.block_num())("t", dt.count()) );
    return result;
 }
 
@@ -868,19 +957,19 @@ void database::push_transaction( const signed_transaction& trx, uint32_t skip )
       {
          FC_ASSERT( fc::raw::pack_size(trx) <= (get_dynamic_global_properties().maximum_block_size - 256) );
          set_producing( true );
-         set_pending_tx( true );
+         processor.set_pending_tx( true );
          detail::with_skip_flags( *this, skip,
             [&]()
             {
                _push_transaction( trx );
             });
          set_producing( false );
-         set_pending_tx( false );
+         processor.set_pending_tx( false );
       }
       catch( ... )
       {
          set_producing( false );
-         set_pending_tx( false );
+         processor.set_pending_tx( false );
          throw;
       }
    }
@@ -891,17 +980,17 @@ void database::_push_transaction( const signed_transaction& trx )
 {
    // If this is the first transaction pushed after applying a block, start a new undo session.
    // This allows us to quickly rewind to the clean state of the head block, in case a new block arrives.
-   if( !_pending_tx_session.valid() )
-      _pending_tx_session = start_undo_session();
+   if( !processor._pending_tx_session.valid() )
+      processor._pending_tx_session = start_undo_session();
 
-   // Create a temporary undo session as a child of _pending_tx_session.
+   // Create a temporary undo session as a child of processor._pending_tx_session.
    // The temporary session will be discarded by the destructor if
    // _apply_transaction fails.  If we make it to merge(), we
    // apply the changes.
 
    auto temp_session = start_undo_session();
    _apply_transaction( trx );
-   _pending_tx.push_back( trx );
+   processor.push_pending_tx( trx );
 
    // The transaction applied successfully. Merge its changes into the pending block session.
    temp_session.squash();
@@ -915,7 +1004,7 @@ void database::pop_block()
 {
    try
    {
-      _pending_tx_session.reset();
+      processor._pending_tx_session.reset();
       auto head_id = head_block_id();
 
       /// save the head block so we can recover its transactions
@@ -925,8 +1014,9 @@ void database::pop_block()
       _fork_db.pop_block();
       undo();
 
-      _popped_tx.insert( _popped_tx.begin(), head_block->transactions.begin(), head_block->transactions.end() );
-
+      processor._popped_tx.clear();
+      for (auto& it = head_block->transactions.begin(); it != head_block->transactions.end(); *it++)
+         processor._popped_tx[ std::make_tuple(head_block_time(), it->id()) ] = *it;
    }
    FC_CAPTURE_AND_RETHROW()
 }
@@ -935,9 +1025,9 @@ void database::clear_pending()
 {
    try
    {
-      assert( (_pending_tx.size() == 0) || _pending_tx_session.valid() );
-      _pending_tx.clear();
-      _pending_tx_session.reset();
+      assert( (processor._pending_tx.size() == 0) || processor._pending_tx_session.valid() );
+      processor._pending_tx.clear();
+      processor._pending_tx_session.reset();
    }
    FC_CAPTURE_AND_RETHROW()
 }
@@ -992,7 +1082,7 @@ void database::push_required_action( const required_automated_action& a, time_po
    static const action_validate_visitor validate_visitor;
    a.visit( validate_visitor );
 
-   if ( !is_pending_tx() )
+   if ( !processor.is_pending_tx() )
    {
       create< pending_required_action_object >( [&]( pending_required_action_object& pending_action )
       {
@@ -1014,7 +1104,7 @@ void database::push_optional_action( const optional_automated_action& a, time_po
    static const action_validate_visitor validate_visitor;
    a.visit( validate_visitor );
 
-   if ( !is_pending_tx() )
+   if ( !processor.is_pending_tx() )
    {
       create< pending_optional_action_object >( [&]( pending_optional_action_object& pending_action )
       {
@@ -1493,7 +1583,7 @@ void database::apply_block( const signed_block& next_block, uint32_t skip )
    /*try
    {
    /// check invariants
-   if( is_producing() || !( skip & skip_validate_invariants ) )
+   if( processor.is_producing() || !( skip & skip_validate_invariants ) )
       validate_invariants();
    }
    FC_CAPTURE_AND_RETHROW( (next_block) );*/
@@ -3041,11 +3131,6 @@ void database::retally_comment_children()
 #endif
       }
    }
-}
-
-optional< chainbase::database::session >& database::pending_transaction_session()
-{
-   return _pending_tx_session;
 }
 
 } } //xgt::chain

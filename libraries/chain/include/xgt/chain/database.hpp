@@ -26,6 +26,7 @@
 
 #include <functional>
 #include <map>
+#include <tuple>
 
 namespace xgt { namespace chain {
 
@@ -79,15 +80,6 @@ namespace xgt { namespace chain {
          database();
          ~database();
 
-         bool is_producing()const { return _is_producing; }
-         void set_producing( bool p ) { _is_producing = p;  }
-
-         bool is_pending_tx()const { return _is_pending_tx; }
-         void set_pending_tx( bool p ) { _is_pending_tx = p; }
-
-         bool _is_producing = false;
-         bool _is_pending_tx = false;
-
          bool _log_hardforks = true;
 
          enum validation_steps
@@ -132,6 +124,57 @@ namespace xgt { namespace chain {
             // The following fields are only used on reindexing
             uint32_t stop_at_block = 0;
             TBenchmark benchmark = TBenchmark(0, []( uint32_t, const abstract_index_cntr_t& ){});
+         };
+
+         struct transaction_processor
+         {
+            struct tx_comparator
+            {
+               bool operator()( const std::tuple<fc::time_point_sec, transaction_id_type>& a, const std::tuple<fc::time_point_sec, transaction_id_type>& b) const
+               {
+                  if ( std::get<0>(a) < std::get<0>(b) )
+                     return true;
+                  if ( std::get<0>(a) == std::get<0>(b) )
+                     if (std::get<1>(a) < std::get<1>(b) )
+                        return true;
+                  return false;
+               }
+            };
+
+            bool _is_producing = false;
+            bool _is_pending_tx = false;
+            map< std::tuple<fc::time_point_sec, transaction_id_type>, signed_transaction, tx_comparator > _popped_tx;
+            map< std::tuple<fc::time_point_sec, transaction_id_type>, signed_transaction, tx_comparator > _pending_tx;
+            optional< chainbase::database::session > _pending_tx_session;
+
+            optional< chainbase::database::session >& pending_transaction_session();
+
+            bool is_pending_tx()const {
+               return _is_pending_tx;
+            }
+
+            void set_pending_tx(bool p) {
+               _is_pending_tx = p;
+            }
+
+            bool is_producing()const {
+               return _is_producing;
+            }
+
+            void set_producing( bool p ) {
+               _is_producing = p;
+            }
+
+            template <class InputIterator>
+            void insert_popped_tx(map< std::tuple<fc::time_point_sec, transaction_id_type>, signed_transaction, tx_comparator >::iterator position, InputIterator first, InputIterator last)
+            {
+               _popped_tx.insert(position, first, last);
+            }
+
+            void push_pending_tx(const signed_transaction& tx)
+            {
+               _pending_tx[ std::make_tuple(fc::time_point::now(), tx.id()) ] = tx;
+            }
          };
 
          /**
@@ -188,6 +231,8 @@ namespace xgt { namespace chain {
          std::set< wallet_name_type > get_witnesses();
          void set_witnesses( std::set< wallet_name_type > ws );
 
+         transaction_processor processor;
+
          /** Allows to visit all stored blocks until processor returns true. Caller is responsible for block disasembling
           * const signed_block_header& - header of previous block
           * const signed_block& - block to be processed currently
@@ -243,7 +288,6 @@ namespace xgt { namespace chain {
          void _push_transaction( const signed_transaction& trx );
 
          void pop_block();
-         void clear_pending();
 
          void push_virtual_operation( const operation& op );
          void pre_push_virtual_operation( const operation& op );
@@ -355,11 +399,6 @@ namespace xgt { namespace chain {
           */
          void validate_transaction( const signed_transaction& trx );
 
-         /** when popping a block, the transactions that were removed get cached here so they
-          * can be reapplied at the proper time */
-         std::deque< signed_transaction >       _popped_tx;
-         vector< signed_transaction >           _pending_tx;
-
          void retally_comment_children();
 
          void update_global_dynamic_data( const signed_block& b );
@@ -388,8 +427,6 @@ namespace xgt { namespace chain {
          void apply_required_action( const required_automated_action& a );
          void apply_optional_action( const optional_automated_action& a );
 
-         optional< chainbase::database::session >& pending_transaction_session();
-
          void set_index_delegate( const std::string& n, index_delegate&& d );
          const index_delegate& get_index_delegate( const std::string& n );
          bool has_index_delegate( const std::string& n );
@@ -405,8 +442,6 @@ namespace xgt { namespace chain {
          //void pop_undo() { object_database::pop_undo(); }
 
       private:
-         optional< chainbase::database::session > _pending_tx_session;
-
          void apply_block( const signed_block& next_block, uint32_t skip = skip_nothing );
          void _apply_block( const signed_block& next_block );
          void _apply_transaction( const signed_transaction& trx );

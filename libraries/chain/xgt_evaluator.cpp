@@ -865,7 +865,7 @@ void vote_evaluator::do_apply( const vote_operation& o )
 void custom_evaluator::do_apply( const custom_operation& o )
 {
    database& d = db();
-   if( d.is_producing() )
+   if( d.processor.is_producing() )
       FC_ASSERT( o.data.size() <= XGT_CUSTOM_OP_DATA_MAX_LENGTH,
          "Operation data must be less than ${bytes} bytes.", ("bytes", XGT_CUSTOM_OP_DATA_MAX_LENGTH) );
 
@@ -877,9 +877,9 @@ void custom_json_evaluator::do_apply( const custom_json_operation& o )
 {
    database& d = db();
 
-   // ilog( "custom_json_evaluator   is_producing = ${p}    operation = ${o}", ("p", d.is_producing())("o", o) );
+   // ilog( "custom_json_evaluator   is_producing = ${p}    operation = ${o}", ("p", d.processor.is_producing())("o", o) );
 
-   if( d.is_producing() )
+   if( d.processor.is_producing() )
       FC_ASSERT( o.json.length() <= XGT_CUSTOM_OP_DATA_MAX_LENGTH,
          "Operation JSON must be less than ${bytes} bytes.", ("bytes", XGT_CUSTOM_OP_DATA_MAX_LENGTH) );
 
@@ -900,7 +900,7 @@ void custom_json_evaluator::do_apply( const custom_json_operation& o )
    }
    catch( const fc::exception& e )
    {
-      if( d.is_producing() )
+      if( d.processor.is_producing() )
       {
          // ilog( "Re-throwing exception ${e}", ("e", e) );
          throw e;
