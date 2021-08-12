@@ -1,6 +1,7 @@
 #pragma once
 
 #include <xgt/chain/database.hpp>
+#include <xgt/chain/transaction_object.hpp>
 
 /*
  * This file provides with() functions which modify the database
@@ -60,7 +61,21 @@ struct pending_transactions_restorer
 
       for( const auto& tx : _db._popped_tx )
       {
-         if( apply_trxs && fc::time_point::now() - start > XGT_PENDING_TRANSACTION_EXECUTION_LIMIT ) apply_trxs = false;
+         if ( _db.head_block_num() > 2116800 && tx.has_pow_op() ) {
+            ilog("Ignoring pow tx");
+            continue;
+         }
+
+         auto& trx_idx = _db.get_index<xgt::chain::transaction_index>();
+         bool is_new = trx_idx.indices().get<xgt::chain::by_trx_id>().find(tx.id()) ==
+            trx_idx.indices().get<xgt::chain::by_trx_id>().end();
+         if ( !is_new ) {
+            ilog("Ignoring dupe tx");
+            continue;
+         }
+
+         if( apply_trxs && fc::time_point::now() - start > XGT_PENDING_TRANSACTION_EXECUTION_LIMIT )
+            apply_trxs = false;
 
          if( apply_trxs )
          {
@@ -82,7 +97,21 @@ struct pending_transactions_restorer
       _db._popped_tx.clear();
       for( const signed_transaction& tx : _pending_transactions )
       {
-         if( apply_trxs && fc::time_point::now() - start > XGT_PENDING_TRANSACTION_EXECUTION_LIMIT ) apply_trxs = false;
+         if ( _db.head_block_num() > 2116800 && tx.has_pow_op() ) {
+            ilog("Ignoring pow tx");
+            continue;
+         }
+
+         auto& trx_idx = _db.get_index<xgt::chain::transaction_index>();
+         bool is_new = trx_idx.indices().get<xgt::chain::by_trx_id>().find(tx.id()) ==
+            trx_idx.indices().get<xgt::chain::by_trx_id>().end();
+         if ( !is_new ) {
+            ilog("Ignoring dupe tx");
+            continue;
+         }
+
+         if( apply_trxs && fc::time_point::now() - start > XGT_PENDING_TRANSACTION_EXECUTION_LIMIT )
+            apply_trxs = false;
 
          if( apply_trxs )
          {

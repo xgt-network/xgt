@@ -86,12 +86,12 @@ typedef void_type          get_version_args;
 struct get_version_return
 {
    get_version_return() {}
-   get_version_return( fc::string bc_v, fc::string s_v, fc::string fc_v, chain_id_type c_id )
-      :blockchain_version( bc_v ), xgt_revision( s_v ), fc_revision( fc_v ), chain_id( c_id ) {}
+   get_version_return( fc::string xgt_v, fc::string bc_v, fc::string s_v, chain_id_type c_id )
+      :xgt_version(xgt_v), blockchain_version( bc_v ), xgt_revision( s_v ), chain_id( c_id ) {}
 
+   fc::string     xgt_version;
    fc::string     blockchain_version;
    fc::string     xgt_revision;
-   fc::string     fc_revision;
    chain_id_type  chain_id;
 };
 
@@ -351,7 +351,7 @@ typedef find_xtt_token_balances_return list_xtt_token_balances_return;
 } } } // xgt::database_api
 
 FC_REFLECT( xgt::plugins::database_api::get_version_return,
-            (blockchain_version)(xgt_revision)(fc_revision)(chain_id) )
+            (xgt_version)(blockchain_version)(xgt_revision)(chain_id) )
 
 FC_REFLECT_ENUM( xgt::plugins::database_api::sort_order_type,
    (by_name)
