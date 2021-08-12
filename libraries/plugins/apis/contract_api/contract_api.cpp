@@ -21,17 +21,14 @@ class contract_api_impl
 
       DECLARE_API_IMPL(
          (get_contract)
-         (list_owner_contracts) )
+         (list_owner_contracts)
+         (debug_invoke) )
 
       chain::database& _db;
 };
 
 DEFINE_API_IMPL( contract_api_impl, get_contract )
 {
-   // TODO: Temporary
-   machine::message msg = {};
-   ilog( "machine::message msg.flags ${f}", ("f",msg.flags) );
-
    get_contract_return result;
    result.example = true;
    return result;
@@ -56,6 +53,17 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
    return result;
 }
 
+DEFINE_API_IMPL( contract_api_impl, debug_invoke )
+{
+   debug_invoke_return result{false};
+
+   // TODO: Add machine here
+   machine::message msg = {};
+   ilog( "machine::message msg.flags ${f}", ("f",msg.flags) );
+
+   return result;
+}
+
 } // detail
 
 contract_api::contract_api(): my( new detail::contract_api_impl() )
@@ -68,6 +76,7 @@ contract_api::~contract_api() {}
 DEFINE_LOCKLESS_APIS( contract_api,
    (get_contract)
    (list_owner_contracts)
+   (debug_invoke)
 )
 
 } } } //xgt::plugins::contract
