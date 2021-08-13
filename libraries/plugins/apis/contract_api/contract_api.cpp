@@ -165,7 +165,6 @@ DEFINE_API_IMPL( contract_api_impl, invoke )
    std::string tx_origin = "XGT0000000000000000000000000000000000000000";
    std::string block_coinbase = "XGT0000000000000000000000000000000000000000";
 
-   0x00
    // machine::context ctx = {true, 0x5c477758};
    machine::context ctx = {
      is_debug,
