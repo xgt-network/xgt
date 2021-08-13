@@ -59,13 +59,92 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
 
 machine::chain_adapter make_chain_adapter()
 {
-  std::function< uint64_t(std::string) > get_balance = [](std::string wallet_name) -> uint64_t
+  std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
   {
     return 0;
   };
 
+  std::function< uint64_t(std::string) > get_balance = [](std::string address) -> uint64_t
+  {
+    const auto& wallet = _db.get_account(address);
+    return static_cast<uint64_t>(wallet.balance.amount);
+  };
+
+  std::function< std::string(std::string) > get_code_hash = [](std::string address) -> std::string
+  {
+    return "";
+  };
+
+  std::function< std::string(uint64_t) > get_block_hash = [](uint64_t block_num) -> std::string
+  {
+    return "";
+  };
+
+  std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [](std::string address) -> std::vector<machine::word>
+  {
+    return {};
+  };
+
+  std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [](std::vector<machine::word> memory, machine::big_word value) -> std::string
+  {
+    return {};
+  };
+
+  std::function< std::string(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::string
+  {
+    return {};
+  };
+
+  std::function< std::string(machine::big_word, std::vector<machine::word>, std::string) > contract_create2 = [](machine::big_word value, std::vector<machine::word> memory, std::string salt) -> std::string
+  {
+    return {};
+  };
+
+  std::function< bool(std::vector<machine::word>) > revert = [](std::vector<machine::word> memory) -> bool
+  {
+    return {};
+  };
+
+  std::function< machine::big_word(std::string) > access_storage = [](std::string key) -> machine::big_word
+  {
+    return {};
+  };
+
+  std::function< bool(std::string, std::string, machine::big_word) > set_storage = [](std::string destination, std::string key, machine::big_word value) -> bool
+  {
+    return {};
+  };
+
+  std::function< bool(std::vector<machine::word>) > contract_return = [](std::vector<machine::word> memory) -> bool
+  {
+    return {};
+  };
+
+  std::function< bool(std::string) > self_destruct = [](std::string address) -> bool
+  {
+    return {};
+  };
+
+  std::function< std::vector<machine::word>(std::string) > get_input_data = [](std::string address) -> std::vector<machine::word>
+  {
+    return {};
+  };
+
   machine::chain_adapter adapter = {
-    get_balance
+    sha3,
+    get_balance,
+    get_code_hash,
+    get_block_hash,
+    get_code_at_addr,
+    contract_create,
+    contract_call,
+    contract_create2,
+    revert,
+    access_storage,
+    set_storage,
+    contract_return,
+    self_destruct,
+    get_input_data
   };
 
   return adapter;
@@ -77,9 +156,38 @@ DEFINE_API_IMPL( contract_api_impl, invoke )
    machine::message msg = {};
    ilog( "machine::message msg.flags ${f}", ("f",msg.flags) );
 
-   machine::context ctx = {true, 0x5c477758};
+   const is_debug = true;
+   const uint64_t block_timestamp = _db.head_block_time();
+   const uint64_t block_number = _db.head_block_num();
+   const uint64_t block_difficulty = static_cast<uint64_t>( database::get_pow_summary_target() );
+   const uint64_t block_energylimit = 0;
+   const uint64_t tx_energyprice = 0;
+   std::string tx_origin = "XGT0000000000000000000000000000000000000000";
+   std::string block_coinbase = "XGT0000000000000000000000000000000000000000";
+
+   0x00
+   // machine::context ctx = {true, 0x5c477758};
+   machine::context ctx = {
+     is_debug,
+     block_timestamp,
+     block_number,
+     block_difficulty,
+     block_energylimit,
+     tx_energyprice,
+     tx_origin,
+     block_coinbase
+   };
+
+   std::vector<machine::word> code = {0x31, 0x00};
+
    machine::chain_adapter adapter = make_chain_adapter();
-   machine::machine m(ctx, args.code, msg, adapter);
+   // machine::machine m(ctx, args.code, msg, adapter);
+   machine::machine m(ctx, code, msg, adapter);
+
+   std::string init_miner = "XGT0000000000000000000000000000000000000000";
+   machine::stack_variant<std::string> variant(init_miner);
+   m.push_word(variant);
+
    m.print_stack();
 
    std::string line;
