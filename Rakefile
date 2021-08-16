@@ -47,23 +47,23 @@ def mining_error(message)
 end
 
 def wallet
-  'XGTFnjnrACfmLLi4fZSK5TfRi6NvFCLrukk4ZfZBZXQ'
+  ENV['XGT_WALLET'] || mining_error("Wallet not specificed, please specify a wallet with 'XGT_WALLET'")
 end
 
 def wif
-  '5KDxgvTZ17SZeiAzUv87vAxMwQ9T9jvakYurSdc1zHGdSdXJZCF'
+  ENV['XGT_WIF'] || mining_error("XGT_WIF not specified")
 end
 
 def recovery_private_key
-  '5KDxgvTZ17SZeiAzUv87vAxMwQ9T9jvakYurSdc1zHGdSdXJZCF'
+  ENV['XGT_RECOVERY_PRIVATE_KEY'] || mining_error("XGT_RECOVERY_PRIVATE_KEY not specified")
 end
 
 def witness_private_key
-  '5KDxgvTZ17SZeiAzUv87vAxMwQ9T9jvakYurSdc1zHGdSdXJZCF'
+  ENV['XGT_WITNESS_PRIVATE_KEY'] || mining_error("XGT_WITNESS_PRIVATE_KEY not specified")
 end
 
 def host
-  ENV['XGT_HOST'] || 'http://xgt.rag.pub:8751'
+  ENV['XGT_HOST'] || 'http://localhost:8751'
 end
 
 def seed_hosts

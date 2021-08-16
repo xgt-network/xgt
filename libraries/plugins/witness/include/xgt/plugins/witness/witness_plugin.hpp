@@ -5,7 +5,6 @@
 #include <xgt/plugins/p2p/p2p_plugin.hpp>
 #include <xgt/plugins/witness/block_producer.hpp>
 #include <xgt/chain/witness_objects.hpp>
-#include <machine.hpp>
 
 #include <appbase/application.hpp>
 

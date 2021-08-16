@@ -57,17 +57,17 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
    return result;
 }
 
-machine::chain_adapter make_chain_adapter()
+machine::chain_adapter make_chain_adapter(chain::database& _db)
 {
   std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
   {
     return 0;
   };
 
-  std::function< uint64_t(std::string) > get_balance = [](std::string address) -> uint64_t
+  std::function< uint64_t(std::string) > get_balance = [&_db](std::string address) -> uint64_t
   {
     const auto& wallet = _db.get_account(address);
-    return static_cast<uint64_t>(wallet.balance.amount);
+    return static_cast<uint64_t>(wallet.balance.amount.value);
   };
 
   std::function< std::string(std::string) > get_code_hash = [](std::string address) -> std::string
@@ -156,10 +156,10 @@ DEFINE_API_IMPL( contract_api_impl, invoke )
    machine::message msg = {};
    ilog( "machine::message msg.flags ${f}", ("f",msg.flags) );
 
-   const is_debug = true;
-   const uint64_t block_timestamp = _db.head_block_time();
+   const bool is_debug = true;
+   const uint64_t block_timestamp = static_cast<uint64_t>( _db.head_block_time().sec_since_epoch() );
    const uint64_t block_number = _db.head_block_num();
-   const uint64_t block_difficulty = static_cast<uint64_t>( database::get_pow_summary_target() );
+   const uint64_t block_difficulty = static_cast<uint64_t>( _db.get_pow_summary_target() );
    const uint64_t block_energylimit = 0;
    const uint64_t tx_energyprice = 0;
    std::string tx_origin = "XGT0000000000000000000000000000000000000000";
@@ -179,13 +179,12 @@ DEFINE_API_IMPL( contract_api_impl, invoke )
 
    std::vector<machine::word> code = {0x31, 0x00};
 
-   machine::chain_adapter adapter = make_chain_adapter();
+   machine::chain_adapter adapter = make_chain_adapter(_db);
    // machine::machine m(ctx, args.code, msg, adapter);
    machine::machine m(ctx, code, msg, adapter);
 
    std::string init_miner = "XGT0000000000000000000000000000000000000000";
-   machine::stack_variant<std::string> variant(init_miner);
-   m.push_word(variant);
+   m.push_string(init_miner);
 
    m.print_stack();
 

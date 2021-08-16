@@ -53,40 +53,40 @@ enum opcode
   shr_opcode = 0x1C,
   sar_opcode = 0x1D,
 
-  sha3_opcode = 0x20, // XXX depends on crypto++ -- needs cmake integration
+  sha3_opcode = 0x20,
   address_opcode = 0x30,
-  balance_opcode = 0x31, // XXX Look up balance for address on top of stack. Is this an rpc call to the chain?
-  origin_opcode = 0x32, // XXX Transaction origin address
+  balance_opcode = 0x31,
+  origin_opcode = 0x32,
   caller_opcode = 0x33,
   callvalue_opcode = 0x34,
-  calldataload_opcode = 0x35, // XXX Reads a uint256 from message data
-  calldatasize_opcode = 0x36, // XXX Message data length in bytes
-  calldatacopy_opcode = 0x37, // XXX Copy message data to memory
+  calldataload_opcode = 0x35,
+  calldatasize_opcode = 0x36,
+  calldatacopy_opcode = 0x37,
   codesize_opcode = 0x38,
-  codecopy_opcode = 0x39, // XXX Copy executing contract's bytecode to memory
-  gasprice_opcode = 0x3A, // XXX Price of executing contract. Energyprice? 
-  extcodesize_opcode = 0x3B, // XXX Length of the contract bytecode at addr (top of stack) in bytes
-  extcodecopy_opcode = 0x3C, // XXX Copy contract's code to memory
-  returndatasize_opcode = 0x3D, // XXX Size of returned data from last external call in bytes
-  returndatacopy_opcode = 0x3E, // XXX Copy returned data to memory
-  extcodehash_opcode = 0x3F, // XXX Hash of contract bytecode at addr (top of stack)
-  blockhash_opcode = 0x40, // XXX Hash of specific block (blocknumber is top of stack)
-  coinbase_opcode = 0x41, // TODO REVIEW
+  codecopy_opcode = 0x39,
+  energyprice_opcode = 0x3A,
+  extcodesize_opcode = 0x3B,
+  extcodecopy_opcode = 0x3C,
+  returndatasize_opcode = 0x3D,
+  returndatacopy_opcode = 0x3E,
+  extcodehash_opcode = 0x3F,
+  blockhash_opcode = 0x40,
+  coinbase_opcode = 0x41,
   timestamp_opcode = 0x42,
   number_opcode = 0x43,
   difficulty_opcode = 0x44,
-  gaslimit_opcode = 0x45,
+  energylimit_opcode = 0x45,
   pop_opcode = 0x50,
-  mload_opcode = 0x51, // TODO
-  mstore_opcode = 0x52, // TODO
-  mstore8_opcode = 0x53, // TODO
-  sload_opcode = 0x54, // TODO
-  sstore_opcode = 0x55, // TODO
+  mload_opcode = 0x51,
+  mstore_opcode = 0x52,
+  mstore8_opcode = 0x53,
+  sload_opcode = 0x54,
+  sstore_opcode = 0x55,
   jump_opcode = 0x56,
-  jumpi_opcode = 0x57, 
+  jumpi_opcode = 0x57,
   pc_opcode = 0x58,
-  msize_opcode = 0x59, // TODO
-  gas_opcode = 0x5A, // TODO energy?
+  msize_opcode = 0x59,
+  energy_opcode = 0x5A,
   jumpdest_opcode = 0x5B,
 
   // PUSH
@@ -160,26 +160,21 @@ enum opcode
   swap16_opcode = 0x9F,
 
   // LOG
-  log0_opcode = 0xA0, // TODO
-  log1_opcode = 0xA1, // TODO
-  log2_opcode = 0xA2, // TODO
-  log3_opcode = 0xA3, // TODO
-  log4_opcode = 0xA4, // TODO
+  log0_opcode = 0xA0,
+  log1_opcode = 0xA1,
+  log2_opcode = 0xA2,
+  log3_opcode = 0xA3,
+  log4_opcode = 0xA4,
 
-  // Generic push/dup/swap opcodes
-  //push_opcode = 0xB0, // TODO
-  //dup_opcode = 0xB1, // TODO
-  //swap_opcode = 0xB2, // TODO
-
-  //create_opcode = 0xF0, // TODO
-  //call_opcode = 0xF1, // TODO
-  //callcode_opcode = 0xF2, // TODO
+  create_opcode = 0xF0,
+  call_opcode = 0xF1, // TODO
+  callcode_opcode = 0xF2, // TODO
   return_opcode = 0xF3,
-  //delegatecall_opcode = 0xF4, // TODO
-  //create2_opcode = 0xF5, // TODO
-  //staticcall_opcode = 0xFA, // TODO
-  //revert_opcode = 0xFD, // TODO
-  //selfdestruct_opcode = 0xFF, // TODO
+  delegatecall_opcode = 0xF4, // TODO
+  create2_opcode = 0xF5, // TODO
+  staticcall_opcode = 0xFA, // TODO
+  revert_opcode = 0xFD,
+  selfdestruct_opcode = 0xFF,
 };
 
 enum class machine_state
@@ -201,44 +196,74 @@ struct message
 {
   uint32_t flags;
   int32_t depth;
-  int64_t gas;
+  int64_t energy;
 
-  // TODO Need address datatype
-  // address sender;
-  big_word sender;
-  // address destination;
-  big_word destination;
+  std::string sender;
+  std::string destination;
 
   big_word value;
   size_t input_size;
-  const uint8_t* input_data;
+  std::vector<word> input_data = {};
   size_t code_size;
 };
 
+// TODO replace with correct data types
 struct context
 {
   bool is_debug;
   uint64_t block_timestamp;
   uint64_t block_number;
   uint64_t block_difficulty;
-  uint64_t block_gaslimit;
-  uint64_t tx_gasprice;
-  // Should be address datatype
-  uint64_t block_coinbase;
+  uint64_t block_energylimit;
+  uint64_t tx_energyprice;
+  std::string tx_origin;
+  std::string block_coinbase;
 };
-
-/* TODO switch stack to variant implementing this pattern
-
-   if (stack_variant* it = std::get_if<stack_variant>(from))
-   {
-     stack_variant& stack_object = std::get<stack_variant>(from);
-    // Use `stack_object` as normal
-   }
- */
 
 struct chain_adapter
 {
+  // TODO sha3 opcode
+  std::function< std::string(std::vector<word>) > sha3;
+
+  // TODO retrieves balance at addr -- used for balance opcode
   std::function< uint64_t(std::string) > get_balance;
+
+  // TODO for hashing address -- extcodehash opcode
+  std::function< std::string(std::string) > get_code_hash;
+
+  // TODO for hashing block number -- blockhash opcode
+  std::function< std::string(uint64_t) > get_block_hash;
+
+  // TODO get contract bytecode at address
+  std::function< std::vector<word>(std::string) > get_code_at_addr;
+
+  // TODO creates a child contract -- create opcode
+  std::function< std::string(std::vector<word>, big_word) > contract_create;
+
+  // TODO call a method from another contract -- call opcode -- address, energy, value, args
+  std::function< std::string(std::string, uint64_t, big_word, std::vector<word>) > contract_call;
+
+  // TODO creates a child contract -- create2 opcode
+  std::function< std::string(big_word, std::vector<word>, std::string) > contract_create2;
+
+  // TODO revert opcode
+  std::function< bool(std::vector<word>) > revert;
+
+  // TODO load opcode -- takes key as a parameter and returns value
+  std::function< big_word(std::string) > access_storage;
+
+  // TODO sstore opcode -- destination, key, value
+  std::function< bool(std::string, std::string, big_word) > set_storage;
+
+  // TODO return opcode
+  std::function< bool(std::vector<word>) > contract_return;
+
+  // TODO selfdestruct opcode
+  std::function< bool(std::string) > self_destruct;
+
+  // TODO used to initialize message data
+  std::function< std::vector<word>(std::string) > get_input_data;
+
 };
 
 class machine
@@ -250,10 +275,13 @@ class machine
   std::vector<word> code;
   message msg;
   std::vector<word> memory;
+  std::vector< std::map<std::string, big_word> > storage;
   std::vector<word> return_value;
+  std::vector<word> ext_return_data;
   boost::optional<std::string> error_message;
   std::stringstream logger;
   chain_adapter adapter;
+  big_word energy_left;
 
   void push_word(stack_variant v);
   big_word pop_word();
