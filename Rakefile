@@ -558,6 +558,12 @@ namespace :contracts do
     response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}
     p response
   end
+
+  desc 'View sample contracts'
+  task :debug_invoke do
+    response = rpc.call('contract_api.invoke', { 'owner' => wallet, 'code' => [] }) || {}
+    p response
+  end
 end
 
 namespace :machine do
