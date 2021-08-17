@@ -19,6 +19,10 @@ end
 
 directory "../xgt-build"
 
+def from_genesis?
+  ENV['FROM_GENESIS']&.upcase == 'TRUE'
+end
+
 def mining_disabled?
   ENV['MINING_DISABLED']&.upcase == 'TRUE'
 end
@@ -291,13 +295,19 @@ task :run do
 
       enable-stale-production = #{mining_disabled? ? 'false' : 'true'}
     )))
-    if seed_hosts && seed_hosts.any?
+    if from_genesis?
+      f.puts "p2p-seed-node = "
+    elsif seed_hosts && seed_hosts.any?
       f.puts "p2p-seed-node = #{seed_hosts.join(" ")}"
     end
   end
   $stderr.puts(File.read("#{data_dir}/config.ini"))
 
-  sh %(cd #{data_dir} && ../xgt-build/programs/xgtd/xgtd --data-dir=.)
+  flags = ['--data-dir=.']
+  if from_genesis?
+    flags << '--from-genesis'
+  end
+  sh %(cd #{data_dir} && ../xgt-build/programs/xgtd/xgtd #{flags.join(' ')})
 end
 
 desc 'Get approximate C++ LoC'
