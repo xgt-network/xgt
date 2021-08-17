@@ -1,16 +1,20 @@
 file( GLOB HEADERS "include/xgt/plugins/contract_api/*.hpp" )
 set( SOURCES contract_api.cpp contract_api_plugin.cpp )
 
-add_library( contract_api_plugin ${SOURCES} ${HEADERS} )
+add_library( contract_api_plugin ${SOURCES} ${HEADERS}
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../../vendor/cryptopp/*.{c,cpp,h,hpp}"
+)
 
 target_link_libraries( contract_api_plugin
                        chain_plugin
                        json_rpc_plugin
+                       cryptopp-static
                        xgtvm
                      )
 target_include_directories( contract_api_plugin
                             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
                                    "${CMAKE_CURRENT_SOURCE_DIR}/../../../vendor/xgtvm/libraries"
+                                   "${CMAKE_CURRENT_SOURCE_DIR}/../../../vendor/cryptopp"
                           )
 
 if( CLANG_TIDY_EXE )

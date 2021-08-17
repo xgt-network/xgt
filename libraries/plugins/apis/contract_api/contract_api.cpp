@@ -7,6 +7,11 @@
 #include <xgt/chain/database.hpp>
 #include <xgt/chain/index.hpp>
 
+#include <cryptlib.h>
+#include <filters.h>
+#include <hex.h>
+#include <keccak.h>
+
 #include <machine.hpp>
 
 namespace xgt { namespace plugins { namespace contract {
@@ -59,9 +64,16 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
 
 machine::chain_adapter make_chain_adapter(chain::database& _db)
 {
+  // TODO: Change to take a string and return a string
   std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
   {
-    return 0;
+    CryptoPP::Keccak_256 hash;
+    std::string msg(memory.begin(), memory.end());
+    std::string digest;
+    CryptoPP::HexEncoder encoder( new CryptoPP::StringSink(digest) );
+    CryptoPP::StringSource(msg, true, new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(digest)));
+    CryptoPP::StringSource(digest, true, new CryptoPP::Redirector(encoder));
+    return digest;
   };
 
   std::function< uint64_t(std::string) > get_balance = [&_db](std::string address) -> uint64_t
