@@ -67,13 +67,14 @@ machine::chain_adapter make_chain_adapter(chain::database& _db)
   // TODO: Change to take a string and return a string
   std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
   {
-    CryptoPP::Keccak_256 hash;
+    //CryptoPP::Keccak_256 hash;
     std::string msg(memory.begin(), memory.end());
-    std::string digest;
-    CryptoPP::HexEncoder encoder( new CryptoPP::StringSink(digest) );
-    CryptoPP::StringSource(msg, true, new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(digest)));
-    CryptoPP::StringSource(digest, true, new CryptoPP::Redirector(encoder));
-    return digest;
+    //std::string digest;
+    //CryptoPP::HexEncoder encoder( new CryptoPP::StringSink(digest) );
+    //CryptoPP::StringSource(msg, true, new CryptoPP::HashFilter(hash, new CryptoPP::StringSink(digest)));
+    //CryptoPP::StringSource(digest, true, new CryptoPP::Redirector(encoder));
+    //return digest;
+    return msg;
   };
 
   std::function< uint64_t(std::string) > get_balance = [&_db](std::string address) -> uint64_t
