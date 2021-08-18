@@ -215,7 +215,7 @@ struct context
   uint64_t block_number;
   uint64_t block_difficulty;
   uint64_t block_energylimit;
-  uint64_t tx_energyprice;
+  int64_t tx_energyprice;
   std::string tx_origin;
   std::string block_coinbase;
 };

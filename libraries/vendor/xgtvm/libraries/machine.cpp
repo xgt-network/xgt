@@ -36,12 +36,12 @@ namespace machine
     return x.convert_to<size_t>();
   }
 
-  big_word to_big_word(size_t a)
+  big_word to_big_word(int64_t a)
   {
     return a;
   }
 
-  big_word to_big_word(uint64_t a)
+  big_word to_big_word(size_t a)
   {
     return a;
   }
@@ -236,7 +236,7 @@ namespace machine
     big_word va, vb, vc, vd, ve, vf, vg, vh, vi, vj, vk, vl, vm, vn, vo, vp, vq;
     stack_variant sv;
     signed_big_word sa, sb, sc;
-    size_t offset, dest_offset, length, code_size;
+    size_t offset, dest_offset, length, code_size = 0;
     std::vector<word> contract_args;
     std::vector<word> ext_contract_code;
     std::vector<word>::const_iterator first, last;
@@ -583,24 +583,23 @@ namespace machine
           stack.pop_front();
           ext_contract_code = adapter.get_code_at_addr(*ss);
           code_size = sizeof(ext_contract_code) / sizeof(ext_contract_code[0]);
+          dest_offset = static_cast<size_t>( pop_word() );
+          offset = static_cast<size_t>( pop_word() );
+          length = static_cast<size_t>( pop_word() );
+
+          if ((offset + length) > code_size) {
+            logger << "codecopy end index exceeds external contract code length";
+            break;
+          }
+
+          for (size_t i = 0; i < length; ++i)
+            memory[dest_offset + i] = ext_contract_code[offset + i];
         }
         else
         {
           state = machine_state::error;
           error_message.emplace("Extcodecopy operation type error");
         }
-
-        dest_offset = static_cast<size_t>( pop_word() );
-        offset = static_cast<size_t>( pop_word() );
-        length = static_cast<size_t>( pop_word() );
-
-        if ((offset + length) > code_size) {
-          logger << "codecopy end index exceeds external contract code length";
-          break;
-        }
-
-        for (size_t i = 0; i < length; ++i)
-          memory[dest_offset + i] = ext_contract_code[offset + i];
 
         break;
       case returndatasize_opcode:
