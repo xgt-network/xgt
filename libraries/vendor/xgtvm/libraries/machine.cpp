@@ -41,6 +41,11 @@ namespace machine
     return a;
   }
 
+  big_word to_big_word(uint64_t a)
+  {
+    return a;
+  }
+
   big_word to_big_word(word a)
   {
     return a;
@@ -460,7 +465,6 @@ namespace machine
         push_word( msg.destination );
         break;
       case balance_opcode:
-        std::cout << 1 << std::endl;
         logger << "op balance" << std::endl;
         {
           sv = stack.front(); // addr
@@ -2629,22 +2633,53 @@ namespace machine
 
           contract_args = std::vector<word>(first, last);
 
-          adapter.contract_call(*ss, static_cast<uint64_t>(va), vb, contract_args);
-        }
+          std::vector<word> contract_call_return = adapter.contract_call(*ss, static_cast<uint64_t>(va), vb, contract_args);
 
-        // TODO
+          for (size_t i = 0; i < static_cast<size_t>(vf); i++)
+            memory[static_cast<size_t>(ve) + i] = contract_call_return[i];
+
+          // TODO revise stack return value?
+          push_word("Success"); // success
+        }
+        else {
+          push_word("Failure"); // success
+          state = machine_state::error;
+          error_message.emplace("Call operation type error");
+        }
         break;
       case callcode_opcode:
         logger << "op callcode" << std::endl;
         va = pop_word(); // energy
-        vb = pop_word(); // addr
-        vc = pop_word(); // value
-        vd = pop_word(); // argsOffset
-        ve = pop_word(); // argsLength
-        vf = pop_word(); // retOffset
-        vg = pop_word(); // retLength
 
-        // TODO
+        sv = stack.front(); // addr
+        ss = boost::get<std::string>(&sv);
+        if (ss)
+        {
+          stack.pop_front();
+          vb = pop_word(); // value
+          vc = pop_word(); // argsOffset
+          vd = pop_word(); // argsLength
+          ve = pop_word(); // retOffset
+          vf = pop_word(); // retLength
+
+          first = memory.begin() + static_cast<size_t>(vc);
+          last = memory.begin() + static_cast<size_t>(vc) + static_cast<size_t>(vd);
+
+          contract_args = std::vector<word>(first, last);
+
+          std::vector<word> contract_callcode_return = adapter.contract_callcode(*ss, static_cast<uint64_t>(va), vb, contract_args);
+
+          for (size_t i = 0; i < static_cast<size_t>(vf); i++)
+            memory[static_cast<size_t>(ve) + i] = contract_callcode_return[i];
+
+          // TODO revise stack return value?
+          push_word("Success"); // success
+        }
+        else {
+          push_word("Failure"); // success
+          state = machine_state::error;
+          error_message.emplace("Callcode operation type error");
+        }
         break;
       case return_opcode:
         logger << "op return" << std::endl;
@@ -2671,32 +2706,88 @@ namespace machine
       case delegatecall_opcode:
         logger << "op delegatecall" << std::endl;
         va = pop_word(); // energy
-        vb = pop_word(); // addr
-        vc = pop_word(); // argsOffset
-        vd = pop_word(); // argsLength
-        ve = pop_word(); // retOffset
-        vf = pop_word(); // retLength
 
-        // TODO
+        sv = stack.front(); // addr
+        ss = boost::get<std::string>(&sv);
+        if (ss)
+        {
+          stack.pop_front();
+          vb = pop_word(); // argsOffset
+          vc = pop_word(); // argsLength
+          vd = pop_word(); // retOffset
+          ve = pop_word(); // retLength
+
+          first = memory.begin() + static_cast<size_t>(vb);
+          last = memory.begin() + static_cast<size_t>(vb) + static_cast<size_t>(vc);
+
+          contract_args = std::vector<word>(first, last);
+
+          std::vector<word> contract_delegatecall_return = adapter.contract_delegatecall(*ss, static_cast<uint64_t>(va), contract_args);
+
+          for (size_t i = 0; i < static_cast<size_t>(ve); i++)
+            memory[static_cast<size_t>(vd) + i] = contract_delegatecall_return[i];
+
+          // TODO revise stack return value?
+          push_word("Success"); // success
+        }
+        else {
+          push_word("Failure"); // success
+          state = machine_state::error;
+          error_message.emplace("Delegatecall operation type error");
+        }
         break;
       case create2_opcode:
         logger << "op create2" << std::endl;
         va = pop_word(); // value
         vb = pop_word(); // offset
-        vc = pop_word(); //length
-        vd = pop_word(); // salt
-        // TODO
+        vc = pop_word(); // length
+
+        sv = stack.front(); // salt
+        ss = boost::get<std::string>(&sv);
+        if (ss)
+        {
+          first = memory.begin() + static_cast<size_t>(vb);
+          last = memory.begin() + static_cast<size_t>(vb) + static_cast<size_t>(vc);
+
+          push_word( adapter.contract_create2( std::vector<word>(first, last), va, *ss ) );
+        }
+        else {
+          state = machine_state::error;
+          error_message.emplace("Create2 operation type error");
+        }
         break;
       case staticcall_opcode:
         logger << "op staticcall" << std::endl;
         va = pop_word(); // energy
-        vb = pop_word(); // addr
-        vc = pop_word(); // argsOffset
-        vd = pop_word(); // argsLength
-        ve = pop_word(); // retOffset
-        vf = pop_word(); // retLength
 
-        // TODO
+        sv = stack.front(); // addr
+        ss = boost::get<std::string>(&sv);
+        if (ss)
+        {
+          stack.pop_front();
+          vb = pop_word(); // argsOffset
+          vc = pop_word(); // argsLength
+          vd = pop_word(); // retOffset
+          ve = pop_word(); // retLength
+
+          first = memory.begin() + static_cast<size_t>(vb);
+          last = memory.begin() + static_cast<size_t>(vb) + static_cast<size_t>(vc);
+
+          contract_args = std::vector<word>(first, last);
+
+          std::vector<word> contract_staticcall_return = adapter.contract_staticcall(*ss, static_cast<uint64_t>(va), contract_args);
+
+          for (size_t i = 0; i < static_cast<size_t>(ve); i++)
+            memory[static_cast<size_t>(vd) + i] = contract_staticcall_return[i];
+
+          // TODO revise stack return value?
+          push_word("Success"); // success
+        }
+        else {
+          push_word("Failure"); // success
+          state = machine_state::error;
+          error_message.emplace("Staticcall operation type error");
+        }
         break;
       case revert_opcode:
         logger << "op revert" << std::endl;

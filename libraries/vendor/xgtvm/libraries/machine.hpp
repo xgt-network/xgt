@@ -167,12 +167,12 @@ enum opcode
   log4_opcode = 0xA4,
 
   create_opcode = 0xF0,
-  call_opcode = 0xF1, // TODO
-  callcode_opcode = 0xF2, // TODO
+  call_opcode = 0xF1,
+  callcode_opcode = 0xF2,
   return_opcode = 0xF3,
-  delegatecall_opcode = 0xF4, // TODO
-  create2_opcode = 0xF5, // TODO
-  staticcall_opcode = 0xFA, // TODO
+  delegatecall_opcode = 0xF4,
+  create2_opcode = 0xF5,
+  staticcall_opcode = 0xFA,
   revert_opcode = 0xFD,
   selfdestruct_opcode = 0xFF,
 };
@@ -225,7 +225,6 @@ struct chain_adapter
   // TODO sha3 opcode
   std::function< std::string(std::vector<word>) > sha3;
 
-  // TODO retrieves balance at addr -- used for balance opcode
   std::function< uint64_t(std::string) > get_balance;
 
   // TODO for hashing address -- extcodehash opcode
@@ -241,10 +240,20 @@ struct chain_adapter
   std::function< std::string(std::vector<word>, big_word) > contract_create;
 
   // TODO call a method from another contract -- call opcode -- address, energy, value, args
-  std::function< std::string(std::string, uint64_t, big_word, std::vector<word>) > contract_call;
+  std::function< std::vector<word>(std::string, uint64_t, big_word, std::vector<word>) > contract_call;
+
+  // TODO call a method from another contract(?) -- callcode opcode -- address, energy, value, args
+  std::function< std::vector<word>(std::string, uint64_t, big_word, std::vector<word>) > contract_callcode;
+
+  // TODO call a method from another contract using the storage of the current
+  // opcode -- delegatecall opcode -- address, energy, args
+  std::function< std::vector<word>(std::string, uint64_t, std::vector<word>) > contract_delegatecall;
+
+  // TODO call a method from another contract with state changes disallowed -- staticcall opcode -- address, energy, args
+  std::function< std::vector<word>(std::string, uint64_t, std::vector<word>) > contract_staticcall;
 
   // TODO creates a child contract -- create2 opcode
-  std::function< std::string(big_word, std::vector<word>, std::string) > contract_create2;
+  std::function< std::string(std::vector<word>, big_word, std::string) > contract_create2;
 
   // TODO revert opcode
   std::function< bool(std::vector<word>) > revert;
