@@ -14,13 +14,17 @@ namespace detail { class contract_api_impl; }
 
 struct get_contract_args
 {
-   bool example = true;
+  protocol::contract_hash_type hash;
 };
 
+struct api_contract_object
+{
+  bool example = true;
+};
 
 struct get_contract_return
 {
-   bool example = true;
+  api_contract_object contract;
 };
 
 
@@ -64,8 +68,9 @@ class contract_api
 
 } } } // xgt::plugins::contract
 
-FC_REFLECT( xgt::plugins::contract::get_contract_args, (example) )
-FC_REFLECT( xgt::plugins::contract::get_contract_return, (example) )
+FC_REFLECT( xgt::plugins::contract::get_contract_args, (hash) )
+FC_REFLECT( xgt::plugins::contract::get_contract_return, (contract) )
+FC_REFLECT( xgt::plugins::contract::api_contract_object, (example) )
 FC_REFLECT( xgt::plugins::contract::list_owner_contracts_args, (owner) )
 FC_REFLECT( xgt::plugins::contract::list_owner_contracts_return, (contracts) )
 FC_REFLECT( xgt::plugins::contract::invoke_args, (owner) (code) )

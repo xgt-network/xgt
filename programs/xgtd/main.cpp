@@ -12,6 +12,7 @@
 #include <xgt/plugins/block_api/block_api_plugin.hpp>
 #include <xgt/plugins/chain_api/chain_api_plugin.hpp>
 #include <xgt/plugins/database_api/database_api_plugin.hpp>
+#include <xgt/plugins/contract_api/contract_api_plugin.hpp>
 #include <xgt/plugins/transaction_api/transaction_api_plugin.hpp>
 #include <xgt/plugins/wallet_by_key_api/wallet_by_key_api_plugin.hpp>
 #include <xgt/plugins/wallet_history_api/wallet_history_api_plugin.hpp>
@@ -97,6 +98,7 @@ int main( int argc, char** argv )
          xgt::plugins::block_api::block_api_plugin,
          xgt::plugins::chain::chain_api_plugin,
          xgt::plugins::database_api::database_api_plugin,
+         xgt::plugins::contract::contract_api_plugin,
          xgt::plugins::transaction_api::transaction_api_plugin,
          xgt::plugins::wallet_by_key::wallet_by_key_api_plugin,
          xgt::plugins::wallet_history::wallet_history_api_plugin

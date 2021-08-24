@@ -34,7 +34,6 @@ DEFINE_API_IMPL( contract_api_impl, get_contract )
    ilog( "machine::message msg.flags ${f}", ("f",msg.flags) );
 
    get_contract_return result;
-   result.example = true;
    return result;
 }
 
