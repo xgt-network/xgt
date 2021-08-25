@@ -71,7 +71,14 @@ machine::chain_adapter make_chain_adapter(chain::database& _db)
 {
   std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
   {
-    return 0;
+    std::string message(memory.begin(), memory.end());
+    unsigned char output[32];
+    SHA3_CTX ctx;
+    keccak_init(&ctx);
+    keccak_update(&ctx, (unsigned char*)message.c_str(), message.size());
+    keccak_final(&ctx, output);
+    std::string fin((char*)output, 32);
+    return fin;
   };
 
   std::function< uint64_t(std::string) > get_balance = [](std::string address) -> uint64_t
