@@ -1,5 +1,5 @@
-file( GLOB HEADERS "include/xgt/plugins/contract_api/*.hpp" )
-set( SOURCES contract_api.cpp contract_api_plugin.cpp )
+file( GLOB HEADERS "include/xgt/plugins/contract_api/*.hpp" "include/keccak256.h" )
+set( SOURCES contract_api.cpp contract_api_plugin.cpp keccak256.c )
 
 add_library( contract_api_plugin ${SOURCES} ${HEADERS} )
 

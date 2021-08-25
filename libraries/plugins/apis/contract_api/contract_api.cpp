@@ -7,6 +7,8 @@
 #include <xgt/chain/database.hpp>
 #include <xgt/chain/index.hpp>
 
+#include "keccak256.h"
+
 #include <machine.hpp>
 
 namespace xgt { namespace plugins { namespace contract {
@@ -32,6 +34,14 @@ DEFINE_API_IMPL( contract_api_impl, get_contract )
    // TODO: Temporary
    machine::message msg = {};
    ilog( "machine::message msg.flags ${f}", ("f",msg.flags) );
+
+   // TODO: Temporary
+   std::string message = "testing";
+   unsigned char output[32];
+   SHA3_CTX ctx;
+   keccak_init(&ctx);
+   keccak_update(&ctx, (unsigned char*)message.c_str(), message.size());
+   keccak_final(&ctx, output);
 
    get_contract_return result;
    result.example = true;
