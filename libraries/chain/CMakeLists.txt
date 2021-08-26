@@ -1,4 +1,8 @@
-file(GLOB HEADERS "include/xgt/chain/*.hpp" "include/xgt/chain/util/*.hpp" "include/xgt/chain/xtt_objects/*.hpp")
+file(GLOB HEADERS "include/xgt/chain/*.hpp"
+                  "include/xgt/chain/util/*.hpp"
+                  "include/xgt/chain/xtt_objects/*.hpp"
+                  "include/keccak256.h"
+    )
 
 ## SORT .cpp by most likely to change / break compile
 add_library( xgt_chain
@@ -7,7 +11,7 @@ add_library( xgt_chain
              database.cpp
              index.cpp
 
-             machine.cpp
+             keccak256.c
 
              xtt_evaluator.cpp
 
@@ -32,11 +36,14 @@ add_library( xgt_chain
              ${HEADERS}
            )
 
-target_link_libraries( xgt_chain xgt_protocol fc chainbase xgt_schema appbase mira
+target_link_libraries( xgt_chain xgt_protocol fc chainbase xgt_schema appbase mira xgtvm
                        ${PATCH_MERGE_LIB} )
 target_include_directories( xgt_chain
                             PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
-                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
+                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+                                   "${CMAKE_CURRENT_BINARY_DIR}/include"
+                                   "${CMAKE_CURRENT_SOURCE_DIR}/../../../vendor/xgtvm/libraries"
+                          )
 
 if( CLANG_TIDY_EXE )
    set_target_properties(
