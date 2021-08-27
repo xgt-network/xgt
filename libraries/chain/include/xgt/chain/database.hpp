@@ -10,7 +10,6 @@
 #include <xgt/chain/node_property_object.hpp>
 #include <xgt/chain/notifications.hpp>
 #include <xgt/chain/contract_objects.hpp>
-#include <xgt/chain/machine.hpp>
 
 #include <xgt/chain/util/advanced_benchmark_dumper.hpp>
 #include <xgt/chain/util/signal.hpp>

@@ -9,7 +9,9 @@
 #include <xgt/chain/contract_objects.hpp>
 #include <xgt/chain/block_summary_object.hpp>
 #include <xgt/chain/xtt_objects/account_balance_object.hpp>
-#include <xgt/chain/machine.hpp>
+
+#include "keccak256.h"
+#include <machine.hpp>
 
 #include <xgt/chain/util/energybar.hpp>
 
@@ -1025,6 +1027,123 @@ void contract_create_evaluator::do_apply( const contract_create_operation& op )
       c.owner = op.owner;
       c.code = op.code;
    });
+}
+
+machine::chain_adapter make_chain_adapter(chain::database& _db)
+{
+  std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
+  {
+    std::string message(memory.begin(), memory.end());
+    unsigned char output[32];
+    SHA3_CTX ctx;
+    keccak_init(&ctx);
+    keccak_update(&ctx, (unsigned char*)message.c_str(), message.size());
+    keccak_final(&ctx, output);
+    std::string fin((char*)output, 32);
+    return fin;
+  };
+
+  std::function< uint64_t(std::string) > get_balance = [](std::string address) -> uint64_t
+  {
+    return 0;
+  };
+
+  std::function< std::string(std::string) > get_code_hash = [](std::string address) -> std::string
+  {
+    return "";
+  };
+
+  std::function< std::string(uint64_t) > get_block_hash = [](uint64_t block_num) -> std::string
+  {
+    return "";
+  };
+
+  std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [](std::string address) -> std::vector<machine::word>
+  {
+    return {};
+  };
+
+  std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [](std::vector<machine::word> memory, machine::big_word value) -> std::string
+  {
+    return {};
+  };
+
+  std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
+  {
+    return {};
+  };
+
+  std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_callcode = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
+  {
+    return {};
+  };
+
+  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_delegatecall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
+  {
+    return {};
+  };
+
+  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
+  {
+    return {};
+  };
+
+  std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
+  {
+    return {};
+  };
+
+  std::function< bool(std::vector<machine::word>) > revert = [](std::vector<machine::word> memory) -> bool
+  {
+    return {};
+  };
+
+  std::function< machine::big_word(std::string) > access_storage = [](std::string key) -> machine::big_word
+  {
+    return {};
+  };
+
+  std::function< bool(std::string, std::string, machine::big_word) > set_storage = [](std::string destination, std::string key, machine::big_word value) -> bool
+  {
+    return {};
+  };
+
+  std::function< bool(std::vector<machine::word>) > contract_return = [](std::vector<machine::word> memory) -> bool
+  {
+    return {};
+  };
+
+  std::function< bool(std::string) > self_destruct = [](std::string address) -> bool
+  {
+    return {};
+  };
+
+  std::function< std::vector<machine::word>(std::string) > get_input_data = [](std::string address) -> std::vector<machine::word>
+  {
+    return {};
+  };
+
+  machine::chain_adapter adapter = {
+    sha3,
+    get_balance,
+    get_code_hash,
+    get_block_hash,
+    get_code_at_addr,
+    contract_create,
+    contract_call,
+    contract_callcode,
+    contract_delegatecall,
+    contract_staticcall,
+    contract_create2,
+    revert,
+    access_storage,
+    set_storage,
+    contract_return,
+    self_destruct,
+    get_input_data
+  };
+
+  return adapter;
 }
 
 void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
