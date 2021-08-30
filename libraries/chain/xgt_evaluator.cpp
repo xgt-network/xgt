@@ -1029,7 +1029,7 @@ void contract_create_evaluator::do_apply( const contract_create_operation& op )
    });
 }
 
-machine::chain_adapter make_chain_adapter(chain::database& _db)
+machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type owner)
 {
   std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
   {
@@ -1051,37 +1051,61 @@ machine::chain_adapter make_chain_adapter(chain::database& _db)
 
   std::function< std::string(std::string) > get_code_hash = [](std::string address) -> std::string
   {
+    // TODO Get sha3 hash of contract code at addr
     return "";
   };
 
+  // ripemd160 -- store as uint256
   std::function< std::string(uint64_t) > get_block_hash = [](uint64_t block_num) -> std::string
   {
+    // TODO Get a hash of a complete block with block num block_num -- returns 0 if block_num is greater than head
     return "";
   };
 
   std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [](std::string address) -> std::vector<machine::word>
   {
-    return {};
+    chain::contract_object contract = _db.get_contract_at_addr(address);
+    return contract.code;
   };
+
+  addr = new memory[offset:offset+length].value(value)
 
   std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [](std::vector<machine::word> memory, machine::big_word value) -> std::string
   {
-    return {};
+    // TODO create wallet, associate contract object with that wallet, return contract address
+    wallet_object wallet = _db.create< wallet_object >;
+
+    // TODO contracts need a wallet field; owner is the person calling the
+    // contract, wallet is a new wallet created for the contract;
+    // copy owner's public keys to new wallet, allowing owner to update contract wallet
+    // using their private keys
+    chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c)
+        {
+        //c.contract_hash = generate_random_ripmd160();
+        c.owner = owner;
+        c.code = memory;
+    });
+    return contract.address;
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-    return {};
+    // TODO contract_invoke should return std::vector<machine::word> return data?
+    return contract_invoke(address, energy, args);
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_callcode = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-    return {};
+    // TODO Uses alternative account's code (args?)
+    return contract_invoke(address, energy, args);
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_delegatecall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-    return {};
+    // TODO from eth yellowpaper: Message-call into this account with an
+    // alternative account’s code, but persisting the current values for sender
+    // and value
+    return contract_invoke(address, energy, args);
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
@@ -1091,6 +1115,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db)
 
   std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
   {
+    // TODO similar to contract_create
     return {};
   };
 
