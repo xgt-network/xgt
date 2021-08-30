@@ -579,7 +579,10 @@ void p2p_plugin::plugin_initialize(const boost::program_options::variables_map& 
    my = std::make_unique< detail::p2p_plugin_impl >( appbase::app().get_plugin< plugins::chain::chain_plugin >() );
 
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
 =======
+=======
+>>>>>>> Stashed changes
    my->ready_to_mine = true;
 
 >>>>>>> Stashed changes
