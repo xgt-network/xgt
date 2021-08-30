@@ -1045,7 +1045,8 @@ machine::chain_adapter make_chain_adapter(chain::database& _db)
 
   std::function< uint64_t(std::string) > get_balance = [](std::string address) -> uint64_t
   {
-    return 0;
+    auto& wallet = _db.get_account(address);
+    return static_cast<uint64_t>(wallet.balance.amount.value);
   };
 
   std::function< std::string(std::string) > get_code_hash = [](std::string address) -> std::string
