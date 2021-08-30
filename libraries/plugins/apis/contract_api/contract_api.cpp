@@ -107,8 +107,6 @@ machine::chain_adapter make_chain_adapter(chain::database& _db)
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
-<<<<<<< Updated upstream
-<<<<<<< Updated upstream
   {
     return {};
   };
@@ -124,50 +122,10 @@ machine::chain_adapter make_chain_adapter(chain::database& _db)
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
-=======
->>>>>>> Stashed changes
   {
     return {};
   };
 
-<<<<<<< Updated upstream
-=======
-  std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_callcode = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
-  {
-    return {};
-  };
-
-  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_delegatecall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
-  {
-    return {};
-  };
-
-  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
-=======
->>>>>>> Stashed changes
-  {
-    return {};
-  };
-
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
-  std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_callcode = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
-  {
-    return {};
-  };
-
-  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_delegatecall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
-  {
-    return {};
-  };
-
-  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
-  {
-    return {};
-  };
-
->>>>>>> Stashed changes
   std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
   {
     return {};
