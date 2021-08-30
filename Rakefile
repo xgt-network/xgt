@@ -67,7 +67,7 @@ def witness_private_key
 end
 
 def host
-  ENV['XGT_HOST'] || 'http://localhost:8751'
+  ENV['XGT_HOST'] || 'http://localhost:8799'
 end
 
 def seed_hosts
@@ -295,11 +295,15 @@ task :run do
 
       enable-stale-production = #{mining_disabled? ? 'false' : 'true'}
     )))
+<<<<<<< Updated upstream
     if from_genesis?
       f.puts "p2p-seed-node = "
     elsif seed_hosts && seed_hosts.any?
       f.puts "p2p-seed-node = #{seed_hosts.join(" ")}"
     end
+=======
+    f.puts "p2p-seed-node = "
+>>>>>>> Stashed changes
   end
   $stderr.puts(File.read("#{data_dir}/config.ini"))
 
