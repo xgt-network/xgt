@@ -25,6 +25,7 @@ namespace xgt { namespace chain {
 
       contract_id_type id;
       wallet_name_type owner;
+      wallet_name_type wallet;
       contract_hash_type contract_hash;
       vector<char> code;
    };

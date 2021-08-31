@@ -1029,6 +1029,11 @@ void contract_create_evaluator::do_apply( const contract_create_operation& op )
    });
 }
 
+std::vector<machine::word> contract_invoke(std::string address, uint64_t energy,std::vector<machine::word> args)
+{
+  return std::vector<machine::word>();
+}
+
 machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type owner)
 {
   std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
@@ -1043,7 +1048,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return fin;
   };
 
-  std::function< uint64_t(std::string) > get_balance = [](std::string address) -> uint64_t
+  std::function< uint64_t(std::string) > get_balance = [&_db](std::string address) -> uint64_t
   {
     auto& wallet = _db.get_account(address);
     return static_cast<uint64_t>(wallet.balance.amount.value);
@@ -1064,28 +1069,29 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [](std::string address) -> std::vector<machine::word>
   {
-    chain::contract_object contract = _db.get_contract_at_addr(address);
-    return contract.code;
+    //chain::contract_object contract = _db.get_contract_at_addr(address);
+    //return std::vector<unsigned char>(contract.code.begin(), contract.code.end());
+    return std::vector<machine::word>();
   };
-
-  addr = new memory[offset:offset+length].value(value)
 
   std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [](std::vector<machine::word> memory, machine::big_word value) -> std::string
   {
     // TODO create wallet, associate contract object with that wallet, return contract address
-    wallet_object wallet = _db.create< wallet_object >;
+    //wallet_object wallet = _db.create< wallet_object >;
 
     // TODO contracts need a wallet field; owner is the person calling the
     // contract, wallet is a new wallet created for the contract;
     // copy owner's public keys to new wallet, allowing owner to update contract wallet
     // using their private keys
-    chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c)
-        {
-        //c.contract_hash = generate_random_ripmd160();
-        c.owner = owner;
-        c.code = memory;
-    });
-    return contract.address;
+    //chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c)
+    //    {
+    //    //c.contract_hash = generate_random_ripmd160();
+    //    c.wallet = wallet.name;
+    //    c.owner = owner;
+    //    c.code = memory;
+    //});
+    //return contract.wallet;
+    return "";
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
