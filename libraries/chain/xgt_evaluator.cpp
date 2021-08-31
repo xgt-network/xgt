@@ -1035,7 +1035,7 @@ std::vector<machine::word> contract_invoke(std::string address, uint64_t energy,
 }
 
 // TODO make_chain_adapter will be called in contract_invoke
-machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type owner)
+machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type owner, wallet_name_type caller)
 {
   std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
   {
@@ -1055,10 +1055,8 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return static_cast<uint64_t>(wallet.balance.amount.value);
   };
 
-  std::function< std::string(std::string) > get_code_hash = [](std::string address) -> std::string
+  std::function< std::string(std::string) > get_code_hash = [&_db](std::string address) -> std::string
   {
-    // TODO Get sha3 hash of contract code at addr -- TODO verify
-    // get_contract or get_account?
     auto& contract = _db.get_contract(address);
     std::string message(contract.code.begin(), contract.code.end());
     unsigned char output[32];
@@ -1073,6 +1071,8 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   // ripemd160 -- store as uint256
   std::function< std::string(uint64_t) > get_block_hash = [&_db](uint64_t block_num) -> std::string
   {
+    auto& block = _db.get_block_hash_from_block_num(block_num);
+    return ripemd160(block);
     // TODO Get a hash of a complete block with block num block_num -- returns 0 if block_num is greater than head
     return "";
   };
@@ -1159,13 +1159,13 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   std::function< machine::big_word(std::string) > access_storage = [&_db](std::string key) -> machine::big_word
   {
     // TODO
-    return _db.get_storage(owner, key)
+    return _db.get_storage(owner, caller, key)
   };
 
-  std::function< bool(std::string, std::string, machine::big_word) > set_storage = [&_db](std::string destination, std::string key, machine::big_word value) -> bool
+  std::function< bool(std::string, machine::big_word) > set_storage = [&_db](std::string key, machine::big_word value) -> bool
   {
     // TODO owner and destination may be the same? -- destination is message destination from contract
-    return _db.set_storage(owner, destination, key, value);
+    return _db.set_storage(owner, caller, key, value);
   };
 
   std::function< bool(std::vector<machine::word>) > contract_return = [](std::vector<machine::word> memory) -> bool

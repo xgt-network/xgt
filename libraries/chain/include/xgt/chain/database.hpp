@@ -441,6 +441,24 @@ namespace xgt { namespace chain {
                                   balance_operator_type balance_operator );
          void modify_balance( const wallet_object& a, const asset& delta, bool check_balance );
 
+         fc::optional<fc::sha256> get_block_hash_from_block_num(uint32_t block_num) const
+         {
+           auto block = _block_log.read_block_by_num(block_num);
+           if (block) {
+             for( const auto& trx : block.transactions )
+             {
+
+               const auto& operations = trx.operations;
+               for (auto& op : operations)
+               {
+                 if ( is_pow_operation(op) )
+                   return fc::optional<fc::sha256>(op.work.proof);
+               }
+             }
+           }
+           return fc::optional<fc::sha256>();
+         }
+
          operation_notification create_operation_notification( const operation& op )const
          {
             operation_notification note(op);
