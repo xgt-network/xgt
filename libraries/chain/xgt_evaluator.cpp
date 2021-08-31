@@ -1091,6 +1091,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
   {
     // TODO contract_invoke should return std::vector<machine::word> return data?
+    // calls a method from another contract -- is value method name?
     return contract_invoke(address, energy, args);
   };
 
@@ -1105,47 +1106,68 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     // TODO from eth yellowpaper: Message-call into this account with an
     // alternative account’s code, but persisting the current values for sender
     // and value
+    //
+    // from ethervm.io: using storage of the current contract
     return contract_invoke(address, energy, args);
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
   {
+    // TODO from ethervm.io: calls a method in another contract with state
+    // changes such as contract creation, event emission, storage modification
+    // and contract destruction disallowed
     return {};
+    return contract_invoke(address, energy, args);
   };
 
   std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
   {
-    // TODO similar to contract_create
-    return {};
+    // TODO similar to contract_create -- includes a salt for deterministic contract address
+    wallet_object wallet = _db.create< wallet_object >;
+
+    chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c)
+        {
+        //c.contract_hash = generate_random_ripmd160();
+        c.owner = owner;
+        c.code = memory;
+    });
+    return contract.address;
   };
 
   std::function< bool(std::vector<machine::word>) > revert = [](std::vector<machine::word> memory) -> bool
   {
+    // TODO from eth yellowpaper: Halt execution reverting state changes but returning data and remaining gas.
     return {};
   };
 
   std::function< machine::big_word(std::string) > access_storage = [](std::string key) -> machine::big_word
   {
-    return {};
+    // TODO
+    return _db.get_storage(owner, key)
   };
 
   std::function< bool(std::string, std::string, machine::big_word) > set_storage = [](std::string destination, std::string key, machine::big_word value) -> bool
   {
-    return {};
+    // TODO owner and destination may be the same? -- destination is message destination from contract
+    return _db.set_storage(owner, destination, key, value);
   };
 
   std::function< bool(std::vector<machine::word>) > contract_return = [](std::vector<machine::word> memory) -> bool
   {
+    // TODO halts execution returning contract data -- does this need to be an adapter method?
     return {};
   };
 
   std::function< bool(std::string) > self_destruct = [](std::string address) -> bool
   {
+    // TODO halt execution and register contract address for deletion;
+    // should delete wallet containing contract (?)
     return {};
   };
 
   std::function< std::vector<machine::word>(std::string) > get_input_data = [](std::string address) -> std::vector<machine::word>
   {
+    // TODO may not be necessary
     return {};
   };
 
