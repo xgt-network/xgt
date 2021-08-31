@@ -1034,6 +1034,7 @@ std::vector<machine::word> contract_invoke(std::string address, uint64_t energy,
   return std::vector<machine::word>();
 }
 
+// TODO make_chain_adapter will be called in contract_invoke
 machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type owner)
 {
   std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
@@ -1056,25 +1057,34 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::string(std::string) > get_code_hash = [](std::string address) -> std::string
   {
-    // TODO Get sha3 hash of contract code at addr
-    return "";
+    // TODO Get sha3 hash of contract code at addr -- TODO verify
+    // get_contract or get_account?
+    auto& contract = _db.get_contract(address);
+    std::string message(contract.code.begin(), contract.code.end());
+    unsigned char output[32];
+    SHA3_CTX ctx;
+    keccak_init(&ctx);
+    keccak_update(&ctx, (unsigned char*)message.c_str(), message.size());
+    keccak_final(&ctx, output);
+    std::string fin((char*)output, 32);
+    return fin;
   };
 
   // ripemd160 -- store as uint256
-  std::function< std::string(uint64_t) > get_block_hash = [](uint64_t block_num) -> std::string
+  std::function< std::string(uint64_t) > get_block_hash = [&_db](uint64_t block_num) -> std::string
   {
     // TODO Get a hash of a complete block with block num block_num -- returns 0 if block_num is greater than head
     return "";
   };
 
-  std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [](std::string address) -> std::vector<machine::word>
+  std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [&_db](std::string address) -> std::vector<machine::word>
   {
     //chain::contract_object contract = _db.get_contract_at_addr(address);
     //return std::vector<unsigned char>(contract.code.begin(), contract.code.end());
     return std::vector<machine::word>();
   };
 
-  std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [](std::vector<machine::word> memory, machine::big_word value) -> std::string
+  std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [&_db](std::vector<machine::word> memory, machine::big_word value) -> std::string
   {
     // TODO create wallet, associate contract object with that wallet, return contract address
     //wallet_object wallet = _db.create< wallet_object >;
@@ -1126,7 +1136,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return contract_invoke(address, energy, args);
   };
 
-  std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
+  std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [&_db](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
   {
     // TODO similar to contract_create -- includes a salt for deterministic contract address
     wallet_object wallet = _db.create< wallet_object >;
@@ -1146,13 +1156,13 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return {};
   };
 
-  std::function< machine::big_word(std::string) > access_storage = [](std::string key) -> machine::big_word
+  std::function< machine::big_word(std::string) > access_storage = [&_db](std::string key) -> machine::big_word
   {
     // TODO
     return _db.get_storage(owner, key)
   };
 
-  std::function< bool(std::string, std::string, machine::big_word) > set_storage = [](std::string destination, std::string key, machine::big_word value) -> bool
+  std::function< bool(std::string, std::string, machine::big_word) > set_storage = [&_db](std::string destination, std::string key, machine::big_word value) -> bool
   {
     // TODO owner and destination may be the same? -- destination is message destination from contract
     return _db.set_storage(owner, destination, key, value);
@@ -1168,12 +1178,6 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   {
     // TODO halt execution and register contract address for deletion;
     // should delete wallet containing contract (?)
-    return {};
-  };
-
-  std::function< std::vector<machine::word>(std::string) > get_input_data = [](std::string address) -> std::vector<machine::word>
-  {
-    // TODO may not be necessary
     return {};
   };
 
@@ -1193,8 +1197,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     access_storage,
     set_storage,
     contract_return,
-    self_destruct,
-    get_input_data
+    self_destruct
   };
 
   return adapter;
