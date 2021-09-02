@@ -445,14 +445,19 @@ namespace xgt { namespace chain {
          {
            auto block = _block_log.read_block_by_num(block_num);
            if (block) {
-             for( const auto& trx : block.transactions )
+             for( const auto& trx : block->transactions )
              {
 
                const auto& operations = trx.operations;
                for (auto& op : operations)
                {
                  if ( is_pow_operation(op) )
-                   return fc::optional<fc::sha256>(op.work.proof);
+                 {
+                   const protocol::pow_operation& o = op.template get< protocol::pow_operation >();
+                   // TODO: May need a check to verify it is sha2_pow before continuing
+                   const auto& work = o.work.get< sha2_pow >();
+                   return fc::optional<fc::sha256>(work.proof);
+                 }
                }
              }
            }

@@ -927,6 +927,7 @@ void pow_evaluator::do_apply( const pow_operation& o )
    const auto& dgp = db.get_dynamic_global_properties();
    uint32_t target_pow = db.get_pow_summary_target();
 
+   // TODO: May need a check to verify it is sha2_pow before continuing
    const auto& work = o.work.get< sha2_pow >();
    fc::optional<block_id_type> previous_block_id = db.previous_block_id();
    if (previous_block_id.valid())
