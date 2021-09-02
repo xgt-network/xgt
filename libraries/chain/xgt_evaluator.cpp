@@ -1019,6 +1019,19 @@ fc::ripemd160 generate_random_ripmd160()
    return fc::ripemd160::hash(buf, buflen);
 }
 
+boost::multiprecision::uint256_t ripemd160_to_uint256_t(fc::ripemd160 h)
+{
+  boost::multiprecision::uint256_t n(0);
+  boost::multiprecision::uint256_t m;
+  for (int i = 0; i < 5; i++)
+  {
+    m = h._hashes[i];
+    m = m << (8 * i);
+    n |= m;
+  }
+  return n;
+}
+
 void contract_create_evaluator::do_apply( const contract_create_operation& op )
 {
    wlog("!!!!!! contract_create owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
@@ -1073,13 +1086,15 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return fin;
   };
 
-  // ripemd160 -- store as uint256
-  std::function< std::string(uint64_t) > get_block_hash = [&_db](uint64_t block_num) -> std::string
+  std::function< machine::big_word(uint64_t) > get_block_hash = [&_db](uint64_t block_num) -> machine::big_word
   {
-    //const auto& block = _db.get_block_hash_from_block_num(block_num);
-    //return fc::ripemd160(block);
     // TODO Get a hash of a complete block with block num block_num -- returns 0 if block_num is greater than head
-    return "";
+
+    auto& block = _db.get_block_hash_from_block_num(block_num);
+    auto data = fc::raw::pack_to_vector( block );
+    auto ripemd160_hash =  fc::ripemd160::hash( data.data, data.size() );
+
+    return ripemd160_to_uint256_t(ripemd160_hash);
   };
 
   std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [&_db](std::string address) -> std::vector<machine::word>
