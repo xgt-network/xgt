@@ -262,7 +262,7 @@ struct chain_adapter
   std::function< big_word(std::string) > access_storage;
 
   // TODO sstore opcode -- destination, key, value
-  std::function< bool(std::string, std::string, big_word) > set_storage;
+  std::function< bool(std::string, big_word) > set_storage;
 
   // TODO return opcode
   std::function< bool(std::vector<word>) > contract_return;

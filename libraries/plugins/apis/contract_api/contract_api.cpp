@@ -142,7 +142,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db)
     return {};
   };
 
-  std::function< bool(std::string, std::string, machine::big_word) > set_storage = [](std::string destination, std::string key, machine::big_word value) -> bool
+  std::function< bool(std::string, machine::big_word) > set_storage = [](std::string key, machine::big_word value) -> bool
   {
     return {};
   };

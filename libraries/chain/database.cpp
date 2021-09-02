@@ -610,6 +610,11 @@ const witness_object* database::find_witness( const wallet_name_type& name ) con
    return find< witness_object, by_name >( name );
 }
 
+const contract_object& database::get_contract( const contract_hash_type& hash )const
+{ try {
+   return get< contract_object, by_contract_hash >( hash );
+} FC_CAPTURE_AND_RETHROW( (hash) ) }
+
 const wallet_object& database::get_account( const wallet_name_type& name )const
 { try {
    return get< wallet_object, by_name >( name );

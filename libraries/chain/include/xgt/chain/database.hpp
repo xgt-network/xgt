@@ -203,6 +203,8 @@ namespace xgt { namespace chain {
          const witness_object&  get_witness(  const wallet_name_type& name )const;
          const witness_object*  find_witness( const wallet_name_type& name )const;
 
+         const contract_object&  get_contract(  const contract_hash_type& hash )const;
+
          const wallet_object&  get_account(  const wallet_name_type& name )const;
          const wallet_object*  find_account( const wallet_name_type& name )const;
 
@@ -216,8 +218,6 @@ namespace xgt { namespace chain {
 
          const escrow_object&   get_escrow(  const wallet_name_type& name, uint32_t escrow_id )const;
          const escrow_object*   find_escrow( const wallet_name_type& name, uint32_t escrow_id )const;
-
-         //const contract_object& get_contract( const contract_hash_type& contract_hash )const;
 
          const dynamic_global_property_object&  get_dynamic_global_properties()const;
          const node_property_object&            get_node_properties()const;
@@ -399,6 +399,29 @@ namespace xgt { namespace chain {
          void validate_xtt_invariants()const;
          ///@}
 
+         fc::optional<fc::sha256> get_block_hash_from_block_num(uint32_t block_num) const
+         {
+           auto block = _block_log.read_block_by_num(block_num);
+           if (block) {
+             for( const auto& trx : block->transactions )
+             {
+
+               const auto& operations = trx.operations;
+               for (auto& op : operations)
+               {
+                 if ( is_pow_operation(op) )
+                 {
+                   const protocol::pow_operation& o = op.template get< protocol::pow_operation >();
+                   // TODO: May need a check to verify it is sha2_pow before continuing
+                   const auto& work = o.work.get< sha2_pow >();
+                   return fc::optional<fc::sha256>(work.proof);
+                 }
+               }
+             }
+           }
+           return fc::optional<fc::sha256>();
+         }
+
    protected:
          //Mark pop_undo() as protected -- we do not want outside calling pop_undo(); it should call pop_block() instead
          //void pop_undo() { object_database::pop_undo(); }
@@ -440,29 +463,6 @@ namespace xgt { namespace chain {
          void adjust_xtt_balance( const wallet_name_type& name, const asset& delta, bool check_account,
                                   balance_operator_type balance_operator );
          void modify_balance( const wallet_object& a, const asset& delta, bool check_balance );
-
-         fc::optional<fc::sha256> get_block_hash_from_block_num(uint32_t block_num) const
-         {
-           auto block = _block_log.read_block_by_num(block_num);
-           if (block) {
-             for( const auto& trx : block->transactions )
-             {
-
-               const auto& operations = trx.operations;
-               for (auto& op : operations)
-               {
-                 if ( is_pow_operation(op) )
-                 {
-                   const protocol::pow_operation& o = op.template get< protocol::pow_operation >();
-                   // TODO: May need a check to verify it is sha2_pow before continuing
-                   const auto& work = o.work.get< sha2_pow >();
-                   return fc::optional<fc::sha256>(work.proof);
-                 }
-               }
-             }
-           }
-           return fc::optional<fc::sha256>();
-         }
 
          operation_notification create_operation_notification( const operation& op )const
          {

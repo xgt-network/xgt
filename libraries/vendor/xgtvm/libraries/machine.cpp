@@ -731,15 +731,8 @@ namespace machine
       case sstore_opcode:
         logger << "op sstore" << std::endl;
         sv = stack.front();
-        if (std::string* it = boost::get<std::string>(&sv))
-        {
-          stack.pop_front();
-          va = pop_word();
-          adapter.set_storage(msg.destination, *it, va);
-        }
-        else {
-          throw; // TODO
-        }
+        va = pop_word();
+        adapter.set_storage(msg.destination, va);
       break;
       case jump_opcode:
         logger << "op jump" << std::endl;
