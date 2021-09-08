@@ -87,6 +87,7 @@ namespace xgt { namespace chain {
          c( *this );
       }
 
+      contract_receipt_id_type id;
       contract_hash_type contract_hash;
       wallet_name_type caller;
       vector< vector<char> > args;

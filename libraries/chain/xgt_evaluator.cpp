@@ -1217,28 +1217,62 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
 {
    wlog("contract_invoke ${w}", ("w",op.contract_hash));
-   /*const contract_hash_type contract_hash = op.contract_hash;
-   const auto& c = _db.get_contract(contract_hash);
+   //const contract_hash_type contract_hash = op.contract_hash;
+   //const auto& c = _db.get_contract(contract_hash);
 
-   const machine_context& ctx = {
-      true, // bool is_running
-      0x5c477758 // uint64_t block_timestamp
-   };
-   const vector<machine_word>& code = {0};
-   machine m(ctx, code);
-   m.step(); */
    // // const auto& args = op.args;
    // // const auto& caller = op.caller;
-   // // TODO: Invoke VM
 
-   // // Generate receipt
-   // _db.create< contract_receipt_object >( [&](contract_receipt_object& cr)
-   // {
-   //    // cr.id = std::static_cast<contract_receipt_id_type>(generate_random_ripmd160());
-   //    cr.contract_id = op.contract;
-   //    cr.caller = op.caller;
-   //    cr.args = op.args;
-   // });
+   machine::message msg = {};
+
+   const bool is_debug = true;
+   const uint64_t block_timestamp = static_cast<uint64_t>( _db.head_block_time().sec_since_epoch() );
+   const uint64_t block_number = _db.head_block_num();
+   const uint64_t block_difficulty = static_cast<uint64_t>( _db.get_pow_summary_target() );
+   const uint64_t block_energylimit = 0;
+   const uint64_t tx_energyprice = 0;
+   std::string tx_origin = op.caller;
+   std::string block_coinbase = op.caller; // verify this
+
+   machine::context ctx = {
+     is_debug,
+     block_timestamp,
+     block_number,
+     block_difficulty,
+     block_energylimit,
+     tx_energyprice,
+     tx_origin,
+     block_coinbase
+   };
+
+   std::vector<machine::word> code = {0x00};
+   // TODO: Fill in owner
+   machine::chain_adapter adapter = make_chain_adapter(_db, "", tx_origin);
+   machine::machine m(ctx, code, msg, adapter);
+
+   m.print_stack();
+
+   std::string line;
+   while (m.is_running())
+   {
+     std::cerr << "step\n";
+     m.step();
+     // Print out any logging that was generated
+     while ( std::getline(m.get_logger(), line) )
+       std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
+   }
+   while ( std::getline(m.get_logger(), line) )
+     std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
+   std::cout << m.to_json() << std::endl;
+
+    // Generate receipt
+    _db.create< contract_receipt_object >( [&](contract_receipt_object& cr)
+    {
+       //cr.id = std::static_cast<contract_receipt_id_type>(generate_random_ripmd160());
+       cr.contract_hash = op.contract_hash;
+       cr.caller = op.caller;
+       cr.args = op.args;
+    });
 }
 
 } } // xgt::chain
