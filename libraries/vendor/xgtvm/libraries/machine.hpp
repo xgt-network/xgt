@@ -231,7 +231,7 @@ struct chain_adapter
   std::function< std::string(std::string) > get_code_hash;
 
   // TODO for hashing block number -- blockhash opcode
-  std::function< std::string(uint64_t) > get_block_hash;
+  std::function< machine::big_word(uint64_t) > get_block_hash;
 
   // TODO get contract bytecode at address
   std::function< std::vector<word>(std::string) > get_code_at_addr;

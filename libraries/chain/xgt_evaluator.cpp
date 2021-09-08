@@ -1025,7 +1025,7 @@ boost::multiprecision::uint256_t ripemd160_to_uint256_t(fc::ripemd160 h)
   boost::multiprecision::uint256_t m;
   for (int i = 0; i < 5; i++)
   {
-    m = h._hashes[i];
+    m = h._hash[i];
     m = m << (8 * i);
     n |= m;
   }
@@ -1075,7 +1075,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   std::function< std::string(std::string) > get_code_hash = [&_db](std::string address) -> std::string
   {
     fc::ripemd160 address_ripemd160(address);
-    auto& contract = _db.get_contract(address_ripemd160);
+    const auto& contract = _db.get_contract(address_ripemd160);
     std::string message(contract.code.begin(), contract.code.end());
     unsigned char output[32];
     SHA3_CTX ctx;
@@ -1086,28 +1086,28 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return fin;
   };
 
+  // TODO: Revisit this, we may want to use the original sha256 hash
   std::function< machine::big_word(uint64_t) > get_block_hash = [&_db](uint64_t block_num) -> machine::big_word
   {
     // TODO Get a hash of a complete block with block num block_num -- returns 0 if block_num is greater than head
 
-    auto& block = _db.get_block_hash_from_block_num(block_num);
-    auto data = fc::raw::pack_to_vector( block );
-    auto ripemd160_hash =  fc::ripemd160::hash( data.data, data.size() );
-
-    return ripemd160_to_uint256_t(ripemd160_hash);
+    fc::optional<fc::sha256> block_hash = _db.get_block_hash_from_block_num(block_num);
+    auto ripemd160_hash = fc::ripemd160::hash( block_hash->data() );
+    machine::big_word item = ripemd160_to_uint256_t(ripemd160_hash);
+    return item;
   };
 
   std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [&_db](std::string address) -> std::vector<machine::word>
   {
-    chain::contract_object& contract = _db.get_contract(address);
+    const chain::contract_object& contract = _db.get_contract(address);
     return std::vector<unsigned char>(contract.code.begin(), contract.code.end());
   };
 
   std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [&_db](std::vector<machine::word> memory, machine::big_word value) -> std::string
   {
     // TODO create wallet, associate contract object with that wallet, return contract address
-    wallet_object wallet = _db.create< wallet_object >( []( wallet_object& w ){ w.can_vote = true; } ); // example
-    _db.update< wallet_object >( wallet, []( wallet_object& w){ w.can_vote = false; } ); // example
+    //wallet_object wallet = _db.create< wallet_object >( []( wallet_object& w ){ w.can_vote = true; } ); // example
+    //_db.update< wallet_object >( wallet, []( wallet_object& w){ w.can_vote = false; } ); // example
 
     // TODO contracts need a wallet field; owner is the person calling the
     // contract, wallet is a new wallet created for the contract;

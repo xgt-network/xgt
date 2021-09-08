@@ -70,9 +70,9 @@ machine::chain_adapter make_chain_adapter()
     return "";
   };
 
-  std::function< std::string(uint64_t) > get_block_hash = [](uint64_t block_num) -> std::string
+  std::function< machine::big_word(uint64_t) > get_block_hash = [](uint64_t block_num) -> machine::big_word
   {
-    return "";
+    return {};
   };
 
   std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [](std::string address) -> std::vector<machine::word>
