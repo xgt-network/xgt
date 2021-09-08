@@ -615,6 +615,11 @@ const contract_object& database::get_contract( const contract_hash_type& hash )c
    return get< contract_object, by_contract_hash >( hash );
 } FC_CAPTURE_AND_RETHROW( (hash) ) }
 
+const contract_object& database::get_contract( const wallet_name_type& wallet )const
+{ try {
+   return get< contract_object, by_wallet >( wallet );
+} FC_CAPTURE_AND_RETHROW( (wallet) ) }
+
 const wallet_object& database::get_account( const wallet_name_type& name )const
 { try {
    return get< wallet_object, by_name >( name );
@@ -656,13 +661,6 @@ const escrow_object* database::find_escrow( const wallet_name_type& name, uint32
 {
    return find< escrow_object, by_from_id >( boost::make_tuple( name, escrow_id ) );
 }
-
-/*
-const contract_object& database::get_contract( const contract_hash_type& contract_hash )const
-{ try {
-   return get< contract_object, by_contract_hash >( contract_hash );
-} FC_CAPTURE_AND_RETHROW( (contract_hash) ) }
-*/
 
 const dynamic_global_property_object&database::get_dynamic_global_properties() const
 { try {
