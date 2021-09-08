@@ -1099,20 +1099,21 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [&_db](std::string address) -> std::vector<machine::word>
   {
-    //chain::contract_object contract = _db.get_contract_at_addr(address);
-    //return std::vector<unsigned char>(contract.code.begin(), contract.code.end());
-    return std::vector<machine::word>();
+    chain::contract_object& contract = _db.get_contract(address);
+    return std::vector<unsigned char>(contract.code.begin(), contract.code.end());
   };
 
   std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [&_db](std::vector<machine::word> memory, machine::big_word value) -> std::string
   {
     // TODO create wallet, associate contract object with that wallet, return contract address
-    //wallet_object wallet = _db.create< wallet_object >;
+    wallet_object wallet = _db.create< wallet_object >( []( wallet_object& w ){ w.can_vote = true; } ); // example
+    _db.update< wallet_object >( wallet, []( wallet_object& w){ w.can_vote = false; } ); // example
 
     // TODO contracts need a wallet field; owner is the person calling the
     // contract, wallet is a new wallet created for the contract;
     // copy owner's public keys to new wallet, allowing owner to update contract wallet
     // using their private keys
+    //
     //chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c)
     //    {
     //    //c.contract_hash = generate_random_ripmd160();

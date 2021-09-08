@@ -204,6 +204,7 @@ namespace xgt { namespace chain {
          const witness_object*  find_witness( const wallet_name_type& name )const;
 
          const contract_object&  get_contract(  const contract_hash_type& hash )const;
+         const contract_object&  get_contract(  const wallet_name_type& wallet )const;
 
          const wallet_object&  get_account(  const wallet_name_type& name )const;
          const wallet_object*  find_account( const wallet_name_type& name )const;
