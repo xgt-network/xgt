@@ -1011,7 +1011,7 @@ void report_over_production_evaluator::do_apply( const report_over_production_op
 }
 
 // TODO: Revisit this
-fc::ripemd160 generate_random_ripmd160()
+fc::ripemd160 generate_random_ripemd160()
 {
    const size_t buflen = 128;
    char buf[buflen];
@@ -1037,8 +1037,9 @@ void contract_create_evaluator::do_apply( const contract_create_operation& op )
    wlog("!!!!!! contract_create owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
    _db.create< contract_object >( [&](contract_object& c)
    {
-      //c.contract_hash = generate_random_ripmd160();
+      c.contract_hash = generate_random_ripemd160();
       c.owner = op.owner;
+      c.wallet = op.wallet;
       c.code = op.code;
    });
 }
@@ -1116,7 +1117,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     //
     //chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c)
     //    {
-    //    //c.contract_hash = generate_random_ripmd160();
+    //    //c.contract_hash = generate_random_ripemd160();
     //    c.wallet = wallet.name;
     //    c.owner = owner;
     //    c.code = memory;
@@ -1166,7 +1167,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
     chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c)
     {
-        //c.contract_hash = generate_random_ripmd160();
+        //c.contract_hash = generate_random_ripemd160();
         c.owner = owner;
         //c.code = memory;
     });
@@ -1284,7 +1285,7 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
     // Generate receipt
     _db.create< contract_receipt_object >( [&](contract_receipt_object& cr)
     {
-       //cr.id = std::static_cast<contract_receipt_id_type>(generate_random_ripmd160());
+       //cr.id = std::static_cast<contract_receipt_id_type>(generate_random_ripemd160());
        cr.contract_hash = op.contract_hash;
        cr.caller = op.caller;
        cr.args = op.args;

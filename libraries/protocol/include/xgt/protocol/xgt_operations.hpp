@@ -591,6 +591,7 @@ namespace xgt { namespace protocol {
    struct contract_create_operation : public base_operation
    {
       wallet_name_type owner;
+      wallet_name_type wallet;
       vector<char> code;
 
       void validate()const;

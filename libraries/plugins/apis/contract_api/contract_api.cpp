@@ -57,9 +57,10 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
    wlog("!!!!!! LIST_OWNER_CONTRACTS");
    while( itr != end )
    {
-      if (itr->owner != args.owner) break;
-      wlog("!!!!!! LIST_OWNER_CONTRACTS ${w}", ("w",itr->owner));
-      result.contracts.push_back(*itr);
+      auto& c = *itr;
+      if (c.owner != args.owner) break;
+      wlog("!!!!!! LIST_OWNER_CONTRACTS ${w}", ("w",c.owner));
+      result.contracts.push_back(c);
       ++itr;
    }
 

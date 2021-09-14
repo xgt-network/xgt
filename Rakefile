@@ -316,20 +316,125 @@ task :wc do
   sh %(wc -l #{Dir.glob('**/*.{c,h}pp').join(' ')})
 end
 
+def generate_keys
+  master = Xgt::Ruby::Auth.random_wif
+  ks = { 'master' => master }
+  %w(recovery money social memo).each do |role|
+    private_key = Xgt::Ruby::Auth.generate_wif(wallet, master, 'recovery')
+    public_key = Xgt::Ruby::Auth.wif_to_public_key(private_key, address_prefix)
+    ks["#{role}_private"] = private_key
+    ks["#{role}_public"] = public_key
+  end
+
+  response = rpc.call('wallet_by_key_api.generate_wallet_name', {
+    'recovery_keys' => [ks['recovery_public']]
+  })
+  wallet_name = response['wallet_name']
+  ks['wallet_name'] = wallet_name
+
+  ks
+end
+
+def create_wallet!(keys)
+  name = keys['wallet_name']
+
+  txn = {
+    'extensions' => [],
+    'operations' => [
+      {
+        'type' => 'wallet_create_operation',
+        'value' => {
+          'fee' => {
+            'amount' => '0',
+            'precision' =>  8,
+            'nai' => '@@000000021'
+          },
+          'creator' => wallet,
+          'recovery' => {
+            'weight_threshold' => 1,
+            'account_auths' => [],
+            'key_auths' => [[keys['recovery_public'], 1]]
+          },
+          'money' => {
+            'weight_threshold' => 1,
+            'account_auths' => [],
+            'key_auths' => [[keys['money_public'], 1]]
+          },
+          'social' => {
+            'weight_threshold' => 1,
+            'account_auths' => [],
+            'key_auths' => [[keys['social_public'], 1]]
+          },
+          'memo_key' => keys['memo_public'],
+          'json_metadata' => '',
+          'extensions' => []
+        }
+      }
+    ]
+  }
+
+  $stderr.puts(%(Creator is "#{wallet}" with wif "#{wif}"...))
+  $stderr.puts(%(Creating wallet with master key "#{keys['master']}"...))
+  signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
+  rpc.call('transaction_api.broadcast_transaction', [signed])
+end
+
+def create_contract!(owner, keys, code)
+  txn = {
+    'extensions' => [],
+    'operations' => [
+      {
+        'type' => 'contract_create_operation',
+        'value' => {
+          'owner' => owner,
+          'wallet' => keys['wallet_name'],
+          'code' => code
+          #'code' => '600260030100',
+          #'code' => '00',
+        }
+      }
+    ]
+  }
+  signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
+  $stderr.puts(%(Registering contract... #{signed.to_json}))
+  response = rpc.call('transaction_api.broadcast_transaction', [signed])
+  $stderr.puts(%(Received response contract... #{response}))
+end
+
+def invoke_contract!()
+  txn = {
+    'extensions' => [],
+    'operations' => [
+      {
+        'type' => 'contract_invoke_operation',
+        'value' => {
+          'owner' => wallet,
+          'caller' => '...',
+          'code' => [0x00],
+        }
+      }
+    ]
+  }
+  signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
+  $stderr.puts(%(Registering contract... #{signed.to_json}))
+  response = rpc.call('transaction_api.broadcast_transaction', [signed])
+  $stderr.puts(%(Received response contract... #{response}))
+end
+
+namespace :contracts do
+  desc 'Create a sample contract'
+  task :create do
+    keys = generate_keys
+    create_wallet!(keys)
+    create_contract!(wallet, keys, '00')
+
+    response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}
+    p response
+  end
+end
+
 namespace :lazy_wallets do
   task :name_test do
-    generate_keys = ->() {
-      master = Xgt::Ruby::Auth.random_wif
-      ks = { 'master' => master }
-      %w(recovery money social memo).each do |role|
-        private_key = Xgt::Ruby::Auth.generate_wif(wallet, master, 'recovery')
-        public_key = Xgt::Ruby::Auth.wif_to_public_key(private_key, address_prefix)
-        ks["#{role}_private"] = private_key
-        ks["#{role}_public"] = public_key
-      end
-      ks
-    }
-
     master = Xgt::Ruby::Auth.random_wif
     private_key = Xgt::Ruby::Auth.generate_wif(wallet, master, 'recovery')
     public_key = Xgt::Ruby::Auth.wif_to_public_key(private_key, address_prefix)
@@ -362,7 +467,7 @@ namespace :lazy_wallets do
     id = rpc.broadcast_transaction(txn, [wif], chain_id)
     (puts 'Waiting...' or sleep 1) until rpc.transaction_ready?(id)
 
-    keys = generate_keys.call
+    keys = generate_keys
     txn = {
       'extensions' => [],
       'operations' => [
@@ -396,184 +501,6 @@ namespace :lazy_wallets do
     p txn
     id = rpc.broadcast_transaction(txn, [private_key], chain_id)
     (puts 'Waiting...' or sleep 1) until rpc.transaction_ready?(id)
-  end
-end
-
-namespace :catalyst do
-  generate_keys = ->() {
-    FileUtils.mkdir_p('out')
-    File.open('out/keys.json', 'w') do |f|
-      master = Xgt::Ruby::Auth.random_wif
-      ks = { 'master' => master }
-      %w(recovery money social memo witness).each do |role|
-        private_key = Xgt::Ruby::Auth.generate_wif(wallet, master, role)
-        public_key = Xgt::Ruby::Auth.wif_to_public_key(private_key, address_prefix)
-        ks["#{role}_private"] = private_key
-        ks["#{role}_public"] = public_key
-      end
-      response = rpc.call('wallet_by_key_api.generate_wallet_name', {
-        'recovery_keys' => [ks['recovery_public']]
-      })
-      ks['wallet_name'] = response['wallet_name']
-      f.puts(JSON.pretty_generate(ks))
-    end
-  }
-
-  keys = ->() {
-    JSON.load(File.open('out/keys.json'))
-  }
-
-  does_witness_exist = ->() {
-    name = wallet_name.call
-    response = rpc.call('database_api.list_witnesses', { 'start' => name, 'limit' => 1, 'order' => 'by_name'}) || {}
-    witnesses = response['witnesses'] || []
-    witness = witnesses.first || {}
-    (name == witness['owner'])
-  }
-
-  desc 'Generate the keys for the witness'
-  task :generate_keys do
-    generate_keys.call
-  end
-
-  desc 'Create a wallet for the witness'
-  task :create_wallet do
-    name = keys.call['wallet_name']
-
-    txn = {
-      'extensions' => [],
-      'operations' => [
-        {
-          'type' => 'wallet_create_operation',
-          'value' => {
-            'fee' => {
-              'amount' => '0',
-              'precision' =>  8,
-              'nai' => '@@000000021'
-            },
-            'creator' => wallet,
-            'recovery' => {
-              'weight_threshold' => 1,
-              'account_auths' => [],
-              'key_auths' => [[keys.call['recovery_public'], 1]]
-            },
-            'money' => {
-              'weight_threshold' => 1,
-              'account_auths' => [],
-              'key_auths' => [[keys.call['money_public'], 1]]
-            },
-            'social' => {
-              'weight_threshold' => 1,
-              'account_auths' => [],
-              'key_auths' => [[keys.call['social_public'], 1]]
-            },
-            'memo_key' => keys.call['memo_public'],
-            'json_metadata' => '',
-            'extensions' => []
-          }
-        }
-      ]
-    }
-
-    $stderr.puts(%(Creator is "#{wallet}" with wif "#{wif}"...))
-    $stderr.puts(%(Creating wallet with master key "#{keys.call['master']}"...))
-    signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
-    rpc.call('transaction_api.broadcast_transaction', [signed])
-  end
-
-  desc 'Register the witness'
-  task :register do
-    name = keys.call['wallet_name']
-
-    components = fee.split(' ')
-    decimal = BigDecimal(components.first) * 1
-    final_fee = decimal.truncate.to_s + '.' + sprintf('%03d', (decimal.frac * 1000).truncate) + ' ' + components.last
-
-    # raise 'Witness already registered!' if does_witness_exist.call
-
-    txn = {
-      'extensions' => [],
-      'operations' => [{
-        'type' => 'witness_update_operation',
-        'value' => {
-          'owner' => name,
-          'url' => 'http://witness-category/my-witness',
-          'block_signing_key' => keys.call['witness_public'],
-          'props' => {
-            'account_creation_fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
-          },
-          'fee' => {'amount'=>'0','precision'=>8,'nai'=>'@@000000021'}
-        }
-      }]
-    }
-
-
-    signing_keys = keys.call['recovery_private']
-    signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [signing_keys], chain_id)
-    $stderr.puts(%(Registering witness with recovery private WIF "#{keys.call['recovery_private']}"...))
-    $stderr.puts(%(Signing keypair is #{keys.call['witness_private']} (private) and #{keys.call['witness_public']} (public)...))
-    response = rpc.call('transaction_api.broadcast_transaction', [signed])
-    $stderr.puts(%(Registered witness #{name}))
-  end
-
-  desc 'Assuming keys were generated, do everything else'
-  task :all => [:create_wallet, :register]
-
-  desc 'Regenerate keys and do everything else'
-  task :really_all => [:generate_keys, :create_wallet, :register]
-end
-
-namespace :contracts do
-  desc 'Generate a sample contract'
-  task :generate do
-    txn = {
-      'extensions' => [],
-      'operations' => [
-        {
-          'type' => 'contract_create_operation',
-          'value' => {
-            'owner' => wallet,
-            'code' => "600260030100",
-          }
-        }
-      ]
-    }
-    signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
-    $stderr.puts(%(Registering contract... #{signed.to_json}))
-    response = rpc.call('transaction_api.broadcast_transaction', [signed])
-    $stderr.puts(%(Received response contract... #{response}))
-  end
-
-  desc 'Invoke a sample contract'
-  task :invoke do
-    txn = {
-      'extensions' => [],
-      'operations' => [
-        {
-          'type' => 'contract_invoke_operation',
-          'value' => {
-            'owner' => wallet,
-            'code' => [0x00],
-          }
-        }
-      ]
-    }
-    signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
-    $stderr.puts(%(Registering contract... #{signed.to_json}))
-    response = rpc.call('transaction_api.broadcast_transaction', [signed])
-    $stderr.puts(%(Received response contract... #{response}))
-  end
-
-  desc 'View sample contracts'
-  task :list do
-    response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}
-    p response
-  end
-
-  desc 'View sample contracts'
-  task :debug_invoke do
-    response = rpc.call('contract_api.invoke', { 'owner' => wallet, 'code' => [] }) || {}
-    p response
   end
 end
 
