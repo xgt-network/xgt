@@ -1037,8 +1037,8 @@ void contract_create_evaluator::do_apply( const contract_create_operation& op )
    wlog("!!!!!! contract_create owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
    _db.create< contract_object >( [&](contract_object& c)
    {
-      //c.contract_hash = fc::ripemd160::hash(op.code.begin(), op.code.end());
-      c.contract_hash = generate_random_ripemd160();
+      string s(op.code.begin(), op.code.end());
+      c.contract_hash = fc::ripemd160::hash(s);
       c.owner = op.owner;
       c.wallet = op.wallet;
       c.code = op.code;

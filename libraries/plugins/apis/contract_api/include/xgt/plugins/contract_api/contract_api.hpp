@@ -4,6 +4,7 @@
 
 #include <xgt/protocol/types.hpp>
 
+#include <xgt/chain/wallet_object.hpp>
 #include <xgt/chain/contract_objects.hpp>
 
 #include <fc/optional.hpp>
@@ -11,6 +12,16 @@
 namespace xgt { namespace plugins { namespace contract {
 
 namespace detail { class contract_api_impl; }
+
+struct api_contract_object
+{
+  chain::contract_id_type id;
+  chain::wallet_name_type owner;
+  chain::wallet_name_type wallet;
+  chain::contract_hash_type contract_hash;
+  vector<char> code;
+};
+
 
 struct get_contract_args
 {
@@ -32,7 +43,7 @@ struct list_owner_contracts_args
 
 struct list_owner_contracts_return
 {
-   std::vector< chain::contract_object > contracts;
+   std::vector< api_contract_object > contracts;
 };
 
 
@@ -50,6 +61,13 @@ class contract_api
 };
 
 } } } // xgt::plugins::contract
+
+FC_REFLECT( xgt::plugins::contract::api_contract_object,
+            (id)
+            (owner)
+            (wallet)
+            (contract_hash)
+            (code) )
 
 FC_REFLECT( xgt::plugins::contract::get_contract_args, (example) )
 FC_REFLECT( xgt::plugins::contract::get_contract_return, (example) )

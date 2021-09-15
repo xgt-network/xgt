@@ -60,7 +60,14 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
       auto& c = *itr;
       if (c.owner != args.owner) break;
       wlog("!!!!!! LIST_OWNER_CONTRACTS ${w}", ("w",c.owner));
-      result.contracts.push_back(c);
+
+      api_contract_object ac;
+      ac.id = c.id;
+      ac.owner = c.owner;
+      ac.wallet = c.wallet;
+      ac.contract_hash = c.contract_hash;
+      ac.code = c.code;
+      result.contracts.push_back(ac);
       ++itr;
    }
 
