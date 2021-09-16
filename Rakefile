@@ -401,24 +401,26 @@ def create_contract!(owner, keys, code)
   $stderr.puts(%(Received response contract... #{response}))
 end
 
-def invoke_contract!()
+def invoke_contract!(contract_hash, invoker, args)
   txn = {
     'extensions' => [],
     'operations' => [
       {
         'type' => 'contract_invoke_operation',
         'value' => {
-          'owner' => wallet,
-          'caller' => '...',
-          'code' => [0x00],
+          'contract_hash' => contract_hash,
+          'caller' => invoker,
+          'args' => args
         }
       }
     ]
   }
+  $stderr.puts(%(Signing contract contract... #{txn.to_json}))
   signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
   $stderr.puts(%(Registering contract... #{signed.to_json}))
   response = rpc.call('transaction_api.broadcast_transaction', [signed])
   $stderr.puts(%(Received response contract... #{response}))
+  response
 end
 
 namespace :contracts do
@@ -433,6 +435,8 @@ namespace :contracts do
     contract_hash = response['contracts'].first['contract_hash']
     response = rpc.call('contract_api.get_contract', { 'contract_hash' => contract_hash }) || {}
     p response
+
+    invoke_contract!(contract_hash, keys['wallet_name'], [])
   end
 end
 

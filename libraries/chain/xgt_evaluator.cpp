@@ -1283,14 +1283,14 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
      std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
    std::cout << m.to_json() << std::endl;
 
-    // Generate receipt
-    _db.create< contract_receipt_object >( [&](contract_receipt_object& cr)
-    {
-       //cr.id = std::static_cast<contract_receipt_id_type>(generate_random_ripemd160());
-       cr.contract_hash = op.contract_hash;
-       cr.caller = op.caller;
-       cr.args = op.args;
-    });
+    //// Generate receipt
+    //_db.create< contract_receipt_object >( [&](contract_receipt_object& cr)
+    //{
+    //   //cr.id = std::static_cast<contract_receipt_id_type>(generate_random_ripemd160());
+    //   cr.contract_hash = op.contract_hash;
+    //   cr.caller = op.caller;
+    //   cr.args = op.args;
+    //});
 }
 
 } } // xgt::chain
