@@ -25,13 +25,13 @@ struct api_contract_object
 
 struct get_contract_args
 {
-   bool example = true;
+   chain::contract_hash_type contract_hash;
 };
 
 
 struct get_contract_return
 {
-   bool example = true;
+   api_contract_object contract;
 };
 
 
@@ -69,7 +69,7 @@ FC_REFLECT( xgt::plugins::contract::api_contract_object,
             (contract_hash)
             (code) )
 
-FC_REFLECT( xgt::plugins::contract::get_contract_args, (example) )
-FC_REFLECT( xgt::plugins::contract::get_contract_return, (example) )
+FC_REFLECT( xgt::plugins::contract::get_contract_args, (contract_hash) )
+FC_REFLECT( xgt::plugins::contract::get_contract_return, (contract) )
 FC_REFLECT( xgt::plugins::contract::list_owner_contracts_args, (owner) )
 FC_REFLECT( xgt::plugins::contract::list_owner_contracts_return, (contracts) )

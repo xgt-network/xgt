@@ -430,6 +430,9 @@ namespace :contracts do
 
     response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}
     p response
+    contract_hash = response['contracts'].first['contract_hash']
+    response = rpc.call('contract_api.get_contract', { 'contract_hash' => contract_hash }) || {}
+    p response
   end
 end
 
