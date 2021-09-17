@@ -428,7 +428,7 @@ namespace :contracts do
   task :create do
     keys = generate_keys
     create_wallet!(keys)
-    create_contract!(wallet, keys, '00')
+    create_contract!(wallet, keys, '600360040100')
 
     response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}
     p response

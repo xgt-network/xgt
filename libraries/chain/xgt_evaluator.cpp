@@ -1235,8 +1235,8 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
 {
    wlog("contract_invoke ${w}", ("w",op.contract_hash));
-   //const contract_hash_type contract_hash = op.contract_hash;
-   //const auto& c = _db.get_contract(contract_hash);
+   const contract_hash_type contract_hash = op.contract_hash;
+   const auto& c = _db.get_contract(contract_hash);
 
    // // const auto& args = op.args;
    // // const auto& caller = op.caller;
@@ -1263,7 +1263,7 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
      block_coinbase
    };
 
-   std::vector<machine::word> code = {0x00};
+   std::vector<machine::word> code(c.code.begin(), c.code.end());
    // TODO: Fill in owner
    machine::chain_adapter adapter = make_chain_adapter(_db, "", tx_origin);
    machine::machine m(ctx, code, msg, adapter);
