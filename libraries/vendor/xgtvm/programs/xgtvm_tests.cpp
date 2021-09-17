@@ -4,10 +4,10 @@
 #define test_that(message) \
   std::cerr << "\e[34m" << ( message ) << "\e[0m" << std::endl;
 #define assert_message(message, assertion) \
-  { \
-    bool result = ( assertion ); \
-    std::cerr << "  " << ( result ? "\e[32m" : "\e[31m" ) << ( message ) << "\e[0m" << std::endl; \
-  }
+{ \
+  bool result = ( assertion ); \
+  std::cerr << "  " << ( result ? "\e[32m" : "\e[31m" ) << ( message ) << "\e[0m" << std::endl; \
+}
 
 machine::chain_adapter make_chain_adapter()
 {
@@ -174,6 +174,20 @@ int main(int argc, char** argv)
     assert_message( "machine should stop when done executing", m.get_state() == machine::machine_state::stopped );
     assert_message( "stack has correct length", m.stack_length() == 1 );
     assert_message( "top of stack has correct value", m.peek_word() == 5 );
+  }
+
+  test_that("machine can store and load a value to/from memory")
+  {
+    std::vector<machine::word> input = {0x60, 0x01, 0x60, 0x08, 0x52, 0x60, 0x08, 0x51, 0x00};
+    machine::context ctx = {true, 0x00};
+    machine::message msg = {};
+    machine::chain_adapter adapter = make_chain_adapter();
+    machine::machine m(ctx, input, msg, adapter);
+    while (m.is_running())
+      m.step();
+    assert_message( "machine should stop when done executing", m.get_state() == machine::machine_state::stopped );
+    assert_message( "stack has correct length", m.stack_length() == 1 );
+    assert_message( "top of stack has correct value", m.peek_word() == 1 );
   }
 
   test_that("machine can get a wallet's balance via the chain adapter")
