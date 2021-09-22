@@ -50,23 +50,23 @@ namespace xgt { namespace chain {
       allocator< contract_object >
    > contract_index;
 
-   // class contract_log_object : public object< contract_log_object_type, contract_log_object >
-   // {
-   //    XGT_STD_ALLOCATOR_CONSTRUCTOR( contract_log_object )
+   class contract_log_object : public object< contract_log_object_type, contract_log_object >
+   {
+      XGT_STD_ALLOCATOR_CONSTRUCTOR( contract_log_object )
 
-   //    template< typename Constructor, typename Allocator >
-   //    contract_log_object( Constructor&& c, allocator< Allocator > a )
-   //    {
-   //       c( *this );
-   //    }
+      template< typename Constructor, typename Allocator >
+      contract_log_object( Constructor&& c, allocator< Allocator > a )
+      {
+         c( *this );
+      }
 
-   //    contract_log_id_type id;
-   //    contract_id_type contract_id;
-   //    wallet_name_type owner;
-   //    uint8_t level;
-   //    std::tuple< uint256_t, uint256_t, uint256_t, uint256_t > topics;
-   //    vector<uint8_t> data;
-   // };
+      contract_log_id_type id;
+      contract_id_type contract_id;
+      wallet_name_type owner;
+      uint8_t level;
+      std::tuple< uint256_t, uint256_t, uint256_t, uint256_t > topics;
+      vector<uint8_t> data;
+   };
 
    // struct by_contract_id;
    // // TODO: by_topic, by_level
@@ -75,13 +75,13 @@ namespace xgt { namespace chain {
    // // TODO: Receipt object
    // // https://github.com/ethereum/go-ethereum/tree/master/core/types
 
-   // typedef multi_index_container<
-   //    contract_log_object,
-   //    indexed_by<
-   //       ordered_unique< tag< by_contract_id >, member< contract_log_object, contract_id_type, &contract_log_object::contract_id > >
-   //    >,
-   //    allocator< contract_log_object >
-   // > contract_log_index;
+   typedef multi_index_container<
+      contract_log_object,
+      indexed_by<
+         ordered_unique< tag< by_id >, member< contract_log_object, contract_log_id_type, &contract_log_object::id > >
+      >,
+      allocator< contract_log_object >
+   > contract_log_index;
 
    class contract_receipt_object : public object< contract_receipt_object_type, contract_receipt_object >
    {
@@ -155,14 +155,14 @@ FC_REFLECT( xgt::chain::contract_object,
       )
 CHAINBASE_SET_INDEX_TYPE( xgt::chain::contract_object, xgt::chain::contract_index )
 
-// FC_REFLECT( xgt::chain::contract_log_object,
-//       (id)
-//       (contract_id)
-//       (owner)
-//       (level)
-//       (topics)
-//       (data) )
-// CHAINBASE_SET_INDEX_TYPE( xgt::chain::contract_log_object, xgt::chain::contract_log_index )
+FC_REFLECT( xgt::chain::contract_log_object,
+      (id)
+      (contract_id)
+      (owner)
+      (level)
+      (topics)
+      (data) )
+CHAINBASE_SET_INDEX_TYPE( xgt::chain::contract_log_object, xgt::chain::contract_log_index )
 
 FC_REFLECT( xgt::chain::contract_receipt_object,
       (contract_hash)
