@@ -31,17 +31,21 @@ namespace xgt { namespace chain {
    };
 
    struct by_id;
-   struct by_owner;
    struct by_wallet;
    struct by_contract_hash;
+   struct by_owner_and_contract_hash;
 
    typedef multi_index_container<
       contract_object,
       indexed_by<
          ordered_unique< tag< by_id >, member< contract_object, contract_id_type, &contract_object::id > >,
-         ordered_unique< tag< by_owner >, member< contract_object, wallet_name_type, &contract_object::owner > >,
-         ordered_unique< tag< by_wallet >, member< contract_object, wallet_name_type, &contract_object::wallet > >,
-         ordered_unique< tag< by_contract_hash >, member< contract_object, contract_hash_type, &contract_object::contract_hash > >
+         ordered_unique< tag< by_contract_hash >, member< contract_object, contract_hash_type, &contract_object::contract_hash > >,
+         ordered_unique< tag< by_owner_and_contract_hash >,
+            composite_key< contract_object,
+               member< contract_object, wallet_name_type, &contract_object::owner >,
+               member< contract_object, contract_hash_type, &contract_object::contract_hash >
+            >
+         >
       >,
       allocator< contract_object >
    > contract_index;
@@ -143,7 +147,10 @@ namespace xgt { namespace chain {
 } }
 
 FC_REFLECT( xgt::chain::contract_object,
+      (id)
       (owner)
+      (wallet)
+      (contract_hash)
       (code)
       )
 CHAINBASE_SET_INDEX_TYPE( xgt::chain::contract_object, xgt::chain::contract_index )

@@ -663,5 +663,5 @@ FC_REFLECT( xgt::protocol::request_wallet_recovery_operation, (recovery_account)
 FC_REFLECT( xgt::protocol::recover_wallet_operation, (account_to_recover)(new_recovery_authority)(recent_recovery_authority)(extensions) );
 FC_REFLECT( xgt::protocol::change_recovery_wallet_operation, (account_to_recover)(new_recovery_account)(extensions) );
 
-FC_REFLECT( xgt::protocol::contract_create_operation, (owner)(code) );
+FC_REFLECT( xgt::protocol::contract_create_operation, (owner)(wallet)(code) );
 FC_REFLECT( xgt::protocol::contract_invoke_operation, (caller)(contract_hash)(args) );

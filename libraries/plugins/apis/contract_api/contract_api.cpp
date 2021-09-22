@@ -59,7 +59,7 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
 {
    list_owner_contracts_return result;
 
-   const auto& idx = _db.get_index< chain::contract_index, chain::by_owner >();
+   const auto& idx = _db.get_index< chain::contract_index, chain::by_owner_and_contract_hash >();
    auto itr = idx.lower_bound( args.owner );
    auto end = idx.end();
    wlog("!!!!!! LIST_OWNER_CONTRACTS");

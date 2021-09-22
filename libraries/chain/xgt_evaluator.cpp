@@ -1034,11 +1034,15 @@ boost::multiprecision::uint256_t ripemd160_to_uint256_t(fc::ripemd160 h)
 
 void contract_create_evaluator::do_apply( const contract_create_operation& op )
 {
-   wlog("!!!!!! contract_create owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
+   wlog("!!!!!! contract_create owner ${w} wallet ${x} code size ${y}", ("w",op.owner)("x",op.wallet)("y",op.code.size()));
    _db.create< contract_object >( [&](contract_object& c)
    {
+      // TODO: Temporary, find better way to make contract_hash unique
       string s(op.code.begin(), op.code.end());
-      c.contract_hash = fc::ripemd160::hash(s);
+      string s2 = op.wallet;
+      string s3(s2 + s);
+      c.contract_hash = fc::ripemd160::hash(s3);
+      wlog("!!!!!! contract_create contract_hash ${c}", ("c",c.contract_hash));
       c.owner = op.owner;
       c.wallet = op.wallet;
       c.code = op.code;
@@ -1099,9 +1103,11 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return item;
   };
 
+  // TODO: Uses contract_hash, should it use wallet instead?
   std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [&_db](std::string address) -> std::vector<machine::word>
   {
-    const chain::contract_object& contract = _db.get_contract(address);
+    const fc::ripemd160 contract_hash(address);
+    const chain::contract_object& contract = _db.get_contract(contract_hash);
     return std::vector<unsigned char>(contract.code.begin(), contract.code.end());
   };
 
