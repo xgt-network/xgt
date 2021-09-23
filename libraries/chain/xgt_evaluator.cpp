@@ -1095,42 +1095,40 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   // TODO: Revisit this, we may want to use the original sha256 hash
   std::function< machine::big_word(uint64_t) > get_block_hash = [&_db](uint64_t block_num) -> machine::big_word
   {
-    // TODO Get a hash of a complete block with block num block_num -- returns 0 if block_num is greater than head
-
+    if ( block_num > _db.head_block_num() ) {
+      return 0;
+    }
     fc::optional<fc::sha256> block_hash = _db.get_block_hash_from_block_num(block_num);
     auto ripemd160_hash = fc::ripemd160::hash( block_hash->data() );
     machine::big_word item = ripemd160_to_uint256_t(ripemd160_hash);
     return item;
   };
 
-  // TODO: Uses contract_hash, should it use wallet instead?
   std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [&_db](std::string address) -> std::vector<machine::word>
   {
-    const fc::ripemd160 contract_hash(address);
-    const chain::contract_object& contract = _db.get_contract(contract_hash);
+    const chain::contract_object& contract = _db.get_contract(address);
     return std::vector<unsigned char>(contract.code.begin(), contract.code.end());
   };
 
   std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [&_db](std::vector<machine::word> memory, machine::big_word value) -> std::string
   {
     // TODO create wallet, associate contract object with that wallet, return contract address
-    //wallet_object wallet = _db.create< wallet_object >( []( wallet_object& w ){ w.can_vote = true; } ); // example
-    //_db.update< wallet_object >( wallet, []( wallet_object& w){ w.can_vote = false; } ); // example
+    wallet_object wallet = _db.create< wallet_object >( [&]( wallet_object& acc );
+    // TODO initialize wallet?
 
     // TODO contracts need a wallet field; owner is the person calling the
     // contract, wallet is a new wallet created for the contract;
     // copy owner's public keys to new wallet, allowing owner to update contract wallet
     // using their private keys
     //
-    //chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c)
-    //    {
-    //    //c.contract_hash = generate_random_ripemd160();
-    //    c.wallet = wallet.name;
-    //    c.owner = owner;
-    //    c.code = memory;
-    //});
-    //return contract.wallet;
-    return "";
+    // TODO value argument is amount of energy to load contract with
+    chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c) {
+      c.contract_hash = generate_random_ripemd160();
+      c.wallet = wallet.name;
+      c.owner = owner;
+      c.code = memory;
+    });
+    return contract.wallet;
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
@@ -1184,10 +1182,10 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   std::function< bool(std::vector<machine::word>) > revert = [](std::vector<machine::word> memory) -> bool
   {
     // TODO from eth yellowpaper: Halt execution reverting state changes but returning data and remaining gas.
-    return {};
+    return false;
   };
 
-  // TODO: key needs to be a machine::big_word. The `_db` method should take and return uint256_t instead though
+  // TODO: key needs to be a machine::big_word. The `_db` method should take and return uint256_t instead
   std::function< machine::big_word(std::string) > access_storage = [&_db, &owner, &caller](std::string key) -> machine::big_word
   {
     // TODO
@@ -1200,20 +1198,25 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   {
     // TODO owner and destination may be the same? -- destination is message destination from contract
     //return _db.set_storage(owner, caller, key, value);
-    return true;
+    return false;
   };
 
   std::function< bool(std::vector<machine::word>) > contract_return = [](std::vector<machine::word> memory) -> bool
   {
     // TODO halts execution returning contract data -- does this need to be an adapter method?
-    return {};
+    return false;
   };
 
   std::function< bool(std::string) > self_destruct = [](std::string address) -> bool
   {
     // TODO halt execution and register contract address for deletion;
     // should delete wallet containing contract (?)
-    return {};
+    return false;
+  };
+
+  std::function< std::string(const machine::log_object&) > emit_log = [](const machine::log_object& o) -> std::string
+  {
+    return "";
   };
 
   machine::chain_adapter adapter = {
@@ -1232,7 +1235,8 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     access_storage,
     set_storage,
     contract_return,
-    self_destruct
+    self_destruct,
+    emit_log
   };
 
   return adapter;
