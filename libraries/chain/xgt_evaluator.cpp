@@ -1055,7 +1055,7 @@ std::vector<machine::word> contract_invoke(std::string address, uint64_t energy,
 }
 
 // TODO make_chain_adapter will be called in contract_invoke
-machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c)
+machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash)
 {
   std::string owner(o);
   std::string caller(c);
@@ -1112,10 +1112,6 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [&_db](std::vector<machine::word> memory, machine::big_word value) -> std::string
   {
-    // TODO create wallet, associate contract object with that wallet, return contract address
-    wallet_object wallet = _db.create< wallet_object >( [&]( wallet_object& acc );
-    // TODO initialize wallet?
-
     // TODO contracts need a wallet field; owner is the person calling the
     // contract, wallet is a new wallet created for the contract;
     // copy owner's public keys to new wallet, allowing owner to update contract wallet
@@ -1135,6 +1131,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   {
     // TODO contract_invoke should return std::vector<machine::word> return data?
     // calls a method from another contract -- is value method name?
+
     return contract_invoke(address, energy, args);
   };
 
@@ -1182,7 +1179,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   std::function< bool(std::vector<machine::word>) > revert = [](std::vector<machine::word> memory) -> bool
   {
     // TODO from eth yellowpaper: Halt execution reverting state changes but returning data and remaining gas.
-    return false;
+    return true;
   };
 
   // TODO: key needs to be a machine::big_word. The `_db` method should take and return uint256_t instead
@@ -1196,27 +1193,36 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   // TODO: key needs to be a machine::big_word. The `_db` method should take and return uint256_t instead though
   std::function< bool(std::string, machine::big_word) > set_storage = [&_db, &owner, &caller](std::string key, machine::big_word value) -> bool
   {
-    // TODO owner and destination may be the same? -- destination is message destination from contract
+    // TODO
     //return _db.set_storage(owner, caller, key, value);
     return false;
   };
 
   std::function< bool(std::vector<machine::word>) > contract_return = [](std::vector<machine::word> memory) -> bool
   {
-    // TODO halts execution returning contract data -- does this need to be an adapter method?
-    return false;
+    // TODO
+    return true;
   };
 
-  std::function< bool(std::string) > self_destruct = [](std::string address) -> bool
+  std::function< bool(std::string) > self_destruct = [&_db](std::string address) -> bool
   {
-    // TODO halt execution and register contract address for deletion;
-    // should delete wallet containing contract (?)
-    return false;
+    contract_object& contract = _db.get_contract(address);
+    _db.remove(contract);
+
+    return true;
   };
 
-  std::function< std::string(const machine::log_object&) > emit_log = [](const machine::log_object& o) -> std::string
+  std::function< std::string(const machine::log_object&) > emit_log = [&](const machine::log_object& log) -> std::string
   {
-    return "";
+    _db.create< contract_log_object >( [&](contract_log_object& cl)
+    {
+      cl.contract_hash = contract_hash;
+      cl.owner = o;
+      cl.topics = log.topics;
+      cl.data = log.data;
+    });
+
+    return contract_hash.str();
   };
 
   machine::chain_adapter adapter = {
@@ -1275,7 +1281,7 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
 
    std::vector<machine::word> code(c.code.begin(), c.code.end());
    // TODO: Fill in owner
-   machine::chain_adapter adapter = make_chain_adapter(_db, "", tx_origin);
+   machine::chain_adapter adapter = make_chain_adapter(_db, "", tx_origin, op.contract_hash);
    machine::machine m(ctx, code, msg, adapter);
 
    m.print_stack();

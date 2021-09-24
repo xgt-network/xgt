@@ -61,10 +61,9 @@ namespace xgt { namespace chain {
       }
 
       contract_log_id_type id;
-      contract_id_type contract_id;
+      contract_hash_type contract_hash;
       wallet_name_type owner;
-      uint8_t level;
-      std::tuple< uint256_t, uint256_t, uint256_t, uint256_t > topics;
+      std::vector<uint256_t> topics;
       vector<uint8_t> data;
    };
 
@@ -157,9 +156,8 @@ CHAINBASE_SET_INDEX_TYPE( xgt::chain::contract_object, xgt::chain::contract_inde
 
 FC_REFLECT( xgt::chain::contract_log_object,
       (id)
-      (contract_id)
+      (contract_hash)
       (owner)
-      (level)
       (topics)
       (data) )
 CHAINBASE_SET_INDEX_TYPE( xgt::chain::contract_log_object, xgt::chain::contract_log_index )
