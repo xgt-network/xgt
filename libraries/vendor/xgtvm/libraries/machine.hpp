@@ -186,8 +186,7 @@ namespace machine
 
   struct log_object
   {
-    uint8_t data;
-    uint8_t data_size;
+    std::vector<uint8_t> data;
     std::vector<big_word> topics;
   };
 
@@ -273,6 +272,7 @@ namespace machine
     // TODO used to initialize message data
     std::function< std::vector<word>(std::string) > get_input_data;
 
+    std::function< void(const log_object&) > emit_log;
   };
 
   class machine

@@ -1106,13 +1106,13 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [&_db](std::string address) -> std::vector<machine::word>
   {
-    const chain::contract_object& contract = _db.get_contract(address);
+    const chain::contract_object& contract = _db.get_contract(fc::ripemd160(address));
     return std::vector<unsigned char>(contract.code.begin(), contract.code.end());
   };
 
-  std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [&_db](std::vector<machine::word> memory, machine::big_word value) -> std::string
+  std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [&](std::vector<machine::word> memory, machine::big_word value) -> std::string
   {
-    // TODO contracts need a wallet field; owner is the person calling the
+    // TODO contracts need a wallet field; owner is the person creating the
     // contract, wallet is a new wallet created for the contract;
     // copy owner's public keys to new wallet, allowing owner to update contract wallet
     // using their private keys
@@ -1120,9 +1120,9 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     // TODO value argument is amount of energy to load contract with
     chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c) {
       c.contract_hash = generate_random_ripemd160();
-      c.wallet = wallet.name;
+      // c.wallet = wallet.name; // TODO
       c.owner = owner;
-      c.code = memory;
+      c.code = reinterpret_cast< std::vector<char>& >(memory);
     });
     return contract.wallet;
   };
@@ -1206,13 +1206,19 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< bool(std::string) > self_destruct = [&_db](std::string address) -> bool
   {
-    contract_object& contract = _db.get_contract(address);
+    contract_object contract = _db.get_contract(fc::ripemd160(address));
     _db.remove(contract);
 
     return true;
   };
 
-  std::function< std::string(const machine::log_object&) > emit_log = [&](const machine::log_object& log) -> std::string
+  std::function< std::vector<machine::word>(std::string) > get_input_data = [&](std::string input) -> std::vector<machine::word>
+  {
+    // TODO
+    return std::vector<machine::word>();
+  };
+
+  std::function< void(const machine::log_object&) > emit_log = [&](const machine::log_object& log)
   {
     _db.create< contract_log_object >( [&](contract_log_object& cl)
     {
@@ -1242,6 +1248,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     set_storage,
     contract_return,
     self_destruct,
+    get_input_data,
     emit_log
   };
 
