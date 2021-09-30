@@ -25,13 +25,11 @@ namespace xgt { namespace chain {
 
       contract_id_type id;
       wallet_name_type owner; // Creator of wallet
-      wallet_name_type wallet; // New wallet associated with contract
       contract_hash_type contract_hash;
       vector<char> code;
    };
 
    struct by_id;
-   struct by_wallet;
    struct by_contract_hash;
    struct by_owner_and_contract_hash;
 
@@ -148,7 +146,6 @@ namespace xgt { namespace chain {
 FC_REFLECT( xgt::chain::contract_object,
       (id)
       (owner)
-      (wallet)
       (contract_hash)
       (code)
       )

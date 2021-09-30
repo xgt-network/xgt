@@ -1032,19 +1032,22 @@ boost::multiprecision::uint256_t ripemd160_to_uint256_t(fc::ripemd160 h)
   return n;
 }
 
+fc::ripemd160 make_contract_hash(const wallet_name_type& owner, const vector<char> code)
+{
+  string s(code.begin(), code.end());
+  string s2 = owner;
+  string s3(s2 + s);
+  return fc::ripemd160::hash(s3);
+}
+
 void contract_create_evaluator::do_apply( const contract_create_operation& op )
 {
-   wlog("!!!!!! contract_create owner ${w} wallet ${x} code size ${y}", ("w",op.owner)("x",op.wallet)("y",op.code.size()));
+   wlog("!!!!!! contract_create owner ${w} code size ${y}", ("w",op.owner)("y",op.code.size()));
    _db.create< contract_object >( [&](contract_object& c)
    {
-      // TODO: Temporary, find better way to make contract_hash unique
-      string s(op.code.begin(), op.code.end());
-      string s2 = op.wallet;
-      string s3(s2 + s);
-      c.contract_hash = fc::ripemd160::hash(s3);
+      c.contract_hash = make_contract_hash(op.owner, op.code);
       wlog("!!!!!! contract_create contract_hash ${c}", ("c",c.contract_hash));
       c.owner = op.owner;
-      c.wallet = op.wallet;
       c.code = op.code;
    });
 }
@@ -1112,19 +1115,14 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [&](std::vector<machine::word> memory, machine::big_word value) -> std::string
   {
-    // TODO contracts need a wallet field; owner is the person creating the
-    // contract, wallet is a new wallet created for the contract;
-    // copy owner's public keys to new wallet, allowing owner to update contract wallet
-    // using their private keys
-    //
     // TODO value argument is amount of energy to load contract with
+    fc::ripemd160 contract_hash = generate_random_ripemd160();
     chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c) {
-      c.contract_hash = generate_random_ripemd160();
-      // c.wallet = wallet.name; // TODO
+      c.contract_hash = contract_hash;
       c.owner = owner;
       c.code = reinterpret_cast< std::vector<char>& >(memory);
     });
-    return contract.wallet;
+    return contract_hash.str();
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
@@ -1162,18 +1160,14 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [&_db, &owner](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
   {
-    //// TODO similar to contract_create -- includes a salt for deterministic contract address
-    //wallet_object wallet = _db.create< wallet_object >( [&](wallet_object& w)
-    //{
-    //});
-
+    // TODO: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1014.md
     chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c)
     {
         //c.contract_hash = generate_random_ripemd160();
         c.owner = owner;
         //c.code = memory;
     });
-    return contract.wallet;
+    return "";
   };
 
   std::function< bool(std::vector<machine::word>) > revert = [](std::vector<machine::word> memory) -> bool

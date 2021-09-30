@@ -49,7 +49,6 @@ DEFINE_API_IMPL( contract_api_impl, get_contract )
    get_contract_return result;
    result.contract.id = contract.id;
    result.contract.owner = contract.owner;
-   result.contract.wallet = contract.wallet;
    result.contract.contract_hash = contract.contract_hash;
    result.contract.code = contract.code;
    return result;
@@ -72,7 +71,6 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
       api_contract_object ac;
       ac.id = c.id;
       ac.owner = c.owner;
-      ac.wallet = c.wallet;
       ac.contract_hash = c.contract_hash;
       ac.code = c.code;
       result.contracts.push_back(ac);
