@@ -200,6 +200,9 @@ namespace xgt { namespace chain {
          void foreach_operation(std::function<bool(const signed_block_header&, const signed_block&,
             const signed_transaction&, uint32_t, const operation&, uint16_t)> processor) const;
 
+         const contract_storage_object& get_contract_storage( const contract_hash_type& owner, const wallet_name_type& caller )const;
+         const contract_storage_object* find_contract_storage( const contract_hash_type& owner, const wallet_name_type& caller )const;
+
          const witness_object&  get_witness(  const wallet_name_type& name )const;
          const witness_object*  find_witness( const wallet_name_type& name )const;
 

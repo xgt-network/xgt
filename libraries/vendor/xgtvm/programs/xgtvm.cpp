@@ -115,14 +115,13 @@ machine::chain_adapter make_chain_adapter()
     return {};
   };
 
-  std::function< machine::big_word(std::string) > access_storage = [](std::string key) -> machine::big_word
+  std::function< machine::big_word(machine::big_word) > get_storage = [](machine::big_word) -> machine::big_word
   {
-    return {};
+    return 0;
   };
 
-  std::function< bool(std::string, machine::big_word) > set_storage = [](std::string key, machine::big_word value) -> bool
+  std::function< void(machine::big_word, machine::big_word) > set_storage = [](machine::big_word, machine::big_word value) -> void
   {
-    return {};
   };
 
   std::function< bool(std::vector<machine::word>) > contract_return = [](std::vector<machine::word> memory) -> bool
@@ -153,7 +152,7 @@ machine::chain_adapter make_chain_adapter()
     contract_staticcall,
     contract_create2,
     revert,
-    access_storage,
+    get_storage,
     set_storage,
     contract_return,
     self_destruct,

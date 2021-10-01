@@ -258,10 +258,10 @@ namespace machine
     std::function< bool(std::vector<word>) > revert;
 
     // TODO load opcode -- takes key as a parameter and returns value
-    std::function< big_word(std::string) > access_storage;
+    std::function< big_word(big_word) > get_storage;
 
     // TODO sstore opcode -- destination, key, value
-    std::function< bool(std::string, big_word) > set_storage;
+    std::function< void(big_word, big_word) > set_storage;
 
     // TODO return opcode
     std::function< bool(std::vector<word>) > contract_return;

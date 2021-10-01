@@ -1057,12 +1057,12 @@ std::vector<machine::word> contract_invoke(std::string address, uint64_t energy,
   return std::vector<machine::word>();
 }
 
-machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash)
+machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<uint256_t, uint256_t>& storage)
 {
   std::string owner(o);
   std::string caller(c);
 
-  std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
+  std::function< std::string(std::vector<machine::word>) > sha3 = [&](std::vector<machine::word> memory) -> std::string
   {
     std::string message(memory.begin(), memory.end());
     unsigned char output[32];
@@ -1074,13 +1074,13 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return fin;
   };
 
-  std::function< uint64_t(std::string) > get_balance = [&_db](std::string address) -> uint64_t
+  std::function< uint64_t(std::string) > get_balance = [&](std::string address) -> uint64_t
   {
     auto& wallet = _db.get_account(address);
     return static_cast<uint64_t>(wallet.balance.amount.value);
   };
 
-  std::function< std::string(std::string) > get_code_hash = [&_db](std::string address) -> std::string
+  std::function< std::string(std::string) > get_code_hash = [&](std::string address) -> std::string
   {
     fc::ripemd160 address_ripemd160(address);
     const auto& contract = _db.get_contract(address_ripemd160);
@@ -1095,7 +1095,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   };
 
   // TODO: Revisit this, we may want to use the original sha256 hash
-  std::function< machine::big_word(uint64_t) > get_block_hash = [&_db](uint64_t block_num) -> machine::big_word
+  std::function< machine::big_word(uint64_t) > get_block_hash = [&](uint64_t block_num) -> machine::big_word
   {
     if ( block_num > _db.head_block_num() ) {
       return 0;
@@ -1106,7 +1106,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return item;
   };
 
-  std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [&_db](std::string address) -> std::vector<machine::word>
+  std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [&](std::string address) -> std::vector<machine::word>
   {
     const chain::contract_object& contract = _db.get_contract(fc::ripemd160(address));
     return std::vector<unsigned char>(contract.code.begin(), contract.code.end());
@@ -1124,7 +1124,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return contract_hash.str();
   };
 
-  std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
+  std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [&](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
   {
     // TODO contract_invoke should return std::vector<machine::word> return data?
     // calls a method from another contract -- is value method name?
@@ -1132,13 +1132,13 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return contract_invoke(address, energy, args);
   };
 
-  std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_callcode = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
+  std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_callcode = [&](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
   {
     // TODO Uses alternative account's code (args?)
     return contract_invoke(address, energy, args);
   };
 
-  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_delegatecall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
+  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_delegatecall = [&](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
   {
     // TODO from eth yellowpaper: Message-call into this account with an
     // alternative account’s code, but persisting the current values for sender
@@ -1148,7 +1148,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return contract_invoke(address, energy, args);
   };
 
-  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
+  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [&](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
   {
     // TODO from ethervm.io: calls a method in another contract with state
     // changes such as contract creation, event emission, storage modification
@@ -1169,35 +1169,30 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return "";
   };
 
-  std::function< bool(std::vector<machine::word>) > revert = [](std::vector<machine::word> memory) -> bool
+  std::function< bool(std::vector<machine::word>) > revert = [&](std::vector<machine::word> memory) -> bool
   {
     // TODO from eth yellowpaper: Halt execution reverting state changes but returning data and remaining gas.
     return true;
   };
 
-  // TODO: key needs to be a machine::big_word. The `_db` method should take and return uint256_t instead
-  std::function< machine::big_word(std::string) > access_storage = [&_db, &owner, &caller](std::string key) -> machine::big_word
+  std::function< machine::big_word(machine::big_word) > get_storage = [&](uint256_t key) -> machine::big_word
   {
-    // TODO
-    //return _db.get_storage(owner, caller, key);
-    return 0;
+    return storage[key];
   };
 
-  // TODO: key needs to be a machine::big_word. The `_db` method should take and return uint256_t instead though
-  std::function< bool(std::string, machine::big_word) > set_storage = [&_db, &owner, &caller](std::string key, machine::big_word value) -> bool
+  std::function< bool(machine::big_word, machine::big_word) > set_storage = [&](machine::big_word key, machine::big_word value) -> bool
   {
-    // TODO
-    //return _db.set_storage(owner, caller, key, value);
+    storage[key] = value;
     return false;
   };
 
-  std::function< bool(std::vector<machine::word>) > contract_return = [](std::vector<machine::word> memory) -> bool
+  std::function< bool(std::vector<machine::word>) > contract_return = [&](std::vector<machine::word> memory) -> bool
   {
     // TODO
     return true;
   };
 
-  std::function< bool(std::string) > self_destruct = [&_db](std::string address) -> bool
+  std::function< bool(std::string) > self_destruct = [&](std::string address) -> bool
   {
     contract_object contract = _db.get_contract(fc::ripemd160(address));
     _db.remove(contract);
@@ -1237,7 +1232,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     contract_staticcall,
     contract_create2,
     revert,
-    access_storage,
+    get_storage,
     set_storage,
     contract_return,
     self_destruct,
@@ -1254,8 +1249,10 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
    const contract_hash_type contract_hash = op.contract_hash;
    const auto& c = _db.get_contract(contract_hash);
 
-   // // const auto& args = op.args;
-   // // const auto& caller = op.caller;
+   const contract_storage_object* cs = _db.find_contract_storage(contract_hash, op.caller);
+   map< uint256_t, uint256_t > storage;
+   if (cs)
+      storage = cs->data;
 
    machine::message msg = {};
 
@@ -1280,7 +1277,7 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
    };
 
    std::vector<machine::word> code(c.code.begin(), c.code.end());
-   machine::chain_adapter adapter = make_chain_adapter(_db, c.owner, tx_origin, op.contract_hash);
+   machine::chain_adapter adapter = make_chain_adapter(_db, c.owner, tx_origin, op.contract_hash, storage);
    machine::machine m(ctx, code, msg, adapter);
 
    m.print_stack();

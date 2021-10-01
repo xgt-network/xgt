@@ -86,18 +86,14 @@ namespace xgt { namespace chain {
        contract_storage_id_type id;
        contract_hash_type contract;
        wallet_name_type caller;
-       vector<uint8_t> data;
+       map<uint256_t, uint256_t> data;
     };
 
-    struct by_contract;
-    struct by_caller;
     struct by_contract_and_caller;
 
     typedef multi_index_container<
        contract_storage_object,
        indexed_by<
-          ordered_unique< tag< by_contract >, member< contract_storage_object, contract_hash_type, &contract_storage_object::contract > >,
-          ordered_unique< tag< by_caller >, member< contract_storage_object, wallet_name_type, &contract_storage_object::caller > >,
           ordered_unique< tag< by_contract_and_caller >,
              composite_key< contract_storage_object,
                 member< contract_storage_object, contract_hash_type, &contract_storage_object::contract >,

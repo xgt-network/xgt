@@ -600,6 +600,16 @@ void database::foreach_operation(std::function<bool(const signed_block_header&,c
 }
 
 
+const contract_storage_object& database::get_contract_storage( const contract_hash_type& contract_hash, const wallet_name_type& caller ) const
+{ try {
+   return get< contract_storage_object, by_contract_and_caller >( boost::make_tuple( contract_hash, caller ) );
+} FC_CAPTURE_AND_RETHROW( (contract_hash)(caller) ) }
+
+const contract_storage_object* database::find_contract_storage( const contract_hash_type& contract_hash, const wallet_name_type& caller ) const
+{
+   return find< contract_storage_object, by_contract_and_caller >( boost::make_tuple( contract_hash, caller ) );
+}
+
 const witness_object& database::get_witness( const wallet_name_type& name ) const
 { try {
    return get< witness_object, by_name >( name );
