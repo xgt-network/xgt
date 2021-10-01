@@ -2467,161 +2467,181 @@ namespace machine
           }
           const log_object o = { slice, {} };
           this->emit_log(o);
-
-          // Ex:
-          // log_object& o = { 0 /* data */, { 1, 2 } /* topics, 2 of them */ };
           break;
         }
       case log1_opcode:
         {
           logger << "op log1" << std::endl;
-          // va = pop_word(); // offset
-          // vb = pop_word(); // length
+          va = pop_word(); // offset
+          vb = pop_word(); // length
+          offset = size_t(va);
+          length = size_t(vb);
+          std::vector<word> slice;
+          slice.resize(length);
+          for (size_t i = 0; i < length; i++) {
+            slice[i] = memory[offset + i];
+          }
 
-          // std::vector<big_word> topics;
+          std::vector<big_word> topics;
+          stack_variant& stack_object = stack.front();
+          if (big_word* it = boost::get<big_word>(&stack_object))
+          {
+            stack.pop_front();
+            topics.push_back(*it);
+          }
+          else {
+            throw;
+          }
 
-          // stack_variant& stack_object = stack.front();
-          // if (big_word* it = boost::get<big_word>(&stack_object))
-          // {
-          //   stack.pop_front();
-          //   topics.push_back(*it);
-          // }
-          // else {
-          //   throw;
-          // }
-
-          // word data = memory[size_t(va)];
-          // const log_object o = { data, uint8_t(vb), topics };
-          // this->emit_log(o);
+          const log_object o = { slice, topics };
+          this->emit_log(o);
           break;
         }
       case log2_opcode:
         {
           logger << "op log2" << std::endl;
-          // va = pop_word(); // offset
-          // vb = pop_word(); // length
+          va = pop_word(); // offset
+          vb = pop_word(); // length
+          offset = size_t(va);
+          length = size_t(vb);
+          std::vector<word> slice;
+          slice.resize(length);
+          for (size_t i = 0; i < length; i++) {
+            slice[i] = memory[offset + i];
+          }
 
-          // std::vector<big_word> topics;
+          std::vector<big_word> topics;
 
-          // stack_variant& stack_object = stack.front();
-          // if (big_word* it = boost::get<big_word>(&stack_object))
-          // {
-          //   stack.pop_front();
-          //   topics.push_back(*it);
-          // }
-          // else {
-          //   throw;
-          // }
+          stack_variant& stack_object = stack.front();
+          if (big_word* it = boost::get<big_word>(&stack_object))
+          {
+            stack.pop_front();
+            topics.push_back(*it);
+          }
+          else {
+            throw;
+          }
 
-          // stack_object = stack.front();
-          // if (big_word* it = boost::get<big_word>(&stack_object))
-          // {
-          //   stack.pop_front();
-          //   topics.push_back(*it);
-          // }
-          // else {
-          //   throw;
-          // }
+          stack_object = stack.front();
+          if (big_word* it = boost::get<big_word>(&stack_object))
+          {
+            stack.pop_front();
+            topics.push_back(*it);
+          }
+          else {
+            throw;
+          }
 
-          // word data = memory[size_t(va)];
-          // const log_object o = { data, uint8_t(vb), topics };
-          // this->emit_log(o);
+          const log_object o = { slice, topics };
+          this->emit_log(o);
           break;
         }
       case log3_opcode:
         {
           logger << "op log3" << std::endl;
-          // va = pop_word(); // offset
-          // vb = pop_word(); // length
+          va = pop_word(); // offset
+          vb = pop_word(); // length
+          offset = size_t(va);
+          length = size_t(vb);
+          std::vector<word> slice;
+          slice.resize(length);
+          for (size_t i = 0; i < length; i++) {
+            slice[i] = memory[offset + i];
+          }
 
-          // std::vector<big_word> topics;
+          std::vector<big_word> topics;
 
-          // stack_variant& stack_object = stack.front();
-          // if (big_word* it = boost::get<big_word>(&stack_object))
-          // {
-          //   stack.pop_front();
-          //   topics.push_back(*it);
-          // }
-          // else {
-          //   throw;
-          // }
+          stack_variant& stack_object = stack.front();
+          if (big_word* it = boost::get<big_word>(&stack_object))
+          {
+            stack.pop_front();
+            topics.push_back(*it);
+          }
+          else {
+            throw;
+          }
 
-          // stack_object = stack.front();
-          // if (big_word* it = boost::get<big_word>(&stack_object))
-          // {
-          //   stack.pop_front();
-          //   topics.push_back(*it);
-          // }
-          // else {
-          //   throw;
-          // }
+          stack_object = stack.front();
+          if (big_word* it = boost::get<big_word>(&stack_object))
+          {
+            stack.pop_front();
+            topics.push_back(*it);
+          }
+          else {
+            throw;
+          }
 
-          // stack_object = stack.front();
-          // if (big_word* it = boost::get<big_word>(&stack_object))
-          // {
-          //   stack.pop_front();
-          //   topics.push_back(*it);
-          // }
-          // else {
-          //   throw;
-          // }
+          stack_object = stack.front();
+          if (big_word* it = boost::get<big_word>(&stack_object))
+          {
+            stack.pop_front();
+            topics.push_back(*it);
+          }
+          else {
+            throw;
+          }
 
-          // word data = memory[size_t(va)];
-          // const log_object o = { data, uint8_t(vb), topics };
-          // this->emit_log(o);
+          const log_object o = { slice, topics };
+          this->emit_log(o);
           break;
         }
       case log4_opcode:
         {
-          // logger << "op log4" << std::endl;
-          // va = pop_word(); // offset
-          // vb = pop_word(); // length
+          logger << "op log4" << std::endl;
+          va = pop_word(); // offset
+          vb = pop_word(); // length
+          offset = size_t(va);
+          length = size_t(vb);
+          std::vector<word> slice;
+          slice.resize(length);
+          for (size_t i = 0; i < length; i++) {
+            slice[i] = memory[offset + i];
+          }
 
-          // std::vector<big_word> topics;
+          std::vector<big_word> topics;
 
-          // stack_variant& stack_object = stack.front();
-          // if (big_word* it = boost::get<big_word>(&stack_object))
-          // {
-          //   stack.pop_front();
-          //   topics.push_back(*it);
-          // }
-          // else {
-          //   throw;
-          // }
+          stack_variant& stack_object = stack.front();
+          if (big_word* it = boost::get<big_word>(&stack_object))
+          {
+            stack.pop_front();
+            topics.push_back(*it);
+          }
+          else {
+            throw;
+          }
 
-          // stack_object = stack.front();
-          // if (big_word* it = boost::get<big_word>(&stack_object))
-          // {
-          //   stack.pop_front();
-          //   topics.push_back(*it);
-          // }
-          // else {
-          //   throw;
-          // }
+          stack_object = stack.front();
+          if (big_word* it = boost::get<big_word>(&stack_object))
+          {
+            stack.pop_front();
+            topics.push_back(*it);
+          }
+          else {
+            throw;
+          }
 
-          // stack_object = stack.front();
-          // if (big_word* it = boost::get<big_word>(&stack_object))
-          // {
-          //   stack.pop_front();
-          //   topics.push_back(*it);
-          // }
-          // else {
-          //   throw;
-          // }
+          stack_object = stack.front();
+          if (big_word* it = boost::get<big_word>(&stack_object))
+          {
+            stack.pop_front();
+            topics.push_back(*it);
+          }
+          else {
+            throw;
+          }
 
-          // stack_object = stack.front();
-          // if (big_word* it = boost::get<big_word>(&stack_object))
-          // {
-          //   stack.pop_front();
-          //   topics.push_back(*it);
-          // }
-          // else {
-          //   throw;
-          // }
+          stack_object = stack.front();
+          if (big_word* it = boost::get<big_word>(&stack_object))
+          {
+            stack.pop_front();
+            topics.push_back(*it);
+          }
+          else {
+            throw;
+          }
 
-          // word data = memory[size_t(va)];
-          // const log_object o = { data, uint8_t(vb), topics };
-          // this->emit_log(o);
+          const log_object o = { slice, topics };
+          this->emit_log(o);
           break;
         }
       case create_opcode:

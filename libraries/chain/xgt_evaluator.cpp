@@ -1057,7 +1057,6 @@ std::vector<machine::word> contract_invoke(std::string address, uint64_t energy,
   return std::vector<machine::word>();
 }
 
-// TODO make_chain_adapter will be called in contract_invoke
 machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash)
 {
   std::string owner(o);
@@ -1281,8 +1280,7 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
    };
 
    std::vector<machine::word> code(c.code.begin(), c.code.end());
-   // TODO: Fill in owner
-   machine::chain_adapter adapter = make_chain_adapter(_db, "", tx_origin, op.contract_hash);
+   machine::chain_adapter adapter = make_chain_adapter(_db, c.owner, tx_origin, op.contract_hash);
    machine::machine m(ctx, code, msg, adapter);
 
    m.print_stack();
@@ -1299,15 +1297,6 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
    while ( std::getline(m.get_logger(), line) )
      std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
    std::cout << m.to_json() << std::endl;
-
-    //// Generate receipt
-    //_db.create< contract_receipt_object >( [&](contract_receipt_object& cr)
-    //{
-    //   //cr.id = std::static_cast<contract_receipt_id_type>(generate_random_ripemd160());
-    //   cr.contract_hash = op.contract_hash;
-    //   cr.caller = op.caller;
-    //   cr.args = op.args;
-    //});
 }
 
 } } // xgt::chain

@@ -65,13 +65,6 @@ namespace xgt { namespace chain {
       vector<uint8_t> data;
    };
 
-   // struct by_contract_id;
-   // // TODO: by_topic, by_level
-
-   // // TODO: block id, transaction id, transaction op index?
-   // // TODO: Receipt object
-   // // https://github.com/ethereum/go-ethereum/tree/master/core/types
-
    typedef multi_index_container<
       contract_log_object,
       indexed_by<
@@ -79,31 +72,6 @@ namespace xgt { namespace chain {
       >,
       allocator< contract_log_object >
    > contract_log_index;
-
-   class contract_receipt_object : public object< contract_receipt_object_type, contract_receipt_object >
-   {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( contract_receipt_object )
-
-      template< typename Constructor, typename Allocator >
-      contract_receipt_object( Constructor&& c, allocator< Allocator > a )
-      {
-         c( *this );
-      }
-
-      contract_receipt_id_type id;
-      contract_hash_type contract_hash;
-      wallet_name_type caller;
-      vector< vector<char> > args;
-      // uint64_t energy_used; // TODO: Verify this
-   };
-
-   typedef multi_index_container<
-      contract_receipt_object,
-      indexed_by<
-         ordered_unique< tag< by_contract_hash >, member< contract_receipt_object, contract_hash_type, &contract_receipt_object::contract_hash > >
-      >,
-      allocator< contract_receipt_object >
-   > contract_receipt_index;
 
     class contract_storage_object : public object< contract_storage_object_type, contract_storage_object >
     {
@@ -158,14 +126,6 @@ FC_REFLECT( xgt::chain::contract_log_object,
       (topics)
       (data) )
 CHAINBASE_SET_INDEX_TYPE( xgt::chain::contract_log_object, xgt::chain::contract_log_index )
-
-FC_REFLECT( xgt::chain::contract_receipt_object,
-      (contract_hash)
-      (caller)
-      (args)
-      // (energy_used)
-      )
-CHAINBASE_SET_INDEX_TYPE( xgt::chain::contract_receipt_object, xgt::chain::contract_receipt_index )
 
  FC_REFLECT( xgt::chain::contract_storage_object,
       (id)
