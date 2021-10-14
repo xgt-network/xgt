@@ -1428,6 +1428,7 @@ void database::init_genesis( uint64_t init_supply )
          p.reverse_auction_seconds = XGT_REVERSE_AUCTION_WINDOW_SECONDS;
          p.next_maintenance_time = XGT_GENESIS_TIME;
          p.last_budget_time = XGT_GENESIS_TIME;
+         p.energy_multiplier = 1;
       } );
 
       for( int i = 0; i < 0x10000; i++ )

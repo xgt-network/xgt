@@ -110,6 +110,12 @@ namespace xgt { namespace chain {
          uint16_t downvote_pool_percent = 0;
 
          asset xtt_creation_fee = asset( 1000, XGT_SYMBOL );
+
+         // Virtual machine energy implementation
+
+         int64_t energy_multiplier;
+
+         int64_t energy_interval;
    };
 
    typedef multi_index_container<
