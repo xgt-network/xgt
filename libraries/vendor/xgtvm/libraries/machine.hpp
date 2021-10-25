@@ -12,7 +12,6 @@
 
 namespace machine
 {
-
   typedef uint8_t word;
   typedef boost::multiprecision::uint256_t big_word;
   typedef boost::multiprecision::int256_t signed_big_word;
@@ -190,7 +189,6 @@ namespace machine
     std::vector<big_word> topics;
   };
 
-
   struct message
   {
     uint32_t flags;
@@ -206,7 +204,7 @@ namespace machine
     size_t code_size;
   };
 
-  // TODO replace with correct data types
+  // TODO ensure correct data types
   struct context
   {
     bool is_debug;
@@ -291,6 +289,7 @@ namespace machine
     std::stringstream logger;
     chain_adapter adapter;
     big_word energy_left;
+    opcode current_opcode = stop_opcode;
 
     void push_word(stack_variant v);
     big_word pop_word();
@@ -311,6 +310,7 @@ namespace machine
     machine_state get_state();
     boost::optional<std::string> get_error_message();
     std::stringstream& get_logger();
+    opcode get_current_opcode() { return current_opcode; };
     std::string to_json();
 
     void emit_log(const log_object& o);

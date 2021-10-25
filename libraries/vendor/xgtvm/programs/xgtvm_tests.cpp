@@ -76,8 +76,9 @@ machine::chain_adapter make_chain_adapter()
     return 0;
   };
 
-  std::function< void(machine::big_word, machine::big_word) > set_storage = [](machine::big_word, machine::big_word value) -> bool
+  std::function< bool(machine::big_word, machine::big_word) > set_storage = [](machine::big_word, machine::big_word value) -> bool
   {
+    return 0;
   };
 
   std::function< bool(std::vector<machine::word>) > contract_return = [](std::vector<machine::word> memory) -> bool

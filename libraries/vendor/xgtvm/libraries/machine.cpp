@@ -249,6 +249,7 @@ namespace machine
     }
     word current_instruction = code[pc];
     opcode op = (opcode)current_instruction;
+    current_opcode = op;
     pc++;
 
     logger << "step pc " << std::to_string(pc) << " opcode " << std::hex << op << std::dec << std::endl;
