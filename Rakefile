@@ -66,8 +66,8 @@ def host
   ENV['XGT_HOST'] || 'http://localhost:8751'
 end
 
-def seed_hosts
-  Array((ENV['XGT_SEED_HOST'] || "").split(","))
+def override_seeds
+  Array((ENV['XGT_OVERRIDE_SEEDS'] || "").split(","))
 end
 
 def instance_index
@@ -291,8 +291,8 @@ task :run do
 
       enable-stale-production = #{mining_disabled? ? 'false' : 'true'}
     )))
-    if seed_hosts && seed_hosts.any?
-      f.puts "p2p-seed-node = #{seed_hosts.join(" ")}"
+    if override_seeds && override_seeds.any?
+      f.puts "p2p-seed-node = #{override_seeds.join(" ")}"
     end
   end
   $stderr.puts(File.read("#{data_dir}/config.ini"))
