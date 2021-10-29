@@ -428,6 +428,11 @@ namespace :contracts do
   task :create do
     keys = generate_keys
     create_wallet!(keys)
+    # Bytecode explanation:
+    #
+    #     60   03 60   04 01  00
+    #     PUSH 3  PUSH 4  ADD HALT
+    #
     create_contract!(wallet, keys, '600360040100')
 
     response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}
@@ -437,6 +442,43 @@ namespace :contracts do
     p response
 
     invoke_contract!(contract_hash, keys['wallet_name'], [])
+  end
+
+  desc 'Create a sample contract which calls another'
+  task :create_and_call do
+    create_contract = lambda { |code|
+      keys = generate_keys
+      create_wallet!(keys)
+      create_contract!(wallet, keys, code)
+
+      response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}
+      p response
+      contract_hash = response['contracts'].first['contract_hash']
+      response = rpc.call('contract_api.get_contract', { 'contract_hash' => contract_hash }) || {}
+      p response
+
+      [contract_hash, keys]
+    }
+
+    # Arguments to `call` opcode are:
+    #
+    #     energy contract_hash value argsOffset argsLength retOffset retLength
+    #
+    # Bytecode explanation:
+    #
+    #     PUSH 0 PUSH 0 RETURN HALT
+    #     60 00 60 00 F3 00
+    #
+    contract_hash1, keys1 = create_contract.(%(60006000F300))
+    #
+    # Bytecode explanation:
+    #
+    #     PUSH 0 PUSH #{contract_hash1} 0 0 0 0 0 CALL HALT
+    #     60 00 60 #{contract_hash1} 60 00 60 00 60 00 60 00 60 00 F1 00
+    #
+    contract_hash2, keys2 = create_contract.(%(600060#{contract_hash1}60006000600060006000F100))
+
+    invoke_contract!(contract_hash2, keys2['wallet_name'], [])
   end
 end
 

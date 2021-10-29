@@ -1,4 +1,6 @@
 #pragma once
+#include <boost/multiprecision/cpp_int.hpp>
+#include <fc/crypto/ripemd160.hpp>
 #include <fc/io/raw_variant.hpp>
 #include <fc/reflect/reflect.hpp>
 #include <fc/io/datastream.hpp>
@@ -13,6 +15,7 @@
 #include <fc/exception/exception.hpp>
 #include <fc/safe.hpp>
 #include <fc/io/raw_fwd.hpp>
+#include <sstream>
 #include <map>
 #include <deque>
 
@@ -94,6 +97,40 @@ namespace fc {
        s.read( (char*)&sec, sizeof(sec) );
        tp = fc::time_point() + fc::seconds(sec);
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
+
+    template<typename Stream>
+    inline void pack( Stream& s, const boost::multiprecision::uint256_t& v )
+    {
+       std::ostringstream os;
+       os << std::hex << std::setw(64) << std::setfill('0') << v;
+       std::string string_hash = os.str();
+       fc::raw::pack(s, string_hash);
+    }
+
+    template<typename Stream>
+    inline void unpack( Stream& s, boost::multiprecision::uint256_t& v, uint32_t depth )
+    {
+       string string_hash;
+       fc::raw::unpack(s, string_hash, depth);
+       std::string prefix = "0x";
+       std::string prepended_string_hash = prefix.append(string_hash);
+       v = boost::multiprecision::uint256_t(prepended_string_hash);
+    }
+
+    template<typename Stream>
+    inline void pack( Stream& s, const fc::ripemd160& v )
+    {
+       string str = v.str();
+       fc::raw::pack(s, str);
+    }
+
+    template<typename Stream>
+    inline void unpack( Stream& s, fc::ripemd160& v, uint32_t depth )
+    {
+       string tmp;
+       fc::raw::unpack(s,tmp,depth);
+       v = fc::ripemd160(tmp);
+    }
 
     template<typename Stream>
     inline void pack( Stream& s, const fc::time_point& tp )

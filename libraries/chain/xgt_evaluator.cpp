@@ -1264,7 +1264,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     {
       cl.contract_hash = contract_hash;
       cl.owner = o;
-      cl.topics = log.topics;
+      //cl.topics = log.topics;
       cl.data = log.data;
     });
 
