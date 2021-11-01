@@ -99,25 +99,6 @@ namespace fc {
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
     template<typename Stream>
-    inline void pack( Stream& s, const boost::multiprecision::uint256_t& v )
-    {
-       std::ostringstream os;
-       os << std::hex << std::setw(64) << std::setfill('0') << v;
-       std::string string_hash = os.str();
-       fc::raw::pack(s, string_hash);
-    }
-
-    template<typename Stream>
-    inline void unpack( Stream& s, boost::multiprecision::uint256_t& v, uint32_t depth )
-    {
-       string string_hash;
-       fc::raw::unpack(s, string_hash, depth);
-       std::string prefix = "0x";
-       std::string prepended_string_hash = prefix.append(string_hash);
-       v = boost::multiprecision::uint256_t(prepended_string_hash);
-    }
-
-    template<typename Stream>
     inline void pack( Stream& s, const fc::ripemd160& v )
     {
        string str = v.str();

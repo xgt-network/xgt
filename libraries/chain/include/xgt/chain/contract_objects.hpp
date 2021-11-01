@@ -1,7 +1,5 @@
 #pragma once
 
-#include <boost/multiprecision/cpp_int.hpp>
-
 #include <xgt/chain/xgt_fwd.hpp>
 
 #include <xgt/protocol/authority.hpp>
@@ -10,8 +8,6 @@
 #include <xgt/chain/xgt_object_types.hpp>
 
 namespace xgt { namespace chain {
-
-   using uint256_t = boost::multiprecision::uint256_t;
 
    class contract_object : public object< contract_object_type, contract_object >
    {
@@ -61,8 +57,7 @@ namespace xgt { namespace chain {
       contract_log_id_type id;
       contract_hash_type contract_hash;
       wallet_name_type owner;
-      //uint256_t example;
-      //std::vector<uint256_t> topics;
+      std::vector<fc::sha256> topics;
       vector<uint8_t> data;
    };
 
@@ -87,7 +82,7 @@ namespace xgt { namespace chain {
        contract_storage_id_type id;
        contract_hash_type contract;
        wallet_name_type caller;
-       map<uint256_t, uint256_t> data;
+       map<fc::sha256, fc::sha256> data;
     };
 
     struct by_contract_and_caller;
@@ -120,8 +115,7 @@ FC_REFLECT( xgt::chain::contract_log_object,
       (id)
       (contract_hash)
       (owner)
-      //(example)
-      //(topics)
+      (topics)
       (data)
       )
 CHAINBASE_SET_INDEX_TYPE( xgt::chain::contract_log_object, xgt::chain::contract_log_index )
