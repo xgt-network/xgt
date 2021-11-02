@@ -1103,8 +1103,7 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
       std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
    std::cout << m.to_json() << std::endl;
 
-   // TODO: return values
-   return std::vector<machine::word>();
+   return m.get_return_value();
 }
 
 machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<fc::sha256, fc::sha256>& storage)
@@ -1176,39 +1175,65 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [&](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-     const contract_storage_object& cs = _db.get_contract_storage(contract_hash, caller);
-     map< fc::sha256, fc::sha256 > storage = cs.data;
+     const contract_storage_object* cs = _db.find_contract_storage(contract_hash, caller);
+     map< fc::sha256, fc::sha256 > storage;
+     if (cs)
+       storage = cs->data;
+     else
+       storage = map< fc::sha256, fc::sha256 >();
+
      auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
-     // TODO: Update storage
+
+     if (cs)
+        _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
+          cs.contract = contract_hash;
+          cs.caller = caller;
+          cs.data = storage;
+        });
+     else
+        _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+          cs.data = storage;
+        });
+
      return result;
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_callcode = [&](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-    // TODO Uses alternative account's code (args?)
-    //return contract_invoke(address, energy, args);
-    return {};
+     // TODO
+     return std::vector<machine::word>();
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_delegatecall = [&](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-    // TODO from eth yellowpaper: Message-call into this account with an
-    // alternative account’s code, but persisting the current values for sender
-    // and value
-    //
-    // from ethervm.io: using storage of the current contract
-    auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
-    // TODO: Update storage
-    return result;
+     const contract_storage_object* cs = _db.find_contract_storage(contract_hash, c); // TODO: Verify `c` is correct
+     map< fc::sha256, fc::sha256 > storage;
+     if (cs)
+       storage = cs->data;
+     else
+       storage = map< fc::sha256, fc::sha256 >();
+
+     auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
+
+     if (cs)
+        _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
+          cs.contract = contract_hash;
+          cs.caller = c;
+          cs.data = storage;
+        });
+     else
+        _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+          cs.data = storage;
+        });
+
+     return result;
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [&](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-    // TODO from ethervm.io: calls a method in another contract with state
-    // changes such as contract creation, event emission, storage modification
-    // and contract destruction disallowed
-    return {};
-    //return contract_invoke(address, energy, args);
+     map< fc::sha256, fc::sha256 > storage; // Should this be empty, or just immutable for `staticcall`?
+     auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
+     return result;
   };
 
   std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [&_db, &owner](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
