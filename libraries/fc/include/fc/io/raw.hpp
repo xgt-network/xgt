@@ -99,21 +99,6 @@ namespace fc {
     } FC_RETHROW_EXCEPTIONS( warn, "" ) }
 
     template<typename Stream>
-    inline void pack( Stream& s, const fc::ripemd160& v )
-    {
-       string str = v.str();
-       fc::raw::pack(s, str);
-    }
-
-    template<typename Stream>
-    inline void unpack( Stream& s, fc::ripemd160& v, uint32_t depth )
-    {
-       string tmp;
-       fc::raw::unpack(s,tmp,depth);
-       v = fc::ripemd160(tmp);
-    }
-
-    template<typename Stream>
     inline void pack( Stream& s, const fc::time_point& tp )
     {
        uint64_t usec = tp.time_since_epoch().count();

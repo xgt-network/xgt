@@ -90,6 +90,7 @@ namespace xgt { namespace chain {
     typedef multi_index_container<
        contract_storage_object,
        indexed_by<
+          ordered_unique< tag< by_id >, member< contract_storage_object, contract_storage_id_type, &contract_storage_object::id > >,
           ordered_unique< tag< by_contract_and_caller >,
              composite_key< contract_storage_object,
                 member< contract_storage_object, contract_hash_type, &contract_storage_object::contract >,

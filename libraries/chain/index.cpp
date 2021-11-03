@@ -43,7 +43,7 @@ void initialize_core_indexes( database& db )
    XGT_ADD_CORE_INDEX(db, xtt_ico_tier_index);
    XGT_ADD_CORE_INDEX(db, contract_index);
    XGT_ADD_CORE_INDEX(db, contract_log_index);
-   //XGT_ADD_CORE_INDEX(db, contract_storage_index);
+   XGT_ADD_CORE_INDEX(db, contract_storage_index);
 }
 
 index_info::index_info() {}
