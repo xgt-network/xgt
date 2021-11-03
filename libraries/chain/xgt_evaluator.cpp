@@ -1054,9 +1054,57 @@ void contract_create_evaluator::do_apply( const contract_create_operation& op )
    });
 }
 
-std::vector<machine::word> contract_invoke(std::string address, uint64_t energy,std::vector<machine::word> args)
+// Forward declaration
+machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<uint256_t, uint256_t>& storage);
+
+std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_type o, wallet_name_type caller, contract_hash_type contract_hash, uint64_t energy,std::vector<machine::word> args, map< uint256_t, uint256_t >& storage)
 {
-  return std::vector<machine::word>();
+   wlog("contract_invoke another contract ${w}", ("w",contract_hash));
+   const auto& c = _db.get_contract(contract_hash);
+
+   machine::message msg = {};
+
+   const bool is_debug = true;
+   const uint64_t block_timestamp = static_cast<uint64_t>( _db.head_block_time().sec_since_epoch() );
+   const uint64_t block_number = _db.head_block_num();
+   const uint64_t block_difficulty = static_cast<uint64_t>( _db.get_pow_summary_target() );
+   const uint64_t block_energylimit = 0;
+   const uint64_t tx_energyprice = 0;
+   std::string tx_origin = caller;
+   std::string block_coinbase = caller; // verify this
+
+   machine::context ctx = {
+      is_debug,
+      block_timestamp,
+      block_number,
+      block_difficulty,
+      block_energylimit,
+      tx_energyprice,
+      tx_origin,
+      block_coinbase
+   };
+
+   std::vector<machine::word> code(c.code.begin(), c.code.end());
+   machine::chain_adapter adapter = make_chain_adapter(_db, c.owner, tx_origin, contract_hash, storage);
+   machine::machine m(ctx, code, msg, adapter);
+
+   m.print_stack();
+
+   std::string line;
+   while (m.is_running())
+   {
+      std::cerr << "step\n";
+      m.step();
+      // Print out any logging that was generated
+      while ( std::getline(m.get_logger(), line) )
+         std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
+   }
+   while ( std::getline(m.get_logger(), line) )
+      std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
+   std::cout << m.to_json() << std::endl;
+
+   // TODO: return values
+   return std::vector<machine::word>();
 }
 
 machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<uint256_t, uint256_t>& storage)
@@ -1128,16 +1176,18 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [&](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-    // TODO contract_invoke should return std::vector<machine::word> return data?
-    // calls a method from another contract -- is value method name?
-
-    return contract_invoke(address, energy, args);
+     const contract_storage_object& cs = _db.get_contract_storage(contract_hash, caller);
+     map< uint256_t, uint256_t > storage = cs.data;
+     auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
+     // TODO: Update storage
+     return result;
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_callcode = [&](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
   {
     // TODO Uses alternative account's code (args?)
-    return contract_invoke(address, energy, args);
+    //return contract_invoke(address, energy, args);
+    return {};
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_delegatecall = [&](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
@@ -1147,7 +1197,9 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     // and value
     //
     // from ethervm.io: using storage of the current contract
-    return contract_invoke(address, energy, args);
+    auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
+    // TODO: Update storage
+    return result;
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [&](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
@@ -1156,7 +1208,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     // changes such as contract creation, event emission, storage modification
     // and contract destruction disallowed
     return {};
-    return contract_invoke(address, energy, args);
+    //return contract_invoke(address, energy, args);
   };
 
   std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [&_db, &owner](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
