@@ -99,6 +99,7 @@
 #define XGT_MAX_TIME_UNTIL_EXPIRATION       (60*60) // seconds,  aka: 1 hour
 #define XGT_MAX_MEMO_SIZE                   2048
 #define XGT_VOTING_ENERGY_REGENERATION_SECONDS (1*60*60*24) // 1 day
+#define XGT_ENERGY_REGENERATION_SECONDS (1*60*60*24) // 1 day
 #define XGT_MAX_VOTE_CHANGES                5
 #define XGT_REVERSE_AUCTION_WINDOW_SECONDS (60*5) /// 5 minutes
 #define XGT_MIN_VOTE_INTERVAL_SEC           3
