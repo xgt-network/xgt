@@ -1498,12 +1498,8 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
    while ( std::getline(m.get_logger(), line) )
      std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
    std::cout << m.to_json() << std::endl;
-   std::cout << "Energy cost incurred" << energy_cost_incurred << std::endl;
 
-
-   const wallet_object wallet = _db.get_account(op.caller);
-   std::cout << wallet.energybar.current_energy << std::endl;
-   std::cout << wallet.energybar.last_update_time << std::endl;
+   const wallet_object& wallet = _db.get_account(op.caller);
 
    uint32_t energy_regen_period = XGT_ENERGY_REGENERATION_SECONDS; // TODO: Hardcode this for now (should be a constant I think)
    _db.modify(wallet, [&](wallet_object& w)
@@ -1511,12 +1507,6 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
       util::update_energybar( _db.get_dynamic_global_properties(), w, energy_regen_period, true );
       w.energybar.use_energy( energy_cost_incurred );
    });
-
-   const wallet_object wallet_after = _db.get_account(op.caller);
-
-   std::cout << "*******************" << std::endl;
-   std::cout << wallet_after.energybar.current_energy << std::endl;
-   std::cout << wallet_after.energybar.last_update_time << std::endl;
 }
 
 } } // xgt::chain
