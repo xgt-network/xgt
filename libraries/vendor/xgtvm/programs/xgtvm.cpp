@@ -203,17 +203,17 @@ int main(int argc, char** argv)
     std::string line;
     while (m.is_running())
     {
-      std::cerr << "step\n";
+      if (debug_flag)
+        std::cerr << "step\n";
       m.step();
       // Print out any logging that was generated
       if (debug_flag)
-      {
         while ( std::getline(m.get_logger(), line) )
           std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
-      }
     }
-    while ( std::getline(m.get_logger(), line) )
-      std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
+    if (debug_flag)
+      while ( std::getline(m.get_logger(), line) )
+        std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
     std::cout << m.to_json() << std::endl;
   }
 

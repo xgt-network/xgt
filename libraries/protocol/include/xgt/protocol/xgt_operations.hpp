@@ -605,7 +605,7 @@ namespace xgt { namespace protocol {
    {
       wallet_name_type caller;
       contract_hash_type contract_hash;
-      vector< vector<char> > args;
+      vector<char> args;
 
       void validate()const;
       uint64_t energy_cost()const { return 0; }
