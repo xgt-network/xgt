@@ -95,22 +95,6 @@ database::~database()
    clear_pending();
 }
 
-fc::sha256 bigint_to_hash(boost::multiprecision::uint256_t b)
-{
-   std::ostringstream os;
-   os << std::hex << std::setw(64) << std::setfill('0') << b;
-   std::string string_hash = os.str();
-   return fc::sha256(string_hash);
-}
-
-boost::multiprecision::uint256_t hash_to_bigint(fc::sha256 h)
-{
-   std::string prefix = "0x";
-   std::string string_hash = h.str();
-   std::string prepended_string_hash = prefix.append(string_hash);
-   return boost::multiprecision::uint256_t(prepended_string_hash);
-}
-
 #ifdef ENABLE_MIRA
 void set_index_helper( database& db, mira::index_type type, const boost::filesystem::path& p, const boost::any& cfg, std::vector< std::string > indices )
 {

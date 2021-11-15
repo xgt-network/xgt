@@ -1,5 +1,6 @@
 #include <xgt/chain/xgt_fwd.hpp>
 
+#include <boost/multiprecision/cpp_int.hpp>
 #include <xgt/chain/xgt_evaluator.hpp>
 #include <xgt/chain/database.hpp>
 #include <xgt/chain/custom_operation_interpreter.hpp>
@@ -33,6 +34,7 @@
 #include <boost/locale/encoding_utf.hpp>
 
 using boost::locale::conv::utf_to_utf;
+using uint256_t = boost::multiprecision::uint256_t;
 
 std::wstring utf8_to_wstring(const std::string& str)
 {
@@ -1055,9 +1057,9 @@ void contract_create_evaluator::do_apply( const contract_create_operation& op )
 }
 
 // Forward declaration
-machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<uint256_t, uint256_t>& storage);
+machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<fc::sha256, fc::sha256>& storage);
 
-std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_type o, wallet_name_type caller, contract_hash_type contract_hash, uint64_t energy,std::vector<machine::word> args, map< uint256_t, uint256_t >& storage)
+std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_type o, wallet_name_type caller, contract_hash_type contract_hash, uint64_t energy,std::vector<machine::word> args, map< fc::sha256, fc::sha256 >& storage)
 {
    wlog("contract_invoke another contract ${w}", ("w",contract_hash));
    const auto& c = _db.get_contract(contract_hash);
@@ -1103,11 +1105,10 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
       std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
    std::cout << m.to_json() << std::endl;
 
-   // TODO: return values
-   return std::vector<machine::word>();
+   return m.get_return_value();
 }
 
-machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<uint256_t, uint256_t>& storage)
+machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<fc::sha256, fc::sha256>& storage)
 {
   std::string owner(o);
   std::string caller(c);
@@ -1176,39 +1177,65 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [&](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-     const contract_storage_object& cs = _db.get_contract_storage(contract_hash, caller);
-     map< uint256_t, uint256_t > storage = cs.data;
+     const contract_storage_object* cs = _db.find_contract_storage(contract_hash, caller);
+     map< fc::sha256, fc::sha256 > storage;
+     if (cs)
+       storage = cs->data;
+     else
+       storage = map< fc::sha256, fc::sha256 >();
+
      auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
-     // TODO: Update storage
+
+     if (cs)
+        _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
+          cs.contract = contract_hash;
+          cs.caller = caller;
+          cs.data = storage;
+        });
+     else
+        _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+          cs.data = storage;
+        });
+
      return result;
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_callcode = [&](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-    // TODO Uses alternative account's code (args?)
-    //return contract_invoke(address, energy, args);
-    return {};
+     // TODO
+     return std::vector<machine::word>();
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_delegatecall = [&](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-    // TODO from eth yellowpaper: Message-call into this account with an
-    // alternative account’s code, but persisting the current values for sender
-    // and value
-    //
-    // from ethervm.io: using storage of the current contract
-    auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
-    // TODO: Update storage
-    return result;
+     const contract_storage_object* cs = _db.find_contract_storage(contract_hash, c); // TODO: Verify `c` is correct
+     map< fc::sha256, fc::sha256 > storage;
+     if (cs)
+       storage = cs->data;
+     else
+       storage = map< fc::sha256, fc::sha256 >();
+
+     auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
+
+     if (cs)
+        _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
+          cs.contract = contract_hash;
+          cs.caller = c;
+          cs.data = storage;
+        });
+     else
+        _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+          cs.data = storage;
+        });
+
+     return result;
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [&](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-    // TODO from ethervm.io: calls a method in another contract with state
-    // changes such as contract creation, event emission, storage modification
-    // and contract destruction disallowed
-    return {};
-    //return contract_invoke(address, energy, args);
+     map< fc::sha256, fc::sha256 > storage; // Should this be empty, or just immutable for `staticcall`?
+     auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
+     return result;
   };
 
   std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [&_db, &owner](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
@@ -1231,14 +1258,13 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< machine::big_word(machine::big_word) > get_storage = [&](uint256_t key) -> machine::big_word
   {
-    // return storage[key];
-    return 0;
+    return _db.hash_to_bigint( storage[ _db.bigint_to_hash(key) ] );
   };
 
   std::function< bool(machine::big_word, machine::big_word) > set_storage = [&](machine::big_word key, machine::big_word value) -> bool
   {
-    // storage[key] = value;
-    return false;
+    storage[ _db.bigint_to_hash(key) ] = _db.bigint_to_hash(value);
+    return true;
   };
 
   std::function< bool(std::vector<machine::word>) > contract_return = [&](std::vector<machine::word> memory) -> bool
@@ -1267,7 +1293,9 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     {
       cl.contract_hash = contract_hash;
       cl.owner = o;
-      cl.topics = log.topics;
+      cl.topics.reserve(log.topics.size());
+      for (auto topic : log.topics)
+         cl.topics.push_back(_db.bigint_to_hash(topic));
       cl.data = log.data;
     });
 
@@ -1447,10 +1475,10 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
    const contract_hash_type contract_hash = op.contract_hash;
    const auto& c = _db.get_contract(contract_hash);
 
-   // const contract_storage_object* cs = _db.find_contract_storage(contract_hash, op.caller)
-   map< uint256_t, uint256_t > storage;
-   // if (cs)
-   //    storage = cs->data;
+   const contract_storage_object* cs = _db.find_contract_storage(contract_hash, op.caller);
+   map< fc::sha256, fc::sha256 > storage;
+   if (cs)
+      storage = cs->data;
 
    machine::message msg = {};
 

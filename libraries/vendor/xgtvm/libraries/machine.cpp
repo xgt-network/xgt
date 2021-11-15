@@ -2791,6 +2791,7 @@ namespace machine
         }
 
         adapter.contract_return( retval );
+        state = machine_state::stopped; // TODO: Add elsewhere
         break;
       case delegatecall_opcode:
         logger << "op delegatecall" << std::endl;
@@ -2942,6 +2943,11 @@ namespace machine
   std::stringstream& machine::get_logger()
   {
     return logger;
+  }
+
+  std::vector<word>& machine::get_return_value()
+  {
+    return return_value;
   }
 
   bool machine::is_running()

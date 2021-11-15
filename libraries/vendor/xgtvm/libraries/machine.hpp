@@ -307,6 +307,7 @@ namespace machine
     size_t stack_length();
     void step();
     bool is_running();
+    std::vector<word>& get_return_value();
     machine_state get_state();
     boost::optional<std::string> get_error_message();
     std::stringstream& get_logger();
