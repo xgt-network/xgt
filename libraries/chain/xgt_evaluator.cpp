@@ -1310,7 +1310,7 @@ std::map< uint64_t, std::function<int64_t(machine::machine& m)> > energy_cost {
  {machine::smod_opcode, [](machine::machine& m){ return 5; }},
  {machine::addmod_opcode, [](machine::machine& m){ return 8; }},
  {machine::mulmod_opcode, [](machine::machine& m){ return 8; }},
- {machine::exp_opcode, [](machine::machine& m){ return 0; }}, // TODO -- Exp -- variab; le
+ {machine::exp_opcode, [](machine::machine& m){ return 0; }}, // TODO -- Exp -- variable
  {machine::signextend_opcode, [](machine::machine& m){ return 5; }},
  {machine::lt_opcode, [](machine::machine& m){ return 3; }},
  {machine::gt_opcode, [](machine::machine& m){ return 3; }},
@@ -1447,7 +1447,7 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
    const contract_hash_type contract_hash = op.contract_hash;
    const auto& c = _db.get_contract(contract_hash);
 
-   // const contract_storage_object* cs = _db.find_contract_storage(contract_hash, op.caller);
+   // const contract_storage_object* cs = _db.find_contract_storage(contract_hash, op.caller)
    map< uint256_t, uint256_t > storage;
    // if (cs)
    //    storage = cs->data;
