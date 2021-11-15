@@ -1059,6 +1059,149 @@ void contract_create_evaluator::do_apply( const contract_create_operation& op )
 // Forward declaration
 machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<fc::sha256, fc::sha256>& storage);
 
+std::map< uint64_t, std::function<int64_t(machine::machine& m)> > energy_cost {
+ // [] == scoped variables, () == params, -> optional return type, {} == function body
+ {machine::stop_opcode, [](machine::machine& m){ return 0; }},
+ {machine::add_opcode, [](machine::machine& m){ return 3; }},
+ {machine::mul_opcode, [](machine::machine& m){ return 5; }},
+ {machine::sub_opcode, [](machine::machine& m){ return 3; }},
+ {machine::div_opcode, [](machine::machine& m){ return 5; }},
+ {machine::sdiv_opcode, [](machine::machine& m){ return 5; }},
+ {machine::mod_opcode, [](machine::machine& m){ return 5; }},
+ {machine::smod_opcode, [](machine::machine& m){ return 5; }},
+ {machine::addmod_opcode, [](machine::machine& m){ return 8; }},
+ {machine::mulmod_opcode, [](machine::machine& m){ return 8; }},
+ {machine::exp_opcode, [](machine::machine& m){ return 0; }}, // TODO -- Exp -- variable
+ {machine::signextend_opcode, [](machine::machine& m){ return 5; }},
+ {machine::lt_opcode, [](machine::machine& m){ return 3; }},
+ {machine::gt_opcode, [](machine::machine& m){ return 3; }},
+ {machine::slt_opcode, [](machine::machine& m){ return 3; }},
+ {machine::sgt_opcode, [](machine::machine& m){ return 3; }},
+ {machine::eq_opcode, [](machine::machine& m){ return 3; }},
+ {machine::iszero_opcode, [](machine::machine& m){ return 3; }},
+ {machine::and_opcode, [](machine::machine& m){ return 3; }},
+ {machine::or_opcode, [](machine::machine& m){ return 3; }},
+ {machine::xor_opcode, [](machine::machine& m){ return 3; }},
+ {machine::not_opcode, [](machine::machine& m){ return 3; }},
+ {machine::byte_opcode, [](machine::machine& m){ return 3; }},
+ {machine::shl_opcode, [](machine::machine& m){ return 3; }},
+ {machine::shr_opcode, [](machine::machine& m){ return 3; }},
+ {machine::sar_opcode, [](machine::machine& m){ return 3; }},
+ {machine::sha3_opcode, [](machine::machine& m){ return 0; }}, // TODO -- SHA3 -- variab; le
+ {machine::address_opcode, [](machine::machine& m){ return 2; }},
+ {machine::balance_opcode, [](machine::machine& m){ return 700; }},
+ {machine::origin_opcode, [](machine::machine& m){ return 2; }},
+ {machine::caller_opcode, [](machine::machine& m){ return 2; }},
+ {machine::callvalue_opcode, [](machine::machine& m){ return 2; }},
+ {machine::calldataload_opcode, [](machine::machine& m){ return 3; }},
+ {machine::calldatasize_opcode, [](machine::machine& m){ return 2; }},
+ {machine::calldatacopy_opcode, [](machine::machine& m){ return 0; }}, // TODO -- calldatacoy -- variab; le
+ {machine::codesize_opcode, [](machine::machine& m){ return 2; }},
+ {machine::codecopy_opcode, [](machine::machine& m){ return 0; }}, // TODO -- codecopy -- variab; le
+ {machine::energyprice_opcode, [](machine::machine& m){ return 2; }},
+ {machine::extcodesize_opcode, [](machine::machine& m){ return 700; }},
+ {machine::extcodecopy_opcode, [](machine::machine& m){ return 0; }}, // TODO -- extcodecopy -- variab; le
+ {machine::returndatasize_opcode, [](machine::machine& m){ return 2; }},
+ {machine::returndatacopy_opcode, [](machine::machine& m){ return 0; }}, // TODO -- returndatacopy -- variab; le
+ {machine::extcodehash_opcode, [](machine::machine& m){ return 700; }},
+ {machine::blockhash_opcode, [](machine::machine& m){ return 20; }},
+ {machine::coinbase_opcode, [](machine::machine& m){ return 2; }},
+ {machine::timestamp_opcode, [](machine::machine& m){ return 2; }},
+ {machine::number_opcode, [](machine::machine& m){ return 2; }},
+ {machine::difficulty_opcode, [](machine::machine& m){ return 2; }},
+ {machine::energylimit_opcode, [](machine::machine& m){ return 2; }},
+ {machine::pop_opcode, [](machine::machine& m){ return 3; }},
+ {machine::mload_opcode, [](machine::machine& m){ return 3; }},
+ {machine::mstore_opcode, [](machine::machine& m){ return 3; }},
+ {machine::mstore8_opcode, [](machine::machine& m){ return 3; }},
+ {machine::sload_opcode, [](machine::machine& m){ return 800; }},
+ {machine::sstore_opcode, [](machine::machine& m){ return 0; }}, // TODO -- sstore -- variab; le
+ {machine::jump_opcode, [](machine::machine& m){ return 8; }},
+ {machine::jumpi_opcode, [](machine::machine& m){ return 10; }},
+ {machine::pc_opcode, [](machine::machine& m){ return 2; }},
+ {machine::msize_opcode, [](machine::machine& m){ return 2; }},
+ {machine::energy_opcode, [](machine::machine& m){ return 2; }},
+ {machine::jumpdest_opcode, [](machine::machine& m){ return 1; }},
+ {machine::push1_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push2_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push3_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push4_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push5_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push6_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push7_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push8_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push9_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push10_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push11_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push12_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push13_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push14_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push15_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push16_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push17_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push18_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push19_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push20_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push21_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push22_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push23_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push24_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push25_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push26_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push27_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push28_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push29_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push30_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push31_opcode, [](machine::machine& m){ return 3; }},
+ {machine::push32_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup1_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup2_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup3_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup4_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup5_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup6_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup7_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup8_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup9_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup10_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup11_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup12_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup13_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup14_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup15_opcode, [](machine::machine& m){ return 3; }},
+ {machine::dup16_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap1_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap2_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap3_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap4_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap5_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap6_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap7_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap8_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap9_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap10_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap11_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap12_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap13_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap14_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap15_opcode, [](machine::machine& m){ return 3; }},
+ {machine::swap16_opcode, [](machine::machine& m){ return 3; }},
+ {machine::log0_opcode, [](machine::machine& m){ return 0; }}, // TODO -- log0 -- variable
+ {machine::log1_opcode, [](machine::machine& m){ return 0; }}, // TODO -- log1 -- variable
+ {machine::log2_opcode, [](machine::machine& m){ return 0; }}, // TODO -- log2 -- variable
+ {machine::log3_opcode, [](machine::machine& m){ return 0; }}, // TODO -- log3 -- variable
+ {machine::log4_opcode, [](machine::machine& m){ return 0; }}, // TODO -- log4 -- variable
+ {machine::create_opcode, [](machine::machine& m){ return 0; }}, // TODO -- create -- variable
+ {machine::call_opcode, [](machine::machine& m){ return 0; }}, // TODO -- call -- variable
+ {machine::callcode_opcode, [](machine::machine& m){ return 0; }}, // TODO -- callcode -- variable
+ {machine::return_opcode, [](machine::machine& m){ return 0; }},
+ {machine::delegatecall_opcode, [](machine::machine& m){ return 0; }}, // TODO -- delegatecall -- variable
+ {machine::create2_opcode, [](machine::machine& m){ return 0; }}, // TODO -- create2 -- variable
+ {machine::staticcall_opcode, [](machine::machine& m){ return 0; }}, // TODO -- staticcall -- variable
+ {machine::revert_opcode, [](machine::machine& m){ return 0; }},
+ {machine::selfdestruct_opcode, [](machine::machine& m){ return 0; }} // TODO -- selfdestruct -- variable
+};
+
 std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_type o, wallet_name_type caller, contract_hash_type contract_hash, uint64_t energy,std::vector<machine::word> args, map< fc::sha256, fc::sha256 >& storage)
 {
    wlog("contract_invoke another contract ${w}", ("w",contract_hash));
@@ -1110,7 +1253,7 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
       std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
    std::cout << m.to_json() << std::endl;
 
-   const wallet_object& wallet = _db.get_account(op.caller);
+   const wallet_object& wallet = _db.get_account(caller);
 
    uint32_t energy_regen_period = XGT_ENERGY_REGENERATION_SECONDS; // TODO: Hardcode this for now (should be a constant I think)
    _db.modify(wallet, [&](wallet_object& w)
@@ -1339,149 +1482,6 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   return adapter;
 }
-
-std::map< uint64_t, std::function<int64_t(machine::machine& m)> > energy_cost {
- // [] == scoped variables, () == params, -> optional return type, {} == function body
- {machine::stop_opcode, [](machine::machine& m){ return 0; }},
- {machine::add_opcode, [](machine::machine& m){ return 3; }},
- {machine::mul_opcode, [](machine::machine& m){ return 5; }},
- {machine::sub_opcode, [](machine::machine& m){ return 3; }},
- {machine::div_opcode, [](machine::machine& m){ return 5; }},
- {machine::sdiv_opcode, [](machine::machine& m){ return 5; }},
- {machine::mod_opcode, [](machine::machine& m){ return 5; }},
- {machine::smod_opcode, [](machine::machine& m){ return 5; }},
- {machine::addmod_opcode, [](machine::machine& m){ return 8; }},
- {machine::mulmod_opcode, [](machine::machine& m){ return 8; }},
- {machine::exp_opcode, [](machine::machine& m){ return 0; }}, // TODO -- Exp -- variable
- {machine::signextend_opcode, [](machine::machine& m){ return 5; }},
- {machine::lt_opcode, [](machine::machine& m){ return 3; }},
- {machine::gt_opcode, [](machine::machine& m){ return 3; }},
- {machine::slt_opcode, [](machine::machine& m){ return 3; }},
- {machine::sgt_opcode, [](machine::machine& m){ return 3; }},
- {machine::eq_opcode, [](machine::machine& m){ return 3; }},
- {machine::iszero_opcode, [](machine::machine& m){ return 3; }},
- {machine::and_opcode, [](machine::machine& m){ return 3; }},
- {machine::or_opcode, [](machine::machine& m){ return 3; }},
- {machine::xor_opcode, [](machine::machine& m){ return 3; }},
- {machine::not_opcode, [](machine::machine& m){ return 3; }},
- {machine::byte_opcode, [](machine::machine& m){ return 3; }},
- {machine::shl_opcode, [](machine::machine& m){ return 3; }},
- {machine::shr_opcode, [](machine::machine& m){ return 3; }},
- {machine::sar_opcode, [](machine::machine& m){ return 3; }},
- {machine::sha3_opcode, [](machine::machine& m){ return 0; }}, // TODO -- SHA3 -- variab; le
- {machine::address_opcode, [](machine::machine& m){ return 2; }},
- {machine::balance_opcode, [](machine::machine& m){ return 700; }},
- {machine::origin_opcode, [](machine::machine& m){ return 2; }},
- {machine::caller_opcode, [](machine::machine& m){ return 2; }},
- {machine::callvalue_opcode, [](machine::machine& m){ return 2; }},
- {machine::calldataload_opcode, [](machine::machine& m){ return 3; }},
- {machine::calldatasize_opcode, [](machine::machine& m){ return 2; }},
- {machine::calldatacopy_opcode, [](machine::machine& m){ return 0; }}, // TODO -- calldatacoy -- variab; le
- {machine::codesize_opcode, [](machine::machine& m){ return 2; }},
- {machine::codecopy_opcode, [](machine::machine& m){ return 0; }}, // TODO -- codecopy -- variab; le
- {machine::energyprice_opcode, [](machine::machine& m){ return 2; }},
- {machine::extcodesize_opcode, [](machine::machine& m){ return 700; }},
- {machine::extcodecopy_opcode, [](machine::machine& m){ return 0; }}, // TODO -- extcodecopy -- variab; le
- {machine::returndatasize_opcode, [](machine::machine& m){ return 2; }},
- {machine::returndatacopy_opcode, [](machine::machine& m){ return 0; }}, // TODO -- returndatacopy -- variab; le
- {machine::extcodehash_opcode, [](machine::machine& m){ return 700; }},
- {machine::blockhash_opcode, [](machine::machine& m){ return 20; }},
- {machine::coinbase_opcode, [](machine::machine& m){ return 2; }},
- {machine::timestamp_opcode, [](machine::machine& m){ return 2; }},
- {machine::number_opcode, [](machine::machine& m){ return 2; }},
- {machine::difficulty_opcode, [](machine::machine& m){ return 2; }},
- {machine::energylimit_opcode, [](machine::machine& m){ return 2; }},
- {machine::pop_opcode, [](machine::machine& m){ return 3; }},
- {machine::mload_opcode, [](machine::machine& m){ return 3; }},
- {machine::mstore_opcode, [](machine::machine& m){ return 3; }},
- {machine::mstore8_opcode, [](machine::machine& m){ return 3; }},
- {machine::sload_opcode, [](machine::machine& m){ return 800; }},
- {machine::sstore_opcode, [](machine::machine& m){ return 0; }}, // TODO -- sstore -- variab; le
- {machine::jump_opcode, [](machine::machine& m){ return 8; }},
- {machine::jumpi_opcode, [](machine::machine& m){ return 10; }},
- {machine::pc_opcode, [](machine::machine& m){ return 2; }},
- {machine::msize_opcode, [](machine::machine& m){ return 2; }},
- {machine::energy_opcode, [](machine::machine& m){ return 2; }},
- {machine::jumpdest_opcode, [](machine::machine& m){ return 1; }},
- {machine::push1_opcode, [](machine::machine& m){ return 3; }},
- {machine::push2_opcode, [](machine::machine& m){ return 3; }},
- {machine::push3_opcode, [](machine::machine& m){ return 3; }},
- {machine::push4_opcode, [](machine::machine& m){ return 3; }},
- {machine::push5_opcode, [](machine::machine& m){ return 3; }},
- {machine::push6_opcode, [](machine::machine& m){ return 3; }},
- {machine::push7_opcode, [](machine::machine& m){ return 3; }},
- {machine::push8_opcode, [](machine::machine& m){ return 3; }},
- {machine::push9_opcode, [](machine::machine& m){ return 3; }},
- {machine::push10_opcode, [](machine::machine& m){ return 3; }},
- {machine::push11_opcode, [](machine::machine& m){ return 3; }},
- {machine::push12_opcode, [](machine::machine& m){ return 3; }},
- {machine::push13_opcode, [](machine::machine& m){ return 3; }},
- {machine::push14_opcode, [](machine::machine& m){ return 3; }},
- {machine::push15_opcode, [](machine::machine& m){ return 3; }},
- {machine::push16_opcode, [](machine::machine& m){ return 3; }},
- {machine::push17_opcode, [](machine::machine& m){ return 3; }},
- {machine::push18_opcode, [](machine::machine& m){ return 3; }},
- {machine::push19_opcode, [](machine::machine& m){ return 3; }},
- {machine::push20_opcode, [](machine::machine& m){ return 3; }},
- {machine::push21_opcode, [](machine::machine& m){ return 3; }},
- {machine::push22_opcode, [](machine::machine& m){ return 3; }},
- {machine::push23_opcode, [](machine::machine& m){ return 3; }},
- {machine::push24_opcode, [](machine::machine& m){ return 3; }},
- {machine::push25_opcode, [](machine::machine& m){ return 3; }},
- {machine::push26_opcode, [](machine::machine& m){ return 3; }},
- {machine::push27_opcode, [](machine::machine& m){ return 3; }},
- {machine::push28_opcode, [](machine::machine& m){ return 3; }},
- {machine::push29_opcode, [](machine::machine& m){ return 3; }},
- {machine::push30_opcode, [](machine::machine& m){ return 3; }},
- {machine::push31_opcode, [](machine::machine& m){ return 3; }},
- {machine::push32_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup1_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup2_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup3_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup4_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup5_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup6_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup7_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup8_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup9_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup10_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup11_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup12_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup13_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup14_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup15_opcode, [](machine::machine& m){ return 3; }},
- {machine::dup16_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap1_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap2_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap3_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap4_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap5_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap6_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap7_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap8_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap9_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap10_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap11_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap12_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap13_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap14_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap15_opcode, [](machine::machine& m){ return 3; }},
- {machine::swap16_opcode, [](machine::machine& m){ return 3; }},
- {machine::log0_opcode, [](machine::machine& m){ return 0; }}, // TODO -- log0 -- variable
- {machine::log1_opcode, [](machine::machine& m){ return 0; }}, // TODO -- log1 -- variable
- {machine::log2_opcode, [](machine::machine& m){ return 0; }}, // TODO -- log2 -- variable
- {machine::log3_opcode, [](machine::machine& m){ return 0; }}, // TODO -- log3 -- variable
- {machine::log4_opcode, [](machine::machine& m){ return 0; }}, // TODO -- log4 -- variable
- {machine::create_opcode, [](machine::machine& m){ return 0; }}, // TODO -- create -- variable
- {machine::call_opcode, [](machine::machine& m){ return 0; }}, // TODO -- call -- variable
- {machine::callcode_opcode, [](machine::machine& m){ return 0; }}, // TODO -- callcode -- variable
- {machine::return_opcode, [](machine::machine& m){ return 0; }},
- {machine::delegatecall_opcode, [](machine::machine& m){ return 0; }}, // TODO -- delegatecall -- variable
- {machine::create2_opcode, [](machine::machine& m){ return 0; }}, // TODO -- create2 -- variable
- {machine::staticcall_opcode, [](machine::machine& m){ return 0; }}, // TODO -- staticcall -- variable
- {machine::revert_opcode, [](machine::machine& m){ return 0; }},
- {machine::selfdestruct_opcode, [](machine::machine& m){ return 0; }} // TODO -- selfdestruct -- variable
-};
 
 void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
 {
