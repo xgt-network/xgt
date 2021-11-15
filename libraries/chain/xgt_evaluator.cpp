@@ -1086,6 +1086,8 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
       block_coinbase
    };
 
+   int64_t energy_cost_incurred = 0;
+
    std::vector<machine::word> code(c.code.begin(), c.code.end());
    machine::chain_adapter adapter = make_chain_adapter(_db, c.owner, tx_origin, contract_hash, storage);
    machine::machine m(ctx, code, msg, adapter);
@@ -1097,6 +1099,9 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
    {
       std::cerr << "step\n";
       m.step();
+      auto energy_callback = energy_cost[m.get_current_opcode()];
+      // Calculate energy cost and add to total
+      energy_cost_incurred += energy_callback(m);
       // Print out any logging that was generated
       while ( std::getline(m.get_logger(), line) )
          std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
@@ -1104,6 +1109,15 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
    while ( std::getline(m.get_logger(), line) )
       std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
    std::cout << m.to_json() << std::endl;
+
+   const wallet_object& wallet = _db.get_account(op.caller);
+
+   uint32_t energy_regen_period = XGT_ENERGY_REGENERATION_SECONDS; // TODO: Hardcode this for now (should be a constant I think)
+   _db.modify(wallet, [&](wallet_object& w)
+   {
+      util::update_energybar( _db.get_dynamic_global_properties(), w, energy_regen_period, true );
+      w.energybar.use_energy( energy_cost_incurred );
+   });
 
    return m.get_return_value();
 }
@@ -1472,69 +1486,32 @@ std::map< uint64_t, std::function<int64_t(machine::machine& m)> > energy_cost {
 void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
 {
    wlog("contract_invoke ${w}", ("w",op.contract_hash));
+
    const contract_hash_type contract_hash = op.contract_hash;
    const auto& c = _db.get_contract(contract_hash);
+   uint64_t energy = 0; // TODO
 
    const contract_storage_object* cs = _db.find_contract_storage(contract_hash, op.caller);
    map< fc::sha256, fc::sha256 > storage;
    if (cs)
       storage = cs->data;
+   else
+      storage = map< fc::sha256, fc::sha256 >();
 
-   machine::message msg = {};
+   std::vector<unsigned char> unsigned_args;
+   std::copy(op.args.begin(), op.args.end(), std::back_inserter(unsigned_args));
+   auto result = contract_invoke(_db, c.owner, op.caller, contract_hash, energy, unsigned_args, storage);
 
-   const bool is_debug = true;
-   const uint64_t block_timestamp = static_cast<uint64_t>( _db.head_block_time().sec_since_epoch() );
-   const uint64_t block_number = _db.head_block_num();
-   const uint64_t block_difficulty = static_cast<uint64_t>( _db.get_pow_summary_target() );
-   const uint64_t block_energylimit = 0;
-   const uint64_t tx_energyprice = 0;
-   std::string tx_origin = op.caller;
-   std::string block_coinbase = op.caller; // verify this
-
-   machine::context ctx = {
-     is_debug,
-     block_timestamp,
-     block_number,
-     block_difficulty,
-     block_energylimit,
-     tx_energyprice,
-     tx_origin,
-     block_coinbase
-   };
-
-   int64_t energy_cost_incurred = 0;
-
-   std::vector<machine::word> code(c.code.begin(), c.code.end());
-   machine::chain_adapter adapter = make_chain_adapter(_db, c.owner, tx_origin, op.contract_hash, storage);
-   machine::machine m(ctx, code, msg, adapter);
-
-   m.print_stack();
-
-   std::string line;
-   // Get current opcode in machine at each step
-   while (m.is_running())
-   {
-     std::cerr << "step\n";
-     m.step();
-     auto energy_callback = energy_cost[m.get_current_opcode()];
-     // Calculate energy cost and add to total
-     energy_cost_incurred += energy_callback(m);
-     // Print out any logging that was generated
-     while ( std::getline(m.get_logger(), line) )
-       std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
-   }
-   while ( std::getline(m.get_logger(), line) )
-     std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
-   std::cout << m.to_json() << std::endl;
-
-   const wallet_object& wallet = _db.get_account(op.caller);
-
-   uint32_t energy_regen_period = XGT_ENERGY_REGENERATION_SECONDS; // TODO: Hardcode this for now (should be a constant I think)
-   _db.modify(wallet, [&](wallet_object& w)
-   {
-      util::update_energybar( _db.get_dynamic_global_properties(), w, energy_regen_period, true );
-      w.energybar.use_energy( energy_cost_incurred );
-   });
+   if (cs)
+      _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
+         cs.contract = contract_hash;
+         cs.caller = op.caller;
+         cs.data = storage;
+      });
+   else
+      _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+         cs.data = storage;
+      });
 }
 
 } } // xgt::chain

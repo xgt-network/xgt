@@ -532,7 +532,7 @@ namespace machine
         offset = static_cast<size_t>( pop_word() );
 
         if (offset > msg.input_size) {
-          logger << "calldataload start index is larger than message input_size";
+          logger << "calldataload start index is larger than message input_size" << std::endl;
           break;
         }
 
@@ -560,7 +560,7 @@ namespace machine
         length = static_cast<size_t>( pop_word() );
 
         if ((offset + length) > msg.input_size) {
-          logger << "calldatacopy end index is larger than message input_size";
+          logger << "calldatacopy end index is larger than message input_size" << std::endl;
           break;
         }
 
@@ -580,7 +580,7 @@ namespace machine
         length = static_cast<size_t>( pop_word() );
 
         if ((offset + length) > msg.input_size) {
-          logger << "Codecopy end index is larger than message input_size";
+          logger << "Codecopy end index is larger than message input_size" << std::endl;
           break;
         }
 
@@ -622,7 +622,7 @@ namespace machine
           length = static_cast<size_t>( pop_word() );
 
           if ((offset + length) > code_size) {
-            logger << "codecopy end index exceeds external contract code length";
+            logger << "codecopy end index exceeds external contract code length" << std::endl;
             break;
           }
 
@@ -647,7 +647,7 @@ namespace machine
         length = static_cast<size_t>( pop_word() );
 
         if ( (offset + length) > ext_return_data.size() ) {
-          logger << "returndatacopy end index exceeds return data size";
+          logger << "returndatacopy end index exceeds return data size" << std::endl;
           break;
         }
 
@@ -2968,7 +2968,7 @@ namespace machine
         {
           stack_variant sv = *it;
           s << sv;
-          if (it + 1 != stack.cend())
+          if (stack.size() > 1 && std::next(it, 1) != stack.cend())
             s << ",";
         }
         s << "],";
@@ -2977,14 +2977,47 @@ namespace machine
         {
           word w = *it;
           s << std::to_string(w);
-          if (it + 1 != return_value.cend())
+          if (return_value.size() > 1 && std::next(it, 1) != return_value.cend())
             s << ",";
         }
         s << "],";
+
+        s << "\"machineState\":\"";
+        switch (state) {
+          case machine_state::stopped:
+            s << "stopped";
+            break;
+          case machine_state::running:
+            s << "running";
+            break;
+          case machine_state::error:
+            s << "error";
+            break;
+          default:
+            s << "unknown";
+        }
+        s << "\",";
+
+        word current_instruction = code[pc];
+        opcode op = (opcode)current_instruction;
+        s << "\"opcode\":" << std::dec << op << ",";
+
         if (error_message == boost::none)
           s << "\"exceptionError\":" << "null";
         else
           s << "\"exceptionError\":" << "\"" << error_message.value() << "\"";
+        s << ",";
+
+        s << "\"memory\":" << "{";
+        for (auto it = memory.cbegin(); it != memory.cend(); ++it)
+        {
+          s << "\"" << it->first << "\"";
+          s << ":";
+          s << unsigned(it->second);
+          if (memory.size() > 1 && std::next(it, 1) != memory.cend())
+            s << ",";
+        }
+        s << "}";
       }
       s << "}";
     }
