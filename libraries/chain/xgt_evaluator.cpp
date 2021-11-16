@@ -1351,6 +1351,8 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
         });
      else
         _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+          cs.contract = contract_hash;
+          cs.caller = caller;
           cs.data = storage;
         });
 
@@ -1382,6 +1384,8 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
         });
      else
         _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+          cs.contract = contract_hash;
+          cs.caller = c;
           cs.data = storage;
         });
 
@@ -1485,33 +1489,37 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
 void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
 {
-   wlog("contract_invoke ${w}", ("w",op.contract_hash));
-
    const contract_hash_type contract_hash = op.contract_hash;
    const auto& c = _db.get_contract(contract_hash);
    uint64_t energy = 0; // TODO
 
    const contract_storage_object* cs = _db.find_contract_storage(contract_hash, op.caller);
    map< fc::sha256, fc::sha256 > storage;
-   if (cs)
+   if (cs != nullptr) {
       storage = cs->data;
-   else
+   }
+   else {
       storage = map< fc::sha256, fc::sha256 >();
+   }
 
    std::vector<unsigned char> unsigned_args;
    std::copy(op.args.begin(), op.args.end(), std::back_inserter(unsigned_args));
    auto result = contract_invoke(_db, c.owner, op.caller, contract_hash, energy, unsigned_args, storage);
 
-   if (cs)
+   if (cs != nullptr) {
       _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
          cs.contract = contract_hash;
          cs.caller = op.caller;
          cs.data = storage;
       });
-   else
+   }
+   else {
       _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+         cs.contract = contract_hash;
+         cs.caller = op.caller;
          cs.data = storage;
       });
+   }
 }
 
 } } // xgt::chain
