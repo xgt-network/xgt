@@ -16,6 +16,7 @@ namespace xgt { namespace protocol {
       asset             fee;
       wallet_name_type  creator;
       wallet_name_type  new_wallet_name;
+      fc::ripemd160     address_ripemd160;
       authority         recovery;
       authority         money;
       authority         social;
@@ -605,6 +606,7 @@ namespace xgt { namespace protocol {
    {
       wallet_name_type caller;
       contract_hash_type contract_hash;
+      uint64_t value;
       vector<char> args;
 
       void validate()const;
@@ -663,4 +665,4 @@ FC_REFLECT( xgt::protocol::recover_wallet_operation, (account_to_recover)(new_re
 FC_REFLECT( xgt::protocol::change_recovery_wallet_operation, (account_to_recover)(new_recovery_account)(extensions) );
 
 FC_REFLECT( xgt::protocol::contract_create_operation, (owner)(code) );
-FC_REFLECT( xgt::protocol::contract_invoke_operation, (caller)(contract_hash)(args) );
+FC_REFLECT( xgt::protocol::contract_invoke_operation, (caller)(contract_hash)(value)(args) );

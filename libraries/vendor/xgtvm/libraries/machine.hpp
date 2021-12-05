@@ -173,6 +173,7 @@ namespace machine
     create2_opcode = 0xF5,
     staticcall_opcode = 0xFA,
     revert_opcode = 0xFD,
+    invalid_opcode = 0xFE,
     selfdestruct_opcode = 0xFF,
   };
 
@@ -195,8 +196,8 @@ namespace machine
     int32_t depth;
     int64_t energy;
 
-    std::string sender;
-    std::string destination;
+    big_word sender;
+    big_word destination;
 
     big_word value;
     size_t input_size;
@@ -262,7 +263,7 @@ namespace machine
     std::function< void(big_word, big_word) > set_storage;
 
     // TODO return opcode
-    std::function< bool(std::vector<word>) > contract_return;
+    std::function< std::vector<word>(std::vector<word>) > contract_return;
 
     // TODO selfdestruct opcode
     std::function< bool(std::string) > self_destruct;

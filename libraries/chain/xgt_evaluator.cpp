@@ -18,6 +18,9 @@
 
 #include <fc/macros.hpp>
 #include <fc/crypto/rand.hpp>
+#include <fc/crypto/base58.hpp>
+#include <fc/crypto/ripemd160.hpp>
+#include <xgt/protocol/types.hpp>
 
 #include <functional>
 
@@ -206,6 +209,7 @@ void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
       auth.recovery = o.recovery;
       auth.money = o.money;
       auth.social = o.social;
+      auth.address_ripemd160 = o.address_ripemd160;
       auth.last_recovery_update = fc::time_point_sec::min();
    });
 }
@@ -1023,6 +1027,7 @@ fc::ripemd160 generate_random_ripemd160()
    return fc::ripemd160::hash(buf, buflen);
 }
 
+// XXX Needs work -- does not consistently convert values
 boost::multiprecision::uint256_t ripemd160_to_uint256_t(fc::ripemd160 h)
 {
   boost::multiprecision::uint256_t n(0);
@@ -1199,15 +1204,43 @@ std::map< uint64_t, std::function<int64_t(machine::machine& m)> > energy_cost {
  {machine::create2_opcode, [](machine::machine& m){ return 0; }}, // TODO -- create2 -- variable
  {machine::staticcall_opcode, [](machine::machine& m){ return 0; }}, // TODO -- staticcall -- variable
  {machine::revert_opcode, [](machine::machine& m){ return 0; }},
+ {machine::invalid_opcode, [](machine::machine& m){ return 0; }},
  {machine::selfdestruct_opcode, [](machine::machine& m){ return 0; }} // TODO -- selfdestruct -- variable
 };
 
-std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_type o, wallet_name_type caller, contract_hash_type contract_hash, uint64_t energy,std::vector<machine::word> args, map< fc::sha256, fc::sha256 >& storage)
+boost::multiprecision::uint256_t address_to_uint256_t(const std::string& base58str) {
+   std::string prefix( XGT_ADDRESS_PREFIX );
+
+   const size_t prefix_len = prefix.size();
+   auto b58 = base58str.substr( prefix_len );
+   auto r160 = fc::ripemd160::hash(b58);
+
+   std::stringstream ss;
+   ss << std::hex << r160.str();
+   boost::multiprecision::uint256_t x;
+   ss >> x;
+   return x;
+};
+
+std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_type o, wallet_name_type caller, contract_hash_type contract_hash, uint64_t value, uint64_t energy, std::vector<machine::word> args, map< fc::sha256, fc::sha256 >& storage)
 {
    wlog("contract_invoke another contract ${w}", ("w",contract_hash));
    const auto& c = _db.get_contract(contract_hash);
+   const std::string& address_ref = std::string(caller);
 
-   machine::message msg = {};
+   boost::multiprecision::uint256_t converted_address = address_to_uint256_t(address_ref);
+
+   machine::message msg = {
+      0,
+      0,
+      0,
+      converted_address,
+      converted_address,
+      value,
+      args.size(),
+      args,
+      0
+   };
 
    const bool is_debug = true;
    const uint64_t block_timestamp = static_cast<uint64_t>( _db.head_block_time().sec_since_epoch() );
@@ -1235,12 +1268,11 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
    machine::chain_adapter adapter = make_chain_adapter(_db, c.owner, tx_origin, contract_hash, storage);
    machine::machine m(ctx, code, msg, adapter);
 
-   m.print_stack();
-
    std::string line;
    while (m.is_running())
    {
-      std::cerr << "step\n";
+      std::cerr << "step\n" << std::endl;
+      std::cerr << m.to_json() << std::endl;
       m.step();
       auto energy_callback = energy_cost[m.get_current_opcode()];
       // Calculate energy cost and add to total
@@ -1262,7 +1294,23 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
       w.energybar.use_energy( energy_cost_incurred );
    });
 
+   // TODO make return value public in machine
+   wlog("contract_invoke return value ${w}", ("w",m.get_return_value()));
    return m.get_return_value();
+}
+
+std::string inspect(std::vector<machine::word> words)
+{
+   std::stringstream ss;
+   ss << "[";
+   for (size_t i = 0; i < words.size(); i++)
+   {
+      ss << std::to_string(words.at(i));
+      if (i != words.size() -1)
+         ss << ", ";
+   }
+   ss << "]";
+   return ss.str();
 }
 
 machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<fc::sha256, fc::sha256>& storage)
@@ -1272,14 +1320,21 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::string(std::vector<machine::word>) > sha3 = [&](std::vector<machine::word> memory) -> std::string
   {
-    std::string message(memory.begin(), memory.end());
+    std::stringstream ss;
+    std::string message;
+    for (int i = 0; i < 32; i++) {
+       message += std::to_string(memory[i]);
+    }
     unsigned char output[32];
     SHA3_CTX ctx;
     keccak_init(&ctx);
     keccak_update(&ctx, (unsigned char*)message.c_str(), message.size());
     keccak_final(&ctx, output);
-    std::string fin((char*)output, 32);
-    return fin;
+    for (size_t i = 0; i < 32; i++) {
+       ss << std::hex << (machine::opcode)output[i];
+    }
+    // std::string fin((char*)output, 32);
+    return ss.str();
   };
 
   std::function< uint64_t(std::string) > get_balance = [&](std::string address) -> uint64_t
@@ -1341,7 +1396,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
      else
        storage = map< fc::sha256, fc::sha256 >();
 
-     auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
+     auto result = contract_invoke(_db, o, c, contract_hash, energy, static_cast<uint64_t>(value), args, storage);
 
      if (cs)
         _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
@@ -1374,7 +1429,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
      else
        storage = map< fc::sha256, fc::sha256 >();
 
-     auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
+     auto result = contract_invoke(_db, o, c, contract_hash, energy, 0, args, storage);
 
      if (cs)
         _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
@@ -1395,7 +1450,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [&](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
   {
      map< fc::sha256, fc::sha256 > storage; // Should this be empty, or just immutable for `staticcall`?
-     auto result = contract_invoke(_db, o, c, contract_hash, energy, args, storage);
+     auto result = contract_invoke(_db, o, c, contract_hash, energy, 0, args, storage);
      return result;
   };
 
@@ -1428,10 +1483,9 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return true;
   };
 
-  std::function< bool(std::vector<machine::word>) > contract_return = [&](std::vector<machine::word> memory) -> bool
+  std::function< std::vector<machine::word>(std::vector<machine::word>) > contract_return = [&](std::vector<machine::word> memory) -> std::vector<machine::word>
   {
-    // TODO
-    return true;
+    return memory;
   };
 
   std::function< bool(std::string) > self_destruct = [&](std::string address) -> bool
@@ -1494,6 +1548,7 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
    uint64_t energy = 0; // TODO
 
    const contract_storage_object* cs = _db.find_contract_storage(contract_hash, op.caller);
+
    map< fc::sha256, fc::sha256 > storage;
    if (cs != nullptr) {
       storage = cs->data;
@@ -1504,7 +1559,7 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
 
    std::vector<unsigned char> unsigned_args;
    std::copy(op.args.begin(), op.args.end(), std::back_inserter(unsigned_args));
-   auto result = contract_invoke(_db, c.owner, op.caller, contract_hash, energy, unsigned_args, storage);
+   auto result = contract_invoke(_db, c.owner, op.caller, contract_hash, energy, op.value, unsigned_args, storage);
 
    if (cs != nullptr) {
       _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {

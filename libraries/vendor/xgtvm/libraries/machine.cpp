@@ -23,12 +23,14 @@ namespace machine
     return bytes[n];
   }
 
-  void set_byte(boost::multiprecision::uint256_t& x, int n, int v)
+  uint16_t get_bytes(boost::multiprecision::uint256_t x, int n)
   {
     std::vector<unsigned char> bytes;
     boost::multiprecision::export_bits(x, std::back_inserter(bytes), 8);
-    bytes[n] = v;
-    boost::multiprecision::import_bits(x, bytes.begin(), bytes.end());
+    if (x > 255) {
+      return ((uint16_t)bytes[n] << 8) | bytes[n + 1];
+    }
+    return bytes[n];
   }
 
   size_t uint256_t_to_size_t(boost::multiprecision::uint256_t& x)
@@ -53,57 +55,49 @@ namespace machine
 
   big_word to_big_word(word a, word b)
   {
-    big_word va = 0;
-    set_byte(va, 0, a);
-    set_byte(va, 1, b);
+    big_word va = ((big_word)a << 8) | b;
     return va;
   }
 
   big_word to_big_word(word a, word b, word c, word d)
   {
-    big_word va = 0;
-    set_byte(va, 0, a);
-    set_byte(va, 1, b);
-    set_byte(va, 2, c);
-    set_byte(va, 3, d);
-    return va;
+    big_word va = ((big_word)a << 8) | b;
+    big_word vb = (va << 8) | c;
+    big_word vc = (vb << 8) | d;
+    return vc;
   }
 
   big_word to_big_word(word a, word b, word c, word d, word e, word f, word g, word h)
   {
-    big_word va = 0;
-    set_byte(va, 0, a);
-    set_byte(va, 1, b);
-    set_byte(va, 2, c);
-    set_byte(va, 3, d);
-    set_byte(va, 4, e);
-    set_byte(va, 5, f);
-    set_byte(va, 6, g);
-    set_byte(va, 7, h);
-    return va;
+    big_word va = ((big_word)a << 8) | b;
+    big_word vb = (va << 8) | c;
+    big_word vc = (vb << 8) | d;
+    big_word vd = (vc << 8) | e;
+    big_word ve = (vd << 8) | f;
+    big_word vf = (ve << 8) | g;
+    big_word vg = (vf << 8) | h;
+    return vg;
   }
 
   big_word to_big_word(word a, word b, word c, word d, word e, word f, word g,
       word h, word i, word j, word k, word l, word m, word n, word o, word p)
   {
-    big_word va = 0;
-    set_byte(va, 0, a);
-    set_byte(va, 1, b);
-    set_byte(va, 2, c);
-    set_byte(va, 3, d);
-    set_byte(va, 4, e);
-    set_byte(va, 5, f);
-    set_byte(va, 6, g);
-    set_byte(va, 7, h);
-    set_byte(va, 8, i);
-    set_byte(va, 9, j);
-    set_byte(va, 10, k);
-    set_byte(va, 11, l);
-    set_byte(va, 12, m);
-    set_byte(va, 13, n);
-    set_byte(va, 14, o);
-    set_byte(va, 15, p);
-    return va;
+    big_word va = ((big_word)a << 8) | b;
+    big_word vb = (va << 8) | c;
+    big_word vc = (vb << 8) | d;
+    big_word vd = (vc << 8) | e;
+    big_word ve = (vd << 8) | f;
+    big_word vf = (ve << 8) | g;
+    big_word vg = (vf << 8) | h;
+    big_word vh = (vg << 8) | i;
+    big_word vi = (vh << 8) | j;
+    big_word vj = (vi << 8) | k;
+    big_word vk = (vj << 8) | l;
+    big_word vl = (vk << 8) | m;
+    big_word vm = (vl << 8) | n;
+    big_word vn = (vm << 8) | o;
+    big_word vo = (vn << 8) | p;
+    return vo;
   }
 
   big_word to_big_word(word a, word b, word c, word d, word e, word f, word g,
@@ -111,40 +105,48 @@ namespace machine
       word q, word r, word s, word t, word u, word v, word w, word x, word y,
       word z, word aa, word ab, word ac, word ad, word ae, word af)
   {
-    big_word va = 0;
-    set_byte(va, 0, a);
-    set_byte(va, 1, b);
-    set_byte(va, 2, c);
-    set_byte(va, 3, d);
-    set_byte(va, 4, e);
-    set_byte(va, 5, f);
-    set_byte(va, 6, g);
-    set_byte(va, 7, h);
-    set_byte(va, 8, i);
-    set_byte(va, 9, j);
-    set_byte(va, 10, k);
-    set_byte(va, 11, l);
-    set_byte(va, 12, m);
-    set_byte(va, 13, n);
-    set_byte(va, 14, o);
-    set_byte(va, 15, p);
-    set_byte(va, 16, q);
-    set_byte(va, 17, r);
-    set_byte(va, 18, s);
-    set_byte(va, 19, t);
-    set_byte(va, 20, u);
-    set_byte(va, 21, v);
-    set_byte(va, 22, w);
-    set_byte(va, 23, x);
-    set_byte(va, 24, y);
-    set_byte(va, 25, z);
-    set_byte(va, 26, aa);
-    set_byte(va, 27, ab);
-    set_byte(va, 28, ac);
-    set_byte(va, 29, ad);
-    set_byte(va, 30, ae);
-    set_byte(va, 31, af);
-    return va;
+    big_word va  = ((big_word)a << 8) | b;
+    big_word vb  = (va << 8) | c;
+    big_word vc  = (vb << 8) | d;
+    big_word vd  = (vc << 8) | e;
+    big_word ve  = (vd << 8) | f;
+    big_word vf  = (ve << 8) | g;
+    big_word vg  = (vf << 8) | h;
+    big_word vh  = (vg << 8) | i;
+    big_word vi  = (vh << 8) | j;
+    big_word vj  = (vi << 8) | k;
+    big_word vk  = (vj << 8) | l;
+    big_word vl  = (vk << 8) | m;
+    big_word vm  = (vl << 8) | n;
+    big_word vn  = (vm << 8) | o;
+    big_word vo  = (vn << 8) | p;
+    big_word vp  = (vo << 8) | q;
+    big_word vq  = (vp << 8) | r;
+    big_word vr  = (vq << 8) | s;
+    big_word vs  = (vr << 8) | t;
+    big_word vt  = (vs << 8) | u;
+    big_word vu  = (vt << 8) | v;
+    big_word vv  = (vu << 8) | w;
+    big_word vw  = (vv << 8) | x;
+    big_word vx  = (vw << 8) | y;
+    big_word vy  = (vx << 8) | z;
+    big_word vz  = (vy << 8) | aa;
+    big_word vaa = (vz << 8) | ab;
+    big_word vab = (vaa << 8) | ac;
+    big_word vac = (vab << 8) | ad;
+    big_word vad = (vac << 8) | ae;
+    big_word vae = (vad << 8) | af;
+    return vae;
+  }
+
+  std::vector<word> from_big_word(big_word a)
+  {
+    std::vector<word> vec;
+    for (size_t i = 0; i < 31; i++) {
+      vec.push_back(static_cast<word>(((a >>= (8 * i)) & 0xFF)));
+    }
+
+    return vec;
   }
 
   std::string inspect(std::vector<word> words)
@@ -153,7 +155,6 @@ namespace machine
     ss << "[";
     for (size_t i = 0; i < words.size(); i++)
     {
-      // TODO: Print hex
       ss << std::to_string(words.at(i));
       if (i != words.size() - 1)
         ss << ", ";
@@ -172,7 +173,6 @@ namespace machine
     {
       it = words.find(i);
       if (it != words.end()) {
-        // TODO: Print hex
         ss << std::to_string(it->second);
         ss << ", ";
       }
@@ -220,8 +220,6 @@ namespace machine
     stack.push_front(s);
   }
 
-  // TODO: Make better
-  // TODO: Return string instead?
   void machine::print_stack()
   {
     for (auto it = stack.cbegin(); it != stack.cend(); ++it)
@@ -259,14 +257,19 @@ namespace machine
     word a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
          y, z, aa, ab, ac, ad, ae, af;
     big_word va, vb, vc, vd, ve, vf, vg, vh, vi, vj, vk, vl, vm, vn, vo, vp, vq;
+
+    word jumpdest_instruction;
+    opcode jumpdest_op;
     stack_variant sv;
     signed_big_word sa, sb, sc;
     size_t offset, dest_offset, length, code_size = 0;
+    std::vector<word> vec1;
     std::vector<word> contract_args;
     std::vector<word> retval;
     std::vector<word> ext_contract_code;
     std::vector<word>::const_iterator first, last;
     std::string* ss;
+    std::stringstream sstream;
     switch (op)
     {
       case stop_opcode:
@@ -278,6 +281,7 @@ namespace machine
         va = pop_word();
         vb = pop_word();
         vc = va + vb;
+
         push_word(vc);
         break;
       case mul_opcode:
@@ -298,7 +302,10 @@ namespace machine
         logger << "op div" << std::endl;
         va = pop_word();
         vb = pop_word();
-        vc = va / vb;
+        if (vb == 0)
+          push_word(word(0));
+        else
+          vc = va / vb;
         push_word(vc);
         break;
       case sdiv_opcode:
@@ -491,7 +498,9 @@ namespace machine
           }
         }
 
-        push_word( adapter.sha3( retval ) ); // hash
+        sstream << std::hex << adapter.sha3( retval );
+        sstream >> vc;
+        push_word( vc ); // hash
 
         break;
       case address_opcode:
@@ -537,15 +546,39 @@ namespace machine
         }
 
         va = to_big_word(
-            msg.input_data[offset + 7],
-            msg.input_data[offset + 6],
-            msg.input_data[offset + 5],
-            msg.input_data[offset + 4],
-            msg.input_data[offset + 3],
-            msg.input_data[offset + 2],
+            msg.input_data[offset + 0],
             msg.input_data[offset + 1],
-            msg.input_data[offset + 0]
-            );
+            msg.input_data[offset + 2],
+            msg.input_data[offset + 3],
+            msg.input_data[offset + 4],
+            msg.input_data[offset + 5],
+            msg.input_data[offset + 6],
+            msg.input_data[offset + 7],
+            msg.input_data[offset + 8],
+            msg.input_data[offset + 9],
+            msg.input_data[offset + 10],
+            msg.input_data[offset + 11],
+            msg.input_data[offset + 12],
+            msg.input_data[offset + 13],
+            msg.input_data[offset + 14],
+            msg.input_data[offset + 15],
+            msg.input_data[offset + 16],
+            msg.input_data[offset + 17],
+            msg.input_data[offset + 18],
+            msg.input_data[offset + 19],
+            msg.input_data[offset + 20],
+            msg.input_data[offset + 21],
+            msg.input_data[offset + 22],
+            msg.input_data[offset + 23],
+            msg.input_data[offset + 24],
+            msg.input_data[offset + 25],
+            msg.input_data[offset + 26],
+            msg.input_data[offset + 27],
+            msg.input_data[offset + 28],
+            msg.input_data[offset + 29],
+            msg.input_data[offset + 30],
+            msg.input_data[offset + 31]
+        );
         push_word(va);
         break;
       case calldatasize_opcode:
@@ -702,17 +735,40 @@ namespace machine
       case mload_opcode:
         logger << "op mload" << std::endl;
         va = pop_word(); // offset
-        // TODO: Verify order
         vb = to_big_word(
-            memory[static_cast<size_t>(va) + 7],
-            memory[static_cast<size_t>(va) + 6],
-            memory[static_cast<size_t>(va) + 5],
-            memory[static_cast<size_t>(va) + 4],
-            memory[static_cast<size_t>(va) + 3],
-            memory[static_cast<size_t>(va) + 2],
+            memory[static_cast<size_t>(va) + 0],
             memory[static_cast<size_t>(va) + 1],
-            memory[static_cast<size_t>(va) + 0]
-            );
+            memory[static_cast<size_t>(va) + 2],
+            memory[static_cast<size_t>(va) + 3],
+            memory[static_cast<size_t>(va) + 4],
+            memory[static_cast<size_t>(va) + 5],
+            memory[static_cast<size_t>(va) + 6],
+            memory[static_cast<size_t>(va) + 7],
+            memory[static_cast<size_t>(va) + 8],
+            memory[static_cast<size_t>(va) + 9],
+            memory[static_cast<size_t>(va) + 10],
+            memory[static_cast<size_t>(va) + 11],
+            memory[static_cast<size_t>(va) + 12],
+            memory[static_cast<size_t>(va) + 13],
+            memory[static_cast<size_t>(va) + 14],
+            memory[static_cast<size_t>(va) + 15],
+            memory[static_cast<size_t>(va) + 16],
+            memory[static_cast<size_t>(va) + 17],
+            memory[static_cast<size_t>(va) + 18],
+            memory[static_cast<size_t>(va) + 19],
+            memory[static_cast<size_t>(va) + 20],
+            memory[static_cast<size_t>(va) + 21],
+            memory[static_cast<size_t>(va) + 22],
+            memory[static_cast<size_t>(va) + 23],
+            memory[static_cast<size_t>(va) + 24],
+            memory[static_cast<size_t>(va) + 25],
+            memory[static_cast<size_t>(va) + 26],
+            memory[static_cast<size_t>(va) + 27],
+            memory[static_cast<size_t>(va) + 28],
+            memory[static_cast<size_t>(va) + 29],
+            memory[static_cast<size_t>(va) + 30],
+            memory[static_cast<size_t>(va) + 31]
+        );
         push_word(vb);
         break;
       case mstore_opcode:
@@ -721,15 +777,40 @@ namespace machine
         vb = pop_word(); // value
         logger << "memory before: " << inspect(memory) << std::endl;
 
-        // TODO: Verify order
-        memory[static_cast<size_t>(va) + 0] = get_byte(vb, 7);
-        memory[static_cast<size_t>(va) + 1] = get_byte(vb, 6);
-        memory[static_cast<size_t>(va) + 2] = get_byte(vb, 5);
-        memory[static_cast<size_t>(va) + 3] = get_byte(vb, 4);
-        memory[static_cast<size_t>(va) + 4] = get_byte(vb, 3);
-        memory[static_cast<size_t>(va) + 5] = get_byte(vb, 2);
-        memory[static_cast<size_t>(va) + 6] = get_byte(vb, 1);
-        memory[static_cast<size_t>(va) + 7] = get_byte(vb, 0);
+        vec1 = from_big_word(vb);
+
+        memory[static_cast<size_t>(va) + 0]  = vec1[31];
+        memory[static_cast<size_t>(va) + 1]  = vec1[30];
+        memory[static_cast<size_t>(va) + 2]  = vec1[29];
+        memory[static_cast<size_t>(va) + 3]  = vec1[28];
+        memory[static_cast<size_t>(va) + 4]  = vec1[27];
+        memory[static_cast<size_t>(va) + 5]  = vec1[26];
+        memory[static_cast<size_t>(va) + 6]  = vec1[25];
+        memory[static_cast<size_t>(va) + 7]  = vec1[24];
+        memory[static_cast<size_t>(va) + 8]  = vec1[23];
+        memory[static_cast<size_t>(va) + 9]  = vec1[22];
+        memory[static_cast<size_t>(va) + 10] = vec1[21];
+        memory[static_cast<size_t>(va) + 11] = vec1[20];
+        memory[static_cast<size_t>(va) + 12] = vec1[19];
+        memory[static_cast<size_t>(va) + 13] = vec1[18];
+        memory[static_cast<size_t>(va) + 14] = vec1[17];
+        memory[static_cast<size_t>(va) + 15] = vec1[16];
+        memory[static_cast<size_t>(va) + 16] = vec1[15];
+        memory[static_cast<size_t>(va) + 17] = vec1[14];
+        memory[static_cast<size_t>(va) + 18] = vec1[13];
+        memory[static_cast<size_t>(va) + 19] = vec1[12];
+        memory[static_cast<size_t>(va) + 20] = vec1[11];
+        memory[static_cast<size_t>(va) + 21] = vec1[10];
+        memory[static_cast<size_t>(va) + 22] = vec1[9];
+        memory[static_cast<size_t>(va) + 23] = vec1[8];
+        memory[static_cast<size_t>(va) + 24] = vec1[7];
+        memory[static_cast<size_t>(va) + 25] = vec1[6];
+        memory[static_cast<size_t>(va) + 26] = vec1[5];
+        memory[static_cast<size_t>(va) + 27] = vec1[4];
+        memory[static_cast<size_t>(va) + 28] = vec1[3];
+        memory[static_cast<size_t>(va) + 29] = vec1[2];
+        memory[static_cast<size_t>(va) + 30] = vec1[1];
+        memory[static_cast<size_t>(va) + 31] = vec1[0];
         logger << "memory after: " << inspect(memory) << std::endl;
         break;
       case mstore8_opcode:
@@ -780,17 +861,24 @@ namespace machine
       case jump_opcode:
         logger << "op jump" << std::endl;
         va = pop_word(); // destination
-        if (code[get_byte(va, 0)] == jumpdest_opcode)
-          pc = get_byte(va, 0);
+
+        jumpdest_instruction = code[get_bytes(va, 0)];
+        jumpdest_op = (opcode)jumpdest_instruction;
+        if (jumpdest_op == jumpdest_opcode)
+          pc = get_bytes(va, 0);
         break;
       case jumpi_opcode:
         logger << "op jumpi" << std::endl;
         print_stack();
-        va = pop_word();
-        vb = pop_word();
-        if (vb != 0)
-          if (code[get_byte(va, 0)] == jumpdest_opcode)
-            pc = get_byte(va, 0);
+        va = pop_word(); // destination
+        vb = pop_word(); // condition
+
+        if (vb != 0) {
+          jumpdest_instruction = code[get_bytes(va, 0)];
+          jumpdest_op = (opcode)jumpdest_instruction;
+          if (jumpdest_op == jumpdest_opcode)
+            pc = get_bytes(va, 0);
+        }
         break;
       case pc_opcode:
         logger << "op pc" << std::endl;
@@ -820,7 +908,7 @@ namespace machine
         pc++;
         b = code[pc];
         pc++;
-        va = to_big_word(0, 0, a, b); // TODO: Verify
+        va = to_big_word(a, b);
         push_word(va);
         break;
       case push3_opcode:
@@ -831,7 +919,7 @@ namespace machine
         pc++;
         c = code[pc];
         pc++;
-        va = to_big_word(0, a, b, c); // TODO: Verify
+        va = to_big_word(0, a, b, c);
         push_word(va);
         break;
       case push4_opcode:
@@ -844,7 +932,7 @@ namespace machine
         pc++;
         d = code[pc];
         pc++;
-        va = to_big_word(a, b, c, d); // TODO: Verify
+        va = to_big_word(a, b, c, d);
         push_word(va);
         break;
       case push5_opcode:
@@ -859,7 +947,7 @@ namespace machine
         pc++;
         e = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, a, b, c, d, e); // TODO: Verify
+        va = to_big_word(0, 0, 0, a, b, c, d, e);
         push_word(va);
         break;
       case push6_opcode:
@@ -876,7 +964,7 @@ namespace machine
         pc++;
         f = code[pc];
         pc++;
-        va = to_big_word(0, 0, a, b, c, d, e, f); // TODO: Verify
+        va = to_big_word(0, 0, a, b, c, d, e, f);
         push_word(va);
         break;
       case push7_opcode:
@@ -895,7 +983,7 @@ namespace machine
         pc++;
         g = code[pc];
         pc++;
-        va = to_big_word(0, a, b, c, d, e, f, g); // TODO: Verify
+        va = to_big_word(0, a, b, c, d, e, f, g);
         push_word(va);
         break;
       case push8_opcode:
@@ -916,7 +1004,7 @@ namespace machine
         pc++;
         h = code[pc];
         pc++;
-        va = to_big_word(a, b, c, d, e, f, g, h); // TODO: Verify
+        va = to_big_word(a, b, c, d, e, f, g, h);
         push_word(va);
         break;
       case push9_opcode:
@@ -939,7 +1027,7 @@ namespace machine
         pc++;
         i = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i); // TODO: Verify
+        va = to_big_word(0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i);
         push_word(va);
         break;
       case push10_opcode:
@@ -964,7 +1052,7 @@ namespace machine
         pc++;
         j = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j); // TODO: Verify
+        va = to_big_word(0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j);
         push_word(va);
         break;
       case push11_opcode:
@@ -991,7 +1079,7 @@ namespace machine
         pc++;
         k = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k); // TODO: Verify
+        va = to_big_word(0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k);
         push_word(va);
         break;
       case push12_opcode:
@@ -1020,7 +1108,7 @@ namespace machine
         pc++;
         l = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l); // TODO: Verify
+        va = to_big_word(0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l);
         push_word(va);
         break;
       case push13_opcode:
@@ -1051,7 +1139,7 @@ namespace machine
         pc++;
         m = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m); // TODO: Verify
+        va = to_big_word(0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m);
         push_word(va);
         break;
       case push14_opcode:
@@ -1084,7 +1172,7 @@ namespace machine
         pc++;
         n = code[pc];
         pc++;
-        va = to_big_word(0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n); // TODO: Verify
+        va = to_big_word(0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
         push_word(va);
         break;
       case push15_opcode:
@@ -1119,7 +1207,7 @@ namespace machine
         pc++;
         o = code[pc];
         pc++;
-        va = to_big_word(0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o); // TODO: Verify
+        va = to_big_word(0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);
         push_word(va);
         break;
       case push16_opcode:
@@ -1156,7 +1244,7 @@ namespace machine
         pc++;
         p = code[pc];
         pc++;
-        va = to_big_word(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p); // TODO: Verify
+        va = to_big_word(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p);
         push_word(va);
         break;
       case push17_opcode:
@@ -1196,7 +1284,7 @@ namespace machine
         q = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d,
-            e, f, g, h, i, j, k, l, m, n, o, p, q); // TODO: Verify
+            e, f, g, h, i, j, k, l, m, n, o, p, q);
         push_word(va);
         break;
       case push18_opcode:
@@ -1238,7 +1326,7 @@ namespace machine
         r = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e,
-            f, g, h, i, j, k, l, m, n, o, p, q, r); // TODO: Verify
+            f, g, h, i, j, k, l, m, n, o, p, q, r);
         push_word(va);
         break;
       case push19_opcode:
@@ -1282,7 +1370,7 @@ namespace machine
         s = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f,
-            g, h, i, j, k, l, m, n, o, p, q, r, s); // TODO: Verify
+            g, h, i, j, k, l, m, n, o, p, q, r, s);
         push_word(va);
         break;
       case push20_opcode:
@@ -1328,7 +1416,7 @@ namespace machine
         t = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g,
-            h, i, j, k, l, m, n, o, p, q, r, s, t); // TODO: Verify
+            h, i, j, k, l, m, n, o, p, q, r, s, t);
         push_word(va);
         break;
       case push21_opcode:
@@ -1376,7 +1464,7 @@ namespace machine
         u = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h,
-            i, j, k, l, m, n, o, p, q, r, s, t, u); // TODO: Verify
+            i, j, k, l, m, n, o, p, q, r, s, t, u);
         push_word(va);
         break;
       case push22_opcode:
@@ -1426,7 +1514,7 @@ namespace machine
         v = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i,
-            j, k, l, m, n, o, p, q, r, s, t, u, v); // TODO: Verify
+            j, k, l, m, n, o, p, q, r, s, t, u, v);
         push_word(va);
         break;
       case push23_opcode:
@@ -1478,7 +1566,7 @@ namespace machine
         w = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j,
-            k, l, m, n, o, p, q, r, s, t, u, v, w); // TODO: Verify
+            k, l, m, n, o, p, q, r, s, t, u, v, w);
         push_word(va);
         break;
       case push24_opcode:
@@ -1532,7 +1620,7 @@ namespace machine
         x = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k,
-            l, m, n, o, p, q, r, s, t, u, v, w, x); // TODO: Verify
+            l, m, n, o, p, q, r, s, t, u, v, w, x);
         push_word(va);
         break;
       case push25_opcode:
@@ -1588,7 +1676,7 @@ namespace machine
         y = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l,
-            m, n, o, p, q, r, s, t, u, v, w, x, y); // TODO: Verify
+            m, n, o, p, q, r, s, t, u, v, w, x, y);
         push_word(va);
         break;
       case push26_opcode:
@@ -1646,7 +1734,7 @@ namespace machine
         z = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m,
-            n, o, p, q, r, s, t, u, v, w, x, y, z); // TODO: Verify
+            n, o, p, q, r, s, t, u, v, w, x, y, z);
         push_word(va);
         break;
       case push27_opcode:
@@ -1706,7 +1794,7 @@ namespace machine
         aa = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n,
-            o, p, q, r, s, t, u, v, w, x, y, z, aa); // TODO: Verify
+            o, p, q, r, s, t, u, v, w, x, y, z, aa);
         push_word(va);
         break;
       case push28_opcode:
@@ -1768,7 +1856,7 @@ namespace machine
         ab = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o,
-            p, q, r, s, t, u, v, w, x, y, z, aa, ab); // TODO: Verify
+            p, q, r, s, t, u, v, w, x, y, z, aa, ab);
         push_word(va);
         break;
       case push29_opcode:
@@ -1832,7 +1920,7 @@ namespace machine
         ac = code[pc];
         pc++;
         va = to_big_word(0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
-            q, r, s, t, u, v, w, x, y, z, aa, ab, ac); // TODO: Verify
+            q, r, s, t, u, v, w, x, y, z, aa, ab, ac);
         push_word(va);
         break;
       case push30_opcode:
@@ -1898,7 +1986,7 @@ namespace machine
         ad = code[pc];
         pc++;
         va = to_big_word(0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
-            q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad); // TODO: Verify
+            q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad);
         push_word(va);
         break;
       case push31_opcode:
@@ -1966,7 +2054,7 @@ namespace machine
         ae = code[pc];
         pc++;
         va = to_big_word(0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
-            q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae); // TODO: Verify
+            q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae);
         push_word(va);
         break;
       case push32_opcode:
@@ -2036,18 +2124,18 @@ namespace machine
         af = code[pc];
         pc++;
         va = to_big_word(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
-            q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af); // TODO: Verify
+            q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af);
         push_word(va);
         break;
       case dup1_opcode:
         logger << "op dup1" << std::endl;
-        sv = stack.front();
+        sv = stack.at(0);
         push_word(sv);
         break;
       case dup2_opcode:
         logger << "op dup2" << std::endl;
-        sv  = stack.at(1);
-        push_word(va);
+        sv = stack.at(1);
+        push_word(sv);
         break;
       case dup3_opcode:
         logger << "op dup3" << std::endl;
@@ -2123,8 +2211,8 @@ namespace machine
         logger << "op swap1" << std::endl;
         va = pop_word();
         vb = pop_word();
-        push_word(a);
-        push_word(b);
+        push_word(va);
+        push_word(vb);
         break;
       case swap2_opcode:
         logger << "op swap2" << std::endl;
@@ -2764,6 +2852,7 @@ namespace machine
         break;
       case return_opcode:
         logger << "op return" << std::endl;
+        // XXX
         // TODO REVIEW
         // a = pop_word(); // offset
         // b = pop_word(); // length
@@ -2779,7 +2868,7 @@ namespace machine
         va = pop_word(); // offset
         vb = pop_word(); // length
 
-        for (size_t i = static_cast<size_t>(va); i < static_cast<size_t>(vb); i++) {
+        for (size_t i = static_cast<size_t>(va); i < static_cast<size_t>(va + vb); i++) {
           std::map<size_t,word>::iterator it;
           it = memory.find(i);
           if (it != memory.end()) {
@@ -2790,8 +2879,9 @@ namespace machine
           }
         }
 
+        return_value = retval;
         adapter.contract_return( retval );
-        state = machine_state::stopped; // TODO: Add elsewhere
+        state = machine_state::stopped;
         break;
       case delegatecall_opcode:
         logger << "op delegatecall" << std::endl;
@@ -2915,8 +3005,12 @@ namespace machine
           else {
             retval.push_back(word(0));
           }
+          memory[i] = 0;
         }
         adapter.revert( retval );
+        break;
+      case invalid_opcode:
+        logger << "op invalid" << std::endl;
         break;
       case selfdestruct_opcode:
         logger << "op selfdestruct" << std::endl;
@@ -2962,7 +3056,7 @@ namespace machine
     {
       s << "\"finalState\":" << "{";
       {
-        s << "\"pc\":" << pc << ",";
+        s << "\"pc\":" << std::hex << pc << ",";
         s << "\"stack\":" << "[";
         for (auto it = stack.cbegin(); it != stack.cend(); ++it)
         {
@@ -3000,7 +3094,7 @@ namespace machine
 
         word current_instruction = code[pc];
         opcode op = (opcode)current_instruction;
-        s << "\"opcode\":" << std::dec << op << ",";
+        s << "\"opcode\":" << std::hex << op << ",";
 
         if (error_message == boost::none)
           s << "\"exceptionError\":" << "null";
@@ -3017,7 +3111,6 @@ namespace machine
           if (memory.size() > 1 && std::next(it, 1) != memory.cend())
             s << ",";
         }
-        s << "}";
       }
       s << "}";
     }
