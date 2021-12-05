@@ -90,6 +90,7 @@ namespace xgt { namespace chain {
          id_type           id;
 
          wallet_name_type  account;
+         fc::ripemd160     address_ripemd160;
 
          shared_authority  recovery; ///< used for backup control, can set recovery or money
          shared_authority  money;    ///< used for all monetary operations, can set money or social
