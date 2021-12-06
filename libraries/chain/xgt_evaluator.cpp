@@ -1049,18 +1049,6 @@ fc::ripemd160 make_contract_hash(const wallet_name_type& owner, const vector<cha
   return fc::ripemd160::hash(s3);
 }
 
-void contract_create_evaluator::do_apply( const contract_create_operation& op )
-{
-   wlog("!!!!!! contract_create owner ${w} code size ${y}", ("w",op.owner)("y",op.code.size()));
-   _db.create< contract_object >( [&](contract_object& c)
-   {
-      c.contract_hash = make_contract_hash(op.owner, op.code);
-      wlog("!!!!!! contract_create contract_hash ${c}", ("c",c.contract_hash));
-      c.owner = op.owner;
-      c.code = op.code;
-   });
-}
-
 // Forward declaration
 machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<fc::sha256, fc::sha256>& storage);
 
@@ -1233,7 +1221,7 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
    machine::message msg = {
       0,
       0,
-      0,
+      int64_t(energy),
       converted_address,
       converted_address,
       value,
@@ -1297,6 +1285,32 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
    // TODO make return value public in machine
    wlog("contract_invoke return value ${w}", ("w",m.get_return_value()));
    return m.get_return_value();
+}
+
+void contract_create_evaluator::do_apply( const contract_create_operation& op )
+{
+   wlog("!!!!!! contract_create owner ${w} code size ${y}", ("w",op.owner)("y",op.code.size()));
+   auto base_contract = _db.create< contract_object >( [&](contract_object& c)
+   {
+      c.contract_hash = make_contract_hash(op.owner, op.code);
+      wlog("!!!!!! contract_create contract_hash ${c}", ("c",c.contract_hash));
+      c.owner = op.owner;
+      c.code = op.code;
+   });
+
+   const contract_storage_object* cs = _db.find_contract_storage(base_contract.contract_hash, op.owner);
+   map< fc::sha256, fc::sha256 > storage;
+   if (cs)
+     storage = cs->data;
+   else
+     storage = map< fc::sha256, fc::sha256 >();
+   auto machine_return = contract_invoke(_db, op.owner, op.owner, base_contract.contract_hash, 0, 0, {}, storage);
+   std::vector<char> result(machine_return.begin(), machine_return.end());
+
+   const auto& contract = _db.get_contract(base_contract.contract_hash);
+   _db.modify< contract_object >(contract, [&](contract_object& c) {
+     c.code = result;
+   });
 }
 
 std::string inspect(std::vector<machine::word> words)
