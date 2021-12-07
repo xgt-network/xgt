@@ -31,6 +31,7 @@ namespace xgt { namespace chain {
          id_type           id;
 
          wallet_name_type  name;
+         address_ripemd160_type address_ripemd160;
          public_key_type   memo_key;
 
          time_point_sec    last_account_update;
@@ -90,7 +91,7 @@ namespace xgt { namespace chain {
          id_type           id;
 
          wallet_name_type  account;
-         fc::ripemd160     address_ripemd160;
+         address_ripemd160_type address_ripemd160;
 
          shared_authority  recovery; ///< used for backup control, can set recovery or money
          shared_authority  money;    ///< used for all monetary operations, can set money or social
@@ -164,7 +165,9 @@ namespace xgt { namespace chain {
             ordered_unique< tag< by_id >,
             member< wallet_object, wallet_id_type, &wallet_object::id > >,
          ordered_unique< tag< by_name >,
-            member< wallet_object, wallet_name_type, &wallet_object::name > >
+            member< wallet_object, wallet_name_type, &wallet_object::name > >,
+         ordered_unique< tag< by_address_ripemd160 >,
+            member< wallet_object, address_ripemd160_type, &wallet_object::address_ripemd160 > >
       >,
       allocator< wallet_object >
    > wallet_index;

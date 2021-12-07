@@ -469,7 +469,8 @@ namespace machine
         va = pop_word(); // shift
         vb = pop_word(); // value
 
-        vc = vb >> va.convert_to<size_t>();
+        // TODO Implement shift in a loop for va sizes larger than 256
+        vc = vb >> static_cast<size_t>(va);
         push_word(vc);
 
         break;
@@ -611,11 +612,6 @@ namespace machine
         dest_offset = static_cast<size_t>( pop_word() );
         offset = static_cast<size_t>( pop_word() );
         length = static_cast<size_t>( pop_word() );
-
-        if ((offset + length) > msg.input_size) {
-          logger << "Codecopy end index is larger than message input_size" << std::endl;
-          break;
-        }
 
         for (size_t i = 0; i < length; ++i)
           memory[dest_offset + i] = code[offset + i];
@@ -3007,7 +3003,9 @@ namespace machine
           }
           memory[i] = 0;
         }
+        return_value = retval;
         adapter.revert( retval );
+        state = machine_state::stopped;
         break;
       case invalid_opcode:
         logger << "op invalid" << std::endl;

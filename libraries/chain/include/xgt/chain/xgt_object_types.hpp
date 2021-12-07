@@ -42,6 +42,7 @@ using xgt::protocol::block_id_type;
 using xgt::protocol::transaction_id_type;
 using xgt::protocol::chain_id_type;
 using xgt::protocol::wallet_name_type;
+using xgt::protocol::address_ripemd160_type;
 using xgt::protocol::share_type;
 
 using chainbase::shared_string;
@@ -51,6 +52,7 @@ inline void from_string( shared_string& out, const string& in ){ out.assign( in.
 
 struct by_id;
 struct by_name;
+struct by_address_ripemd160;
 
 enum object_type
 {

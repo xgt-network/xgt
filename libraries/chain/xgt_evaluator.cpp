@@ -149,6 +149,7 @@ void initialize_wallet_object( wallet_object& acc, const wallet_name_type& name,
    wlog("?????? initialize_wallet_object key ${n}", ("n", key));
    wlog("?????? initialize_wallet_object created ${n}", ("n", props.time));
    acc.name = name;
+   acc.address_ripemd160 = fc::ripemd160::hex_digest(name);
    acc.memo_key = key;
    acc.created = props.time;
    //acc.energybar.last_update_time = props.time.sec_since_epoch();
@@ -209,7 +210,7 @@ void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
       auth.recovery = o.recovery;
       auth.money = o.money;
       auth.social = o.social;
-      auth.address_ripemd160 = o.address_ripemd160;
+      auth.address_ripemd160 = fc::ripemd160::hex_digest(wallet_name);
       auth.last_recovery_update = fc::time_point_sec::min();
    });
 }
