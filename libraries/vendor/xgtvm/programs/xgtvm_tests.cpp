@@ -17,7 +17,7 @@ machine::chain_adapter make_chain_adapter()
     return 0;
   };
 
-  std::function< uint64_t(std::string) > get_balance = [](std::string address) -> uint64_t
+  std::function< uint64_t(std::string) > get_balance = [](std::string address_ripemd160) -> uint64_t
   {
     std::cout << "chain_adapter::get_balance" << std::endl;
     return 0;

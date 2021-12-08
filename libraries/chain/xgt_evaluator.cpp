@@ -1352,9 +1352,9 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return ss.str();
   };
 
-  std::function< uint64_t(std::string) > get_balance = [&](std::string address) -> uint64_t
+  std::function< uint64_t(std::string) > get_balance = [&](std::string address_ripemd160) -> uint64_t
   {
-    auto& wallet = _db.get_account(address);
+    auto& wallet = _db.get_account_by_ripemd160(address_ripemd160);
     return static_cast<uint64_t>(wallet.balance.amount.value);
   };
 

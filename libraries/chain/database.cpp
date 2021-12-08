@@ -614,6 +614,11 @@ const wallet_object& database::get_account( const wallet_name_type& name )const
    return get< wallet_object, by_name >( name );
 } FC_CAPTURE_AND_RETHROW( (name) ) }
 
+const wallet_object& database::get_account_by_ripemd160( const address_ripemd160_type& address_ripemd160 )const
+{ try {
+   return get< wallet_object, by_address_ripemd160 >( address_ripemd160 );
+} FC_CAPTURE_AND_RETHROW( (address_ripemd160) ) }
+
 const wallet_object* database::find_account( const wallet_name_type& name )const
 {
    return find< wallet_object, by_name >( name );
