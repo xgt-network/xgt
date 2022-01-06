@@ -207,10 +207,12 @@ namespace xgt { namespace chain {
          const witness_object*  find_witness( const wallet_name_type& name )const;
 
          const contract_object&  get_contract(  const contract_hash_type& hash )const;
+         const contract_object&  get_contract_by_wallet(  const wallet_name_type& wallet )const;
 
          const wallet_object&  get_account(  const wallet_name_type& name )const;
          const wallet_object&  get_account_by_ripemd160(  const address_ripemd160_type& address_ripemd160 )const;
          const wallet_object*  find_account( const wallet_name_type& name )const;
+         const wallet_object*  find_account_by_ripemd160(  const address_ripemd160_type& address_ripemd160 )const;
 
          const comment_object&  get_comment(  const wallet_name_type& author, const shared_string& permlink )const;
          const comment_object*  find_comment( const wallet_name_type& author, const shared_string& permlink )const;

@@ -609,6 +609,11 @@ const contract_object& database::get_contract( const contract_hash_type& hash )c
    return get< contract_object, by_contract_hash >( hash );
 } FC_CAPTURE_AND_RETHROW( (hash) ) }
 
+const contract_object& database::get_contract_by_wallet( const wallet_name_type& wallet )const
+{ try {
+   return get< contract_object, by_wallet >( wallet );
+} FC_CAPTURE_AND_RETHROW( (wallet) ) }
+
 const wallet_object& database::get_account( const wallet_name_type& name )const
 { try {
    return get< wallet_object, by_name >( name );
@@ -622,6 +627,11 @@ const wallet_object& database::get_account_by_ripemd160( const address_ripemd160
 const wallet_object* database::find_account( const wallet_name_type& name )const
 {
    return find< wallet_object, by_name >( name );
+}
+
+const wallet_object* database::find_account_by_ripemd160( const address_ripemd160_type& address_ripemd160 )const
+{
+   return find< wallet_object, by_address_ripemd160 >( address_ripemd160 );
 }
 
 const comment_object& database::get_comment( const wallet_name_type& author, const shared_string& permlink )const
