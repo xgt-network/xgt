@@ -75,6 +75,7 @@ namespace machine
     number_opcode = 0x43,
     difficulty_opcode = 0x44,
     energylimit_opcode = 0x45,
+    selfbalance_opcode = 0x47,
     pop_opcode = 0x50,
     mload_opcode = 0x51,
     mstore_opcode = 0x52,
@@ -223,7 +224,7 @@ namespace machine
     // TODO sha3 opcode
     std::function< std::string(std::vector<word>) > sha3;
 
-    std::function< uint64_t(std::string) > get_balance;
+    std::function< big_word(big_word) > get_balance;
 
     // TODO for hashing address -- extcodehash opcode
     std::function< std::string(std::string) > get_code_hash;
@@ -232,13 +233,13 @@ namespace machine
     std::function< machine::big_word(uint64_t) > get_block_hash;
 
     // TODO get contract bytecode at address
-    std::function< std::vector<word>(std::string) > get_code_at_addr;
+    std::function< std::vector<word>(big_word) > get_code_at_addr;
 
     // TODO creates a child contract -- create opcode
-    std::function< std::string(std::vector<word>, big_word) > contract_create;
+    std::function< big_word(std::vector<word>, big_word) > contract_create;
 
     // TODO call a method from another contract -- call opcode -- address, energy, value, args
-    std::function< std::vector<word>(std::string, uint64_t, big_word, std::vector<word>) > contract_call;
+    std::function< std::pair< word, std::vector<word> >(big_word, uint64_t, big_word, std::vector<word>) > contract_call;
 
     // TODO call a method from another contract(?) -- callcode opcode -- address, energy, value, args
     std::function< std::vector<word>(std::string, uint64_t, big_word, std::vector<word>) > contract_callcode;
@@ -248,10 +249,10 @@ namespace machine
     std::function< std::vector<word>(std::string, uint64_t, std::vector<word>) > contract_delegatecall;
 
     // TODO call a method from another contract with state changes disallowed -- staticcall opcode -- address, energy, args
-    std::function< std::vector<word>(std::string, uint64_t, std::vector<word>) > contract_staticcall;
+    std::function< std::pair< word, std::vector<word> >(big_word, uint64_t, std::vector<word>) > contract_staticcall;
 
     // TODO creates a child contract -- create2 opcode
-    std::function< std::string(std::vector<word>, big_word, std::string) > contract_create2;
+    std::function< big_word(std::vector<word>, big_word, std::string) > contract_create2;
 
     // TODO revert opcode
     std::function< bool(std::vector<word>) > revert;

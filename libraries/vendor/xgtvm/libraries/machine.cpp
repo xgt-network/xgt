@@ -106,32 +106,32 @@ namespace machine
       word z, word aa, word ab, word ac, word ad, word ae, word af)
   {
     big_word va  = ((big_word)a << 8) | b;
-    big_word vb  = (va << 8) | c;
-    big_word vc  = (vb << 8) | d;
-    big_word vd  = (vc << 8) | e;
-    big_word ve  = (vd << 8) | f;
-    big_word vf  = (ve << 8) | g;
-    big_word vg  = (vf << 8) | h;
-    big_word vh  = (vg << 8) | i;
-    big_word vi  = (vh << 8) | j;
-    big_word vj  = (vi << 8) | k;
-    big_word vk  = (vj << 8) | l;
-    big_word vl  = (vk << 8) | m;
-    big_word vm  = (vl << 8) | n;
-    big_word vn  = (vm << 8) | o;
-    big_word vo  = (vn << 8) | p;
-    big_word vp  = (vo << 8) | q;
-    big_word vq  = (vp << 8) | r;
-    big_word vr  = (vq << 8) | s;
-    big_word vs  = (vr << 8) | t;
-    big_word vt  = (vs << 8) | u;
-    big_word vu  = (vt << 8) | v;
-    big_word vv  = (vu << 8) | w;
-    big_word vw  = (vv << 8) | x;
-    big_word vx  = (vw << 8) | y;
-    big_word vy  = (vx << 8) | z;
-    big_word vz  = (vy << 8) | aa;
-    big_word vaa = (vz << 8) | ab;
+    big_word vb  = (va << 8)  | c;
+    big_word vc  = (vb << 8)  | d;
+    big_word vd  = (vc << 8)  | e;
+    big_word ve  = (vd << 8)  | f;
+    big_word vf  = (ve << 8)  | g;
+    big_word vg  = (vf << 8)  | h;
+    big_word vh  = (vg << 8)  | i;
+    big_word vi  = (vh << 8)  | j;
+    big_word vj  = (vi << 8)  | k;
+    big_word vk  = (vj << 8)  | l;
+    big_word vl  = (vk << 8)  | m;
+    big_word vm  = (vl << 8)  | n;
+    big_word vn  = (vm << 8)  | o;
+    big_word vo  = (vn << 8)  | p;
+    big_word vp  = (vo << 8)  | q;
+    big_word vq  = (vp << 8)  | r;
+    big_word vr  = (vq << 8)  | s;
+    big_word vs  = (vr << 8)  | t;
+    big_word vt  = (vs << 8)  | u;
+    big_word vu  = (vt << 8)  | v;
+    big_word vv  = (vu << 8)  | w;
+    big_word vw  = (vv << 8)  | x;
+    big_word vx  = (vw << 8)  | y;
+    big_word vy  = (vx << 8)  | z;
+    big_word vz  = (vy << 8)  | aa;
+    big_word vaa = (vz << 8)  | ab;
     big_word vab = (vaa << 8) | ac;
     big_word vac = (vab << 8) | ad;
     big_word vad = (vac << 8) | ae;
@@ -142,8 +142,9 @@ namespace machine
   std::vector<word> from_big_word(big_word a)
   {
     std::vector<word> vec;
+    vec.push_back(static_cast<word>(a & 0xFF));
     for (size_t i = 0; i < 31; i++) {
-      vec.push_back(static_cast<word>(((a >>= (8 * i)) & 0xFF)));
+      vec.push_back(static_cast<word>(((a >>= 8) & 0xFF)));
     }
 
     return vec;
@@ -267,6 +268,7 @@ namespace machine
     std::vector<word> contract_args;
     std::vector<word> retval;
     std::vector<word> ext_contract_code;
+    std::pair< word, std::vector<word> > contract_call_return;
     std::vector<word>::const_iterator first, last;
     std::string* ss;
     std::stringstream sstream;
@@ -460,7 +462,7 @@ namespace machine
         va = pop_word(); // shift
         vb = pop_word(); // value
 
-        vc = vb << va.convert_to<size_t>();
+        vc = vb << static_cast<size_t>(va);
 
         push_word(vc);
         break;
@@ -488,7 +490,9 @@ namespace machine
         va = pop_word(); // offset
         vb = pop_word(); // length
 
-        for (size_t i = static_cast<size_t>(va); i < static_cast<size_t>(vb); i++) {
+        // TODO handle case where length of memory segment is 0, stack needs a 0 pushed
+
+        for (size_t i = static_cast<size_t>(va); i < static_cast<size_t>(va) + static_cast<size_t>(vb); i++) {
           std::map<size_t,word>::iterator it;
           it = memory.find(i);
           if (it != memory.end()) {
@@ -510,20 +514,8 @@ namespace machine
         break;
       case balance_opcode:
         logger << "op balance" << std::endl;
-        {
-          sv = stack.front(); // addr
-          stack.pop_front();
-          ss = boost::get<std::string>(&sv);
-          if (ss)
-          {
-            push_word( adapter.get_balance(*ss) );
-          }
-          else
-          {
-            state = machine_state::error;
-            error_message.emplace("Balance operation type error");
-          }
-        }
+        va = pop_word();
+        push_word( adapter.get_balance(va) );
         break;
       case origin_opcode:
         logger << "op origin" << std::endl;
@@ -623,46 +615,26 @@ namespace machine
         break;
       case extcodesize_opcode:
         logger << "op extcodesize" << std::endl;
-        sv = stack.front(); // addr
-        ss = boost::get<std::string>(&sv);
-        if (ss)
-        {
-          stack.pop_front();
-          ext_contract_code = adapter.get_code_at_addr(*ss);
-          push_word( sizeof(ext_contract_code) / sizeof(ext_contract_code[0]) );
-        }
-        else
-        {
-          state = machine_state::error;
-          error_message.emplace("Extcodesize operation type error");
-        }
+        va = pop_word(); // Address
+        ext_contract_code = adapter.get_code_at_addr(va);
+        push_word( sizeof(ext_contract_code) / sizeof(ext_contract_code[0]) );
         break;
       case extcodecopy_opcode:
         logger << "op extcodecopy" << std::endl;
-        sv = stack.front(); // addr
-        ss = boost::get<std::string>(&sv);
-        if (ss)
-        {
-          stack.pop_front();
-          ext_contract_code = adapter.get_code_at_addr(*ss);
-          code_size = sizeof(ext_contract_code) / sizeof(ext_contract_code[0]);
-          dest_offset = static_cast<size_t>( pop_word() );
-          offset = static_cast<size_t>( pop_word() );
-          length = static_cast<size_t>( pop_word() );
+        va = pop_word(); // address
+        ext_contract_code = adapter.get_code_at_addr(va);
+        code_size = sizeof(ext_contract_code) / sizeof(ext_contract_code[0]);
+        dest_offset = static_cast<size_t>( pop_word() );
+        offset = static_cast<size_t>( pop_word() );
+        length = static_cast<size_t>( pop_word() );
 
-          if ((offset + length) > code_size) {
-            logger << "codecopy end index exceeds external contract code length" << std::endl;
-            break;
-          }
+        if ((offset + length) > code_size) {
+          logger << "codecopy end index exceeds external contract code length" << std::endl;
+          break;
+        }
 
-          for (size_t i = 0; i < length; ++i)
-            memory[dest_offset + i] = ext_contract_code[offset + i];
-        }
-        else
-        {
-          state = machine_state::error;
-          error_message.emplace("Extcodecopy operation type error");
-        }
+        for (size_t i = 0; i < length; ++i)
+          memory[dest_offset + i] = ext_contract_code[offset + i];
 
         break;
       case returndatasize_opcode:
@@ -723,6 +695,10 @@ namespace machine
       case energylimit_opcode:
         logger << "op energylimit" << std::endl;
         push_word( ctx.block_energylimit );
+        break;
+      case selfbalance_opcode:
+        logger << "op selfbalance" << std::endl;
+        push_word( adapter.get_balance(msg.destination) );
         break;
       case pop_opcode:
         logger << "op pop" << std::endl;
@@ -820,38 +796,16 @@ namespace machine
         break;
       case sload_opcode:
         logger << "op sload" << std::endl;
-        sv = stack.front();
-        stack.pop_front();
-        if (big_word* it = boost::get<big_word>(&sv))
-        {
-          va = adapter.get_storage(*it);
-        }
-        else {
-          throw; // TODO
-        }
-        push_word(va);
+        va = pop_word();
+        vb = adapter.get_storage(va);
+
+        push_word(vb);
         break;
       case sstore_opcode:
         logger << "op sstore" << std::endl;
-        sv = stack.front();
-        stack.pop_front();
-        if (big_word* it = boost::get<big_word>(&sv))
-        {
-          va = *it;
-        }
-        else {
-          throw; // TODO
-        }
+        va = pop_word();
+        vb = pop_word();
 
-        sv = stack.front();
-        stack.pop_front();
-        if (big_word* it = boost::get<big_word>(&sv))
-        {
-          vb = *it;
-        }
-        else {
-          throw; // TODO
-        }
         adapter.set_storage(va, vb);
         break;
       case jump_opcode:
@@ -2753,7 +2707,7 @@ namespace machine
         vb = pop_word(); // offset
         vc = pop_word(); // length
 
-        for (size_t i = static_cast<size_t>(vb); i < static_cast<size_t>(vc); i++) {
+        for (size_t i = static_cast<size_t>(vb); i < static_cast<size_t>(vb) + static_cast<size_t>(vc); i++) {
           std::map<size_t,word>::iterator it;
           it = memory.find(i);
           if (it != memory.end()) {
@@ -2770,41 +2724,27 @@ namespace machine
         logger << "op call" << std::endl;
         va = pop_word(); // energy
 
-        sv = stack.front(); // addr
-        ss = boost::get<std::string>(&sv);
-        if (ss)
-        {
-          stack.pop_front();
-          vb = pop_word(); // value
-          vc = pop_word(); // argsOffset
-          vd = pop_word(); // argsLength
-          ve = pop_word(); // retOffset
-          vf = pop_word(); // retLength
+        vb = pop_word(); // address
+        vc = pop_word(); // value
+        vd = pop_word(); // argsOffset
+        ve = pop_word(); // argsLength
+        vf = pop_word(); // retOffset
+        vg = pop_word(); // retLength
 
-          for (size_t i = static_cast<size_t>(vc); i < static_cast<size_t>(vd); i++) {
-            std::map<size_t,word>::iterator it;
-            it = memory.find(i);
-            if (it != memory.end()) {
-              contract_args.push_back(it->second);
-            }
-            else {
-              contract_args.push_back(word(0));
-            }
+        for (size_t i = static_cast<size_t>(vd); i < static_cast<size_t>(vd) + static_cast<size_t>(ve); i++) {
+          std::map<size_t,word>::iterator it;
+          it = memory.find(i);
+          if (it != memory.end()) {
+            contract_args.push_back(it->second);
           }
-
-          std::vector<word> contract_call_return = adapter.contract_call(*ss, static_cast<uint64_t>(va), vb, contract_args);
-
-          for (size_t i = 0; i < static_cast<size_t>(vf); i++)
-            memory[static_cast<size_t>(ve) + i] = contract_call_return[i];
-
-          // TODO revise stack return value?
-          push_word("Success"); // success
+          else {
+            contract_args.push_back(word(0));
+          }
         }
-        else {
-          push_word("Failure"); // success
-          state = machine_state::error;
-          error_message.emplace("Call operation type error");
-        }
+
+        contract_call_return = adapter.contract_call(vb, static_cast<uint64_t>(va), vc, contract_args);
+
+        push_word(big_word(contract_call_return.first));
         break;
       case callcode_opcode:
         logger << "op callcode" << std::endl;
@@ -2952,40 +2892,31 @@ namespace machine
         logger << "op staticcall" << std::endl;
         va = pop_word(); // energy
 
-        sv = stack.front(); // addr
-        ss = boost::get<std::string>(&sv);
-        if (ss)
-        {
-          stack.pop_front();
-          vb = pop_word(); // argsOffset
-          vc = pop_word(); // argsLength
-          vd = pop_word(); // retOffset
-          ve = pop_word(); // retLength
+        vb = pop_word(); // address
+        vc = pop_word(); // argsOffset
+        vd = pop_word(); // argsLength
+        ve = pop_word(); // retOffset
+        vf = pop_word(); // retLength
 
-          for (size_t i = static_cast<size_t>(vb); i < static_cast<size_t>(vc); i++) {
-            std::map<size_t,word>::iterator it;
-            it = memory.find(i);
-            if (it != memory.end()) {
-              contract_args.push_back(it->second);
-            }
-            else {
-              contract_args.push_back(word(0));
-            }
+        for (size_t i = static_cast<size_t>(vc); i < static_cast<size_t>(vc) + static_cast<size_t>(vd); i++) {
+          std::map<size_t,word>::iterator it;
+          it = memory.find(i);
+          if (it != memory.end()) {
+            contract_args.push_back(it->second);
           }
-
-          std::vector<word> contract_staticcall_return = adapter.contract_staticcall(*ss, static_cast<uint64_t>(va), contract_args);
-
-          for (size_t i = 0; i < static_cast<size_t>(ve); i++)
-            memory[static_cast<size_t>(vd) + i] = contract_staticcall_return[i];
-
-          // TODO revise stack return value?
-          push_word("Success"); // success
+          else {
+            contract_args.push_back(word(0));
+          }
         }
-        else {
-          push_word("Failure"); // success
-          state = machine_state::error;
-          error_message.emplace("Staticcall operation type error");
-        }
+
+        contract_call_return = adapter.contract_staticcall(vb, static_cast<uint64_t>(va), contract_args);
+
+        ext_return_data = contract_call_return.second;
+
+        for (size_t i = 0; i < static_cast<size_t>(vf); i++)
+          memory[static_cast<size_t>(ve) + i] = contract_call_return.second[i];
+
+        push_word(big_word(contract_call_return.first));
         break;
       case revert_opcode:
         logger << "op revert" << std::endl;

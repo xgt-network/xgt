@@ -1051,7 +1051,7 @@ fc::ripemd160 make_contract_hash(const wallet_name_type& owner, const vector<cha
 }
 
 // Forward declaration
-machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<fc::sha256, fc::sha256>& storage);
+machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type owner, wallet_name_type caller, wallet_name_type contract_wallet, contract_hash_type contract_hash, map<fc::sha256, fc::sha256>& storage);
 
 std::map< uint64_t, std::function<int64_t(machine::machine& m)> > energy_cost {
  // [] == scoped variables, () == params, -> optional return type, {} == function body
@@ -1104,6 +1104,7 @@ std::map< uint64_t, std::function<int64_t(machine::machine& m)> > energy_cost {
  {machine::number_opcode, [](machine::machine& m){ return 2; }},
  {machine::difficulty_opcode, [](machine::machine& m){ return 2; }},
  {machine::energylimit_opcode, [](machine::machine& m){ return 2; }},
+ {machine::selfbalance_opcode, [](machine::machine& m){ return 0; }}, // TODO not yet implemented
  {machine::pop_opcode, [](machine::machine& m){ return 3; }},
  {machine::mload_opcode, [](machine::machine& m){ return 3; }},
  {machine::mstore_opcode, [](machine::machine& m){ return 3; }},
@@ -1211,20 +1212,57 @@ boost::multiprecision::uint256_t address_to_uint256_t(const std::string& base58s
    return x;
 };
 
+const wallet_object& wallet_create(chain::database& _db)
+{
+   fc::ecc::private_key recovery_privkey = generate_random_private_key();
+   fc::ecc::public_key recovery_pubkey = recovery_privkey.get_public_key();
+   fc::ecc::private_key money_privkey = generate_random_private_key();
+   fc::ecc::public_key money_pubkey = money_privkey.get_public_key();
+   fc::ecc::private_key social_privkey = generate_random_private_key();
+   fc::ecc::public_key social_pubkey = social_privkey.get_public_key();
+   fc::ecc::private_key memo_privkey = generate_random_private_key();
+   fc::ecc::public_key memo_pubkey = memo_privkey.get_public_key();
+   std::vector<public_key_type> recovery_pubkeys = {recovery_pubkey};
+   const auto& props = _db.get_dynamic_global_properties();
+
+   string wallet_name = wallet_create_operation::get_wallet_name(recovery_pubkeys);
+
+   const wallet_object& wallet = _db.create< wallet_object >( [&]( wallet_object& w )
+   {
+      initialize_wallet_object( w, wallet_name, memo_pubkey, props, false /*mined*/, XGT_INIT_MINER_NAME, _db.get_hardfork() );
+   });
+
+   _db.create< account_authority_object >( [&]( account_authority_object& auth )
+   {
+      auth.account = wallet_name;
+      auth.recovery.weight_threshold = 1;
+      auth.recovery.add_authority((public_key_type)recovery_pubkey, 1);
+      auth.money.weight_threshold = 1;
+      auth.money.add_authority((public_key_type)money_pubkey, 1);
+      auth.social.weight_threshold = 1;
+      auth.social.add_authority((public_key_type)social_pubkey, 1);
+      auth.last_recovery_update = fc::time_point_sec::min();
+   });
+
+   return wallet;
+}
+
 std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_type o, wallet_name_type caller, contract_hash_type contract_hash, uint64_t value, uint64_t energy, std::vector<machine::word> args, map< fc::sha256, fc::sha256 >& storage)
 {
    wlog("contract_invoke another contract ${w}", ("w",contract_hash));
    const auto& c = _db.get_contract(contract_hash);
-   const std::string& address_ref = std::string(caller);
+   const std::string& caller_address_ref = std::string(caller);
+   const std::string& destination_address_ref = std::string(c.wallet);
 
-   boost::multiprecision::uint256_t converted_address = address_to_uint256_t(address_ref);
+   boost::multiprecision::uint256_t converted_caller = address_to_uint256_t(caller_address_ref);
+   boost::multiprecision::uint256_t converted_destination = address_to_uint256_t(destination_address_ref);
 
    machine::message msg = {
       0,
       0,
       int64_t(energy),
-      converted_address,
-      converted_address,
+      converted_caller,
+      converted_destination,
       value,
       args.size(),
       args,
@@ -1237,8 +1275,8 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
    const uint64_t block_difficulty = static_cast<uint64_t>( _db.get_pow_summary_target() );
    const uint64_t block_energylimit = 0;
    const uint64_t tx_energyprice = 0;
-   std::string tx_origin = caller;
-   std::string block_coinbase = caller; // verify this
+   std::string tx_origin = caller; // TODO update this to
+   std::string block_coinbase = caller; // TODO update this to this block's miner
 
    machine::context ctx = {
       is_debug,
@@ -1254,7 +1292,7 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
    int64_t energy_cost_incurred = 0;
 
    std::vector<machine::word> code(c.code.begin(), c.code.end());
-   machine::chain_adapter adapter = make_chain_adapter(_db, c.owner, tx_origin, contract_hash, storage);
+   machine::chain_adapter adapter = make_chain_adapter(_db, o, caller, c.wallet, contract_hash, storage);
    machine::machine m(ctx, code, msg, adapter);
 
    std::string line;
@@ -1283,6 +1321,23 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
       w.energybar.use_energy( energy_cost_incurred );
    });
 
+   // Transfer value (C_xfer) if callvalue != 0
+   // TODO XXX Value is dramatically adjusted for test purposes...
+   // Ethereum wei values are significantly larger than XGT g values
+   // 1 Ether = 1,000,000,000,000,000,000 wei
+   // 1 XGT   =               100,000,000 g
+   if (value != 0) {
+      auto callvalue = asset( value / 1000000000, XGT_SYMBOL );
+
+      const auto& contract_wallet = _db.get_account(c.wallet);
+
+      _db.adjust_balance( contract_wallet, callvalue );
+
+      const auto& caller_wallet = _db.get_account(caller);
+
+      _db.adjust_balance( caller_wallet, -callvalue );
+   }
+
    // TODO make return value public in machine
    wlog("contract_invoke return value ${w}", ("w",m.get_return_value()));
    return m.get_return_value();
@@ -1291,22 +1346,32 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
 void contract_create_evaluator::do_apply( const contract_create_operation& op )
 {
    wlog("!!!!!! contract_create owner ${w} code size ${y}", ("w",op.owner)("y",op.code.size()));
+
+   const auto& contract_wallet = wallet_create(_db);
+
    auto base_contract = _db.create< contract_object >( [&](contract_object& c)
    {
       c.contract_hash = make_contract_hash(op.owner, op.code);
       wlog("!!!!!! contract_create contract_hash ${c}", ("c",c.contract_hash));
+      c.wallet = contract_wallet.name;
       c.owner = op.owner;
       c.code = op.code;
    });
 
-   const contract_storage_object* cs = _db.find_contract_storage(base_contract.contract_hash, op.owner);
-   map< fc::sha256, fc::sha256 > storage;
-   if (cs)
-     storage = cs->data;
-   else
-     storage = map< fc::sha256, fc::sha256 >();
+   auto storage = map< fc::sha256, fc::sha256 >();
+   _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+      cs.contract = base_contract.contract_hash;
+      cs.caller = op.owner;
+      cs.data = storage;
+   });
+
    auto machine_return = contract_invoke(_db, op.owner, op.owner, base_contract.contract_hash, 0, 0, {}, storage);
    std::vector<char> result(machine_return.begin(), machine_return.end());
+
+   const contract_storage_object* cs = _db.find_contract_storage(base_contract.contract_hash, op.owner);
+   _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
+      cs.data = storage;
+   });
 
    const auto& contract = _db.get_contract(base_contract.contract_hash);
    _db.modify< contract_object >(contract, [&](contract_object& c) {
@@ -1328,10 +1393,8 @@ std::string inspect(std::vector<machine::word> words)
    return ss.str();
 }
 
-machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type o, wallet_name_type c, contract_hash_type contract_hash, map<fc::sha256, fc::sha256>& storage)
+machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type owner, wallet_name_type caller, wallet_name_type contract_wallet, contract_hash_type contract_hash, map<fc::sha256, fc::sha256>& storage)
 {
-  std::string owner(o);
-  std::string caller(c);
 
   std::function< std::string(std::vector<machine::word>) > sha3 = [&](std::vector<machine::word> memory) -> std::string
   {
@@ -1352,10 +1415,13 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return ss.str();
   };
 
-  std::function< uint64_t(std::string) > get_balance = [&](std::string address_ripemd160) -> uint64_t
+  std::function< machine::big_word(machine::big_word) > get_balance = [&](machine::big_word address_ripemd160) -> machine::big_word
   {
-    auto& wallet = _db.get_account_by_ripemd160(address_ripemd160);
-    return static_cast<uint64_t>(wallet.balance.amount.value);
+    std::stringstream ss;
+    ss << std::hex << address_ripemd160;
+    const address_ripemd160_type r160 = ss.str();
+    auto& wallet = _db.get_account_by_ripemd160(r160);
+    return static_cast<machine::big_word>(wallet.balance.amount.value);
   };
 
   std::function< std::string(std::string) > get_code_hash = [&](std::string address) -> std::string
@@ -1384,49 +1450,155 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return item;
   };
 
-  std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [&](std::string address) -> std::vector<machine::word>
+  std::function< std::vector<machine::word>(machine::big_word) > get_code_at_addr = [&](machine::big_word address) -> std::vector<machine::word>
   {
-    const chain::contract_object& contract = _db.get_contract(fc::ripemd160(address));
+    std::stringstream ss;
+    ss << std::hex << address;
+    const address_ripemd160_type r160 = ss.str();
+    const auto& contract_wallet_account = _db.get_account_by_ripemd160(r160);
+    const contract_object& contract = _db.get_contract_by_wallet(contract_wallet_account.name);
+
     return std::vector<unsigned char>(contract.code.begin(), contract.code.end());
   };
 
-  std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [&](std::vector<machine::word> memory, machine::big_word value) -> std::string
+  std::function< machine::big_word(std::vector<machine::word>, machine::big_word) > contract_create = [&, caller, contract_hash](std::vector<machine::word> memory, machine::big_word value) -> machine::big_word
   {
-    // TODO value argument is amount of energy to load contract with
-    fc::ripemd160 contract_hash = generate_random_ripemd160();
-    chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c) {
-      c.contract_hash = contract_hash;
-      c.owner = owner;
-      c.code = reinterpret_cast< std::vector<char>& >(memory);
-    });
-    return contract_hash.str();
+    const wallet_name_type sender_address = _db.get_contract(contract_hash).wallet;
+    const auto& caller_contract_wallet = _db.get_account(sender_address);
+
+    // TODO XXX Create wallet for contract
+
+    if (caller_contract_wallet.balance.amount.value >= value) {
+      fc::ripemd160 new_contract_hash = generate_random_ripemd160();
+      const wallet_object& contract_wallet_account = wallet_create(_db);
+      chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c) {
+          c.contract_hash = new_contract_hash;
+          c.owner = sender_address;
+          c.code = reinterpret_cast< std::vector<char>& >(memory);
+          c.wallet = contract_wallet_account.name;
+      });
+
+      if (value != 0) {
+        // TODO XXX value is set to be compatible with eth value, needs to be adjusted
+        auto callvalue = asset( value, XGT_SYMBOL );
+        // TODO this should be the calling contract's wallet
+        _db.adjust_balance( caller_contract_wallet, -callvalue );
+        _db.adjust_balance( contract.wallet, callvalue );
+      }
+
+      // Convert new contract's wallet address to uint256_t (big_word)
+      const std::string& address_ref = std::string(contract.wallet);
+      boost::multiprecision::uint256_t new_contract_wallet_address = address_to_uint256_t(address_ref);
+
+      return new_contract_wallet_address;
+    }
+    else {
+      return 0;
+    }
   };
 
-  std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [&](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
+  std::function< std::pair< machine::word, std::vector<machine::word> >(machine::big_word, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [&](machine::big_word address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::pair< machine::word, std::vector<machine::word> >
   {
-     const contract_storage_object* cs = _db.find_contract_storage(contract_hash, caller);
-     map< fc::sha256, fc::sha256 > storage;
-     if (cs)
-       storage = cs->data;
-     else
-       storage = map< fc::sha256, fc::sha256 >();
+     // TODO Implement call depth limit
+     // TODO Refactor get_account_by_ripemd160 flow
+     std::stringstream ss;
+     // ss << std::hex << address;
+     ss << std::hex << address;
+     const address_ripemd160_type r160 = ss.str();
+     const wallet_object* wallet = _db.find_account_by_ripemd160(r160);
 
-     auto result = contract_invoke(_db, o, c, contract_hash, energy, static_cast<uint64_t>(value), args, storage);
+     // TODO C_NEW if (wallet does not exist) { create new account } else { retrieve existing wallet }
+     if (wallet != nullptr) {
+        std::cout << "wallet exists" << std::endl;
+     } else {
+        ss << std::hex << contract_create(args, value);
+        // const address_ripemd160_type new_r160 = ss.str();
+        // const wallet_object* new_wallet = _db.find_account_by_ripemd160(new_r160);
+     }
 
-     if (cs)
-        _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
-          cs.contract = contract_hash;
-          cs.caller = caller;
-          cs.data = storage;
-        });
-     else
-        _db.create< contract_storage_object >([&](contract_storage_object& cs) {
-          cs.contract = contract_hash;
-          cs.caller = caller;
-          cs.data = storage;
-        });
+     if (value != 0) {
+       // C_XFER
+       const auto& caller_contract_wallet = _db.get_account(owner);
 
-     return result;
+       if (caller_contract_wallet.balance.amount.value >= value) {
+         // TODO XXX value is set to be compatible with eth value, needs to be adjusted
+         auto callvalue = asset( value, XGT_SYMBOL );
+         // TODO this should be the calling contract's wallet
+         const auto& caller_contract_wallet = _db.get_account(owner);
+         _db.adjust_balance( caller_contract_wallet, -callvalue );
+         _db.adjust_balance( *wallet, callvalue );
+       } else {
+         std::vector<machine::word> contract_return;
+         return std::make_pair(0, contract_return);
+       }
+     }
+
+     // TODO C_EXTRA get code at wallet address
+
+     // TODO C_CALL if (code length == 0) { result = 0; } else { create a new
+     // contract object using the code from address, along with new contract storage object;
+     // result = contract_invoke(new_contract);
+     // }
+     fc::ripemd160 contract_hash = generate_random_ripemd160();
+     chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c) {
+         c.contract_hash = contract_hash;
+         c.owner = owner;
+         // TODO Get code at address
+         c.code = reinterpret_cast< std::vector<char>& >(args);
+     });
+
+     machine::word result = 1;
+
+     // 1. Calculate energy cost
+     // 2. Value transfer if wallet exists, otherwise create wallet
+     // 3. Execute contract at address if code is not null
+     // 4. Return output of contract execution
+     //
+     //
+     // C_CALL
+     // C_CALLGAS
+     // C_GASCAP
+     // C_EXTRA
+     // C_XFER
+     // C_NEW
+
+     // // Get contract at addr
+     // const contract_object& contract = _db.get_contract_by_wallet(dest);
+     // // If addr matches a contract, continue contract execution
+     // if (contract) {
+     //    const contract_hash_type& c_hash= contract.contract_hash;
+
+     //    // TODO is caller the contract calling this function or the wallet calling the original contract?
+     //    const contract_storage_object* cs = _db.find_contract_storage(c_hash, caller);
+
+     //    map< fc::sha256, fc::sha256 > storage;
+     //    if (cs)
+     //      storage = cs->data;
+     //    else
+     //      storage = map< fc::sha256, fc::sha256 >();
+
+     //    // c_call, c_callgas
+     //    auto result = contract_invoke(_db, dest, c, c_hash, static_cast<uint64_t>(value), energy, args, storage);
+
+     //    // c_extra
+     //    if (cs)
+     //       _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
+     //         cs.contract = c_hash;
+     //         cs.caller = caller;
+     //         cs.data = storage;
+     //       });
+     //    else
+     //       _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+     //         cs.contract = c_hash;
+     //         cs.caller = caller;
+     //         cs.data = storage;
+     //       });
+     // } else {
+     // }
+
+     // TODO update to staticcall return
+     std::vector<machine::word> contract_return;
+     return std::make_pair(result, contract_return);
   };
 
   std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_callcode = [&](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
@@ -1437,48 +1609,110 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_delegatecall = [&](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
   {
-     const contract_storage_object* cs = _db.find_contract_storage(contract_hash, c); // TODO: Verify `c` is correct
+     const contract_storage_object* cs = _db.find_contract_storage(contract_hash, caller); // TODO: Verify `c` is correct
      map< fc::sha256, fc::sha256 > storage;
      if (cs)
        storage = cs->data;
      else
        storage = map< fc::sha256, fc::sha256 >();
 
-     auto result = contract_invoke(_db, o, c, contract_hash, energy, 0, args, storage);
+     auto result = contract_invoke(_db, owner, caller, contract_hash, 0, energy, args, storage);
 
      if (cs)
         _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
           cs.contract = contract_hash;
-          cs.caller = c;
+          cs.caller = caller;
           cs.data = storage;
         });
      else
         _db.create< contract_storage_object >([&](contract_storage_object& cs) {
           cs.contract = contract_hash;
-          cs.caller = c;
+          cs.caller = caller;
           cs.data = storage;
         });
 
      return result;
   };
 
-  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [&](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
+  std::function< std::pair< machine::word, std::vector<machine::word> >(machine::big_word, uint64_t, std::vector<machine::word>) > contract_staticcall = [&, caller, contract_hash](machine::big_word address, uint64_t energy, std::vector<machine::word> args) -> std::pair< machine::word, std::vector<machine::word> >
   {
-     map< fc::sha256, fc::sha256 > storage; // Should this be empty, or just immutable for `staticcall`?
-     auto result = contract_invoke(_db, o, c, contract_hash, energy, 0, args, storage);
-     return result;
+     contract_hash_type new_contract_hash;
+
+     std::stringstream ss;
+     ss << std::hex << address;
+     address_ripemd160_type r160 = ss.str();
+     const wallet_object* wallet = _db.find_account_by_ripemd160(r160);
+
+     if (wallet != nullptr) {
+        new_contract_hash = _db.get_contract_by_wallet(wallet->name).contract_hash;
+     } else {
+        ss << std::hex << contract_create(args, 0);
+        r160 = ss.str();
+        new_contract_hash = _db.get_contract_by_wallet( r160 ).contract_hash;
+     }
+
+     const contract_storage_object* cs = _db.find_contract_storage(new_contract_hash, owner);
+
+     map< fc::sha256, fc::sha256 > storage;
+     if (cs != nullptr) {
+        storage = cs->data;
+     }
+     else {
+        storage = map< fc::sha256, fc::sha256 >();
+     }
+
+     _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+        cs.contract = new_contract_hash;
+        cs.caller = owner;
+        cs.data = storage;
+     });
+
+     const wallet_name_type sender_address = _db.get_contract(contract_hash).wallet;
+
+     // TODO Exceptions should occupy return_value in the case of contract invoke failure (result == 0)
+     std::vector<machine::word> base_contract_return = contract_invoke(_db, owner, sender_address, new_contract_hash, 0, 0, {}, storage);
+     std::vector<char> result(base_contract_return.begin(), base_contract_return.end());
+
+     cs = _db.find_contract_storage(new_contract_hash, owner);
+     _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
+        cs.data = storage;
+     });
+
+     const auto& contract = _db.get_contract(new_contract_hash);
+     _db.modify< contract_object >(contract, [&](contract_object& co) {
+       co.code = result;
+     });
+
+     std::vector<machine::word> contract_return = contract_invoke(_db, owner, sender_address, new_contract_hash, 0, energy, args, storage);
+
+     if (cs != nullptr) {
+        _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
+           cs.contract = new_contract_hash;
+           cs.caller = owner;
+           cs.data = storage;
+        });
+     }
+     else {
+        _db.create< contract_storage_object >([&](contract_storage_object& cs) {
+           cs.contract = new_contract_hash;
+           cs.caller = owner;
+           cs.data = storage;
+        });
+     }
+
+     return std::make_pair(machine::word(1), contract_return);
   };
 
-  std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [&_db, &owner](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
+  std::function< machine::big_word(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [&_db, owner](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> machine::big_word
   {
     // TODO: https://github.com/ethereum/EIPs/blob/master/EIPS/eip-1014.md
-    chain::contract_object contract = _db.create< contract_object >( [&](contract_object& c)
+    chain::contract_object contract = _db.create< contract_object >( [&](contract_object& co)
     {
-        //c.contract_hash = generate_random_ripemd160();
-        c.owner = owner;
-        //c.code = memory;
+        //co.contract_hash = generate_random_ripemd160();
+        co.owner = owner;
+        //co.code = memory;
     });
-    return "";
+    return 0;
   };
 
   std::function< bool(std::vector<machine::word>) > revert = [&](std::vector<machine::word> memory) -> bool
@@ -1505,7 +1739,27 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
 
   std::function< bool(std::string) > self_destruct = [&](std::string address) -> bool
   {
-    contract_object contract = _db.get_contract(fc::ripemd160(address));
+    // TODO send all funds from contract to address
+    //
+    std::stringstream ss;
+    ss << std::hex << address;
+    const address_ripemd160_type r160 = ss.str();
+    const auto& destination_wallet = _db.get_account_by_ripemd160(r160);
+    // const contract_object& contract = _db.get_contract(contract_hash);
+
+    const auto& caller_contract_wallet = _db.get_account(owner);
+
+    const auto value = caller_contract_wallet.balance.amount.value;
+
+    if (value != 0) {
+       // TODO XXX value is set to be compatible with eth value, needs to be adjusted
+       auto callvalue = asset( value, XGT_SYMBOL );
+       // TODO this should be the calling contract's wallet
+       _db.adjust_balance( caller_contract_wallet, -callvalue );
+       _db.adjust_balance( destination_wallet, callvalue );
+    }
+
+    contract_object contract = _db.get_contract_by_wallet(owner);
     _db.remove(contract);
 
     return true;
@@ -1522,7 +1776,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     _db.create< contract_log_object >( [&](contract_log_object& cl)
     {
       cl.contract_hash = contract_hash;
-      cl.owner = o;
+      cl.owner = owner;
       cl.topics.reserve(log.topics.size());
       for (auto topic : log.topics)
          cl.topics.push_back(_db.bigint_to_hash(topic));
@@ -1562,7 +1816,7 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
    const auto& c = _db.get_contract(contract_hash);
    uint64_t energy = 0; // TODO
 
-   const contract_storage_object* cs = _db.find_contract_storage(contract_hash, op.caller);
+   const contract_storage_object* cs = _db.find_contract_storage(contract_hash, c.owner);
 
    map< fc::sha256, fc::sha256 > storage;
    if (cs != nullptr) {
@@ -1574,19 +1828,19 @@ void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
 
    std::vector<unsigned char> unsigned_args;
    std::copy(op.args.begin(), op.args.end(), std::back_inserter(unsigned_args));
-   auto result = contract_invoke(_db, c.owner, op.caller, contract_hash, energy, op.value, unsigned_args, storage);
+   auto result = contract_invoke(_db, c.owner, op.caller, contract_hash, op.value, energy, unsigned_args, storage);
 
    if (cs != nullptr) {
       _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
          cs.contract = contract_hash;
-         cs.caller = op.caller;
+         cs.caller = c.owner;
          cs.data = storage;
       });
    }
    else {
       _db.create< contract_storage_object >([&](contract_storage_object& cs) {
          cs.contract = contract_hash;
-         cs.caller = op.caller;
+         cs.caller = c.owner;
          cs.data = storage;
       });
    }

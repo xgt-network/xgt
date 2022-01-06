@@ -60,7 +60,7 @@ machine::chain_adapter make_chain_adapter()
     return 0;
   };
 
-  std::function< uint64_t(std::string) > get_balance = [](std::string address_ripemd160) -> uint64_t
+  std::function< machine::big_word(machine::big_word) > get_balance = [](machine::big_word address_ripemd160) -> machine::big_word
   {
     return 0;
   };
@@ -75,17 +75,17 @@ machine::chain_adapter make_chain_adapter()
     return {};
   };
 
-  std::function< std::vector<machine::word>(std::string) > get_code_at_addr = [](std::string address) -> std::vector<machine::word>
+  std::function< std::vector<machine::word>(machine::big_word) > get_code_at_addr = [](machine::big_word address) -> std::vector<machine::word>
   {
     return {};
   };
 
-  std::function< std::string(std::vector<machine::word>, machine::big_word) > contract_create = [](std::vector<machine::word> memory, machine::big_word value) -> std::string
+  std::function< machine::big_word(std::vector<machine::word>, machine::big_word) > contract_create = [](std::vector<machine::word> memory, machine::big_word value) -> machine::big_word
   {
     return {};
   };
 
-  std::function< std::vector<machine::word>(std::string, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [](std::string address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::vector<machine::word>
+  std::function< std::pair< machine::word, std::vector<machine::word> >(machine::big_word, uint64_t, machine::big_word, std::vector<machine::word>) > contract_call = [](machine::big_word address, uint64_t energy, machine::big_word value, std::vector<machine::word> args) -> std::pair< machine::word, std::vector<machine::word> >
   {
     return {};
   };
@@ -100,12 +100,12 @@ machine::chain_adapter make_chain_adapter()
     return {};
   };
 
-  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_staticcall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
+  std::function< std::pair< machine::word, std::vector<machine::word> >(machine::big_word, uint64_t, std::vector<machine::word>) > contract_staticcall = [](machine::big_word address, uint64_t energy, std::vector<machine::word> args) -> std::pair< machine::word, std::vector<machine::word> >
   {
     return {};
   };
 
-  std::function< std::string(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> std::string
+  std::function< machine::big_word(std::vector<machine::word>, machine::big_word, std::string) > contract_create2 = [](std::vector<machine::word> memory, machine::big_word value, std::string salt) -> machine::big_word
   {
     return {};
   };
