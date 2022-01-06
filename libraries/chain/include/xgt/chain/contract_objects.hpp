@@ -22,11 +22,13 @@ namespace xgt { namespace chain {
       contract_id_type id;
       wallet_name_type owner; // Creator of wallet
       contract_hash_type contract_hash;
+      wallet_name_type wallet;
       vector<char> code;
    };
 
    struct by_id;
    struct by_contract_hash;
+   struct by_wallet;
    struct by_owner_and_contract_hash;
 
    typedef multi_index_container<
@@ -34,6 +36,7 @@ namespace xgt { namespace chain {
       indexed_by<
          ordered_unique< tag< by_id >, member< contract_object, contract_id_type, &contract_object::id > >,
          ordered_unique< tag< by_contract_hash >, member< contract_object, contract_hash_type, &contract_object::contract_hash > >,
+         ordered_unique< tag< by_wallet >, member< contract_object, wallet_name_type, &contract_object::wallet > >,
          ordered_unique< tag< by_owner_and_contract_hash >,
             composite_key< contract_object,
                member< contract_object, wallet_name_type, &contract_object::owner >,

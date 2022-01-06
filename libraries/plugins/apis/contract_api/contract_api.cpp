@@ -72,6 +72,7 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
       ac.id = c.id;
       ac.owner = c.owner;
       ac.contract_hash = c.contract_hash;
+      ac.wallet = c.wallet;
       ac.code = c.code;
       result.contracts.push_back(ac);
       ++itr;
