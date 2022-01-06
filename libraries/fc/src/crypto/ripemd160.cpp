@@ -70,6 +70,21 @@ string ripemd160::hex_digest(const string wallet_name)
    return ss.str();
 }
 
+boost::multiprecision::uint256_t uint256_t_digest( const string wallet_name )
+{
+   std::string prefix( "XGT" );
+
+   const size_t prefix_len = prefix.size();
+   auto b58 = wallet_name.substr( prefix_len );
+   auto r160 = fc::ripemd160::hash(b58);
+
+   std::stringstream ss;
+   ss << std::hex << r160.str();
+   boost::multiprecision::uint256_t x;
+   ss >> x;
+   return x;
+}
+
 void ripemd160::encoder::write( const char* d, uint32_t dlen ) {
   RIPEMD160_Update( &my->ctx, d, dlen); 
 }

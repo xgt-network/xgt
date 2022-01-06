@@ -3,6 +3,7 @@
 #include <fc/fwd.hpp>
 #include <fc/io/raw_fwd.hpp>
 #include <fc/reflect/typename.hpp>
+#include <boost/multiprecision/cpp_int.hpp>
 
 namespace fc{
 class sha512;
@@ -25,6 +26,7 @@ class ripemd160
     static ripemd160 hash( const char* d, uint32_t dlen );
     static ripemd160 hash( const string& );
     static string hex_digest( const string wallet_name );
+    static string uint256_t_digest( const string wallet_name );
 
     template<typename T>
     static ripemd160 hash( const T& t ) 
