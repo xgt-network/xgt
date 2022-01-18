@@ -614,6 +614,16 @@ const contract_object& database::get_contract_by_wallet( const wallet_name_type&
    return get< contract_object, by_wallet >( wallet );
 } FC_CAPTURE_AND_RETHROW( (wallet) ) }
 
+const contract_object* database::find_contract( const contract_hash_type& hash )const
+{
+   return find< contract_object, by_contract_hash >( hash );
+}
+
+const contract_object* database::find_contract_by_wallet( const wallet_name_type& wallet )const
+{
+   return find< contract_object, by_wallet >( wallet );
+}
+
 const wallet_object& database::get_account( const wallet_name_type& name )const
 { try {
    return get< wallet_object, by_name >( name );

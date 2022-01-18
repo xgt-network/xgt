@@ -208,6 +208,8 @@ namespace xgt { namespace chain {
 
          const contract_object&  get_contract(  const contract_hash_type& hash )const;
          const contract_object&  get_contract_by_wallet(  const wallet_name_type& wallet )const;
+         const contract_object*  find_contract(  const contract_hash_type& hash )const;
+         const contract_object*  find_contract_by_wallet(  const wallet_name_type& wallet )const;
 
          const wallet_object&  get_account(  const wallet_name_type& name )const;
          const wallet_object&  get_account_by_ripemd160(  const address_ripemd160_type& address_ripemd160 )const;

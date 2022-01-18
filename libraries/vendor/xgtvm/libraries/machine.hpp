@@ -246,7 +246,7 @@ namespace machine
 
     // TODO call a method from another contract using the storage of the current
     // opcode -- delegatecall opcode -- address, energy, args
-    std::function< std::vector<word>(std::string, uint64_t, std::vector<word>) > contract_delegatecall;
+    std::function< std::pair< word, std::vector<word> >(big_word, uint64_t, std::vector<word>) > contract_delegatecall;
 
     // TODO call a method from another contract with state changes disallowed -- staticcall opcode -- address, energy, args
     std::function< std::pair< word, std::vector<word> >(big_word, uint64_t, std::vector<word>) > contract_staticcall;

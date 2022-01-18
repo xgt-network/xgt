@@ -68,12 +68,26 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
       if (c.owner != args.owner) break;
       wlog("!!!!!! LIST_OWNER_CONTRACTS ${w}", ("w",c.owner));
 
+      const std::string& wallet_name_ref = std::string(c.wallet);
+
+      std::string prefix( XGT_ADDRESS_PREFIX );
+
+      const size_t prefix_len = prefix.size();
+      auto b58 = wallet_name_ref.substr( prefix_len );
+      auto r160 = fc::ripemd160::hash(b58);
+
+      std::stringstream ss;
+      ss << std::hex << r160.str();
+      std::string en_address;
+      ss >> en_address;
+
       api_contract_object ac;
       ac.id = c.id;
       ac.owner = c.owner;
       ac.contract_hash = c.contract_hash;
       ac.wallet = c.wallet;
       ac.code = c.code;
+      ac.en_address = en_address;
       result.contracts.push_back(ac);
       ++itr;
    }

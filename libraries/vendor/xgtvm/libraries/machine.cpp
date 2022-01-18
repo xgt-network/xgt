@@ -2744,6 +2744,13 @@ namespace machine
 
         contract_call_return = adapter.contract_call(vb, static_cast<uint64_t>(va), vc, contract_args);
 
+        if (contract_call_return.second.size() > 0) {
+          ext_return_data = contract_call_return.second;
+
+          for (size_t i = 0; i < static_cast<size_t>(vf); i++)
+            memory[static_cast<size_t>(ve) + i] = contract_call_return.second[i];
+        }
+
         push_word(big_word(contract_call_return.first));
         break;
       case callcode_opcode:
@@ -2822,41 +2829,33 @@ namespace machine
       case delegatecall_opcode:
         logger << "op delegatecall" << std::endl;
         va = pop_word(); // energy
+        vb = pop_word(); // addr
+        vc = pop_word(); // argsOffset
+        vd = pop_word(); // argsLength
+        ve = pop_word(); // retOffset
+        vf = pop_word(); // retLength
 
-        sv = stack.front(); // addr
-        ss = boost::get<std::string>(&sv);
-        if (ss)
-        {
-          stack.pop_front();
-          vb = pop_word(); // argsOffset
-          vc = pop_word(); // argsLength
-          vd = pop_word(); // retOffset
-          ve = pop_word(); // retLength
-
-          for (size_t i = static_cast<size_t>(va); i < static_cast<size_t>(vb); i++) {
-            std::map<size_t,word>::iterator it;
-            it = memory.find(i);
-            if (it != memory.end()) {
-              contract_args.push_back(it->second);
-            }
-            else {
-              contract_args.push_back(word(0));
-            }
+        for (size_t i = static_cast<size_t>(vc); i < static_cast<size_t>(vc) + static_cast<size_t>(vd); i++) {
+          std::map<size_t,word>::iterator it;
+          it = memory.find(i);
+          if (it != memory.end()) {
+            contract_args.push_back(it->second);
           }
-
-          std::vector<word> contract_delegatecall_return = adapter.contract_delegatecall(*ss, static_cast<uint64_t>(va), contract_args);
-
-          for (size_t i = 0; i < static_cast<size_t>(ve); i++)
-            memory[static_cast<size_t>(vd) + i] = contract_delegatecall_return[i];
-
-          // TODO revise stack return value?
-          push_word("Success"); // success
+          else {
+            contract_args.push_back(word(0));
+          }
         }
-        else {
-          push_word("Failure"); // success
-          state = machine_state::error;
-          error_message.emplace("Delegatecall operation type error");
+
+        contract_call_return = adapter.contract_delegatecall(vb, static_cast<uint64_t>(va), contract_args);
+
+        if (contract_call_return.second.size() > 0) {
+          ext_return_data = contract_call_return.second;
+
+          for (size_t i = 0; i < static_cast<size_t>(vf); i++)
+            memory[static_cast<size_t>(ve) + i] = contract_call_return.second[i];
         }
+
+        push_word(contract_call_return.first);
         break;
       case create2_opcode:
         logger << "op create2" << std::endl;

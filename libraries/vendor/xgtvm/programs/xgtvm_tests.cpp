@@ -59,7 +59,7 @@ machine::chain_adapter make_chain_adapter()
     return {};
   };
 
-  std::function< std::vector<machine::word>(std::string, uint64_t, std::vector<machine::word>) > contract_delegatecall = [](std::string address, uint64_t energy, std::vector<machine::word> args) -> std::vector<machine::word>
+  std::function< std::pair< machine::word, std::vector<machine::word> >(machine::big_word, uint64_t, std::vector<machine::word>) > contract_delegatecall = [](machine::big_word address, uint64_t energy, std::vector<machine::word> args) -> std::pair< machine::word, std::vector<machine::word> >
   {
     std::cout << "chain_adapter::contract_delegatecall" << std::endl;
     return {};
