@@ -26,7 +26,7 @@ class ripemd160
     static ripemd160 hash( const char* d, uint32_t dlen );
     static ripemd160 hash( const string& );
     static string hex_digest( const string wallet_name );
-    static string uint256_t_digest( const string wallet_name );
+    static boost::multiprecision::uint256_t uint256_t_digest( const string wallet_name );
 
     template<typename T>
     static ripemd160 hash( const T& t ) 

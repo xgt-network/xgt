@@ -492,20 +492,24 @@ namespace machine
 
         // TODO handle case where length of memory segment is 0, stack needs a 0 pushed
 
-        for (size_t i = static_cast<size_t>(va); i < static_cast<size_t>(va) + static_cast<size_t>(vb); i++) {
-          std::map<size_t,word>::iterator it;
-          it = memory.find(i);
-          if (it != memory.end()) {
-            retval.push_back(it->second);
+        if (vb == 0) {
+          push_word(0);
+        } else {
+          for (size_t i = static_cast<size_t>(va); i < static_cast<size_t>(va) + static_cast<size_t>(vb); i++) {
+            std::map<size_t,word>::iterator it;
+            it = memory.find(i);
+            if (it != memory.end()) {
+              retval.push_back(it->second);
+            }
+            else {
+              retval.push_back(word(0));
+            }
           }
-          else {
-            retval.push_back(word(0));
-          }
-        }
 
-        sstream << std::hex << adapter.sha3( retval );
-        sstream >> vc;
-        push_word( vc ); // hash
+          sstream << std::hex << adapter.sha3( retval );
+          sstream >> vc;
+          push_word( vc ); // hash
+        }
 
         break;
       case address_opcode:
@@ -2757,41 +2761,34 @@ namespace machine
         logger << "op callcode" << std::endl;
         va = pop_word(); // energy
 
-        sv = stack.front(); // addr
-        ss = boost::get<std::string>(&sv);
-        if (ss)
-        {
-          stack.pop_front();
-          vb = pop_word(); // value
-          vc = pop_word(); // argsOffset
-          vd = pop_word(); // argsLength
-          ve = pop_word(); // retOffset
-          vf = pop_word(); // retLength
+        vb = pop_word(); // address
+        vc = pop_word(); // value
+        vd = pop_word(); // argsOffset
+        ve = pop_word(); // argsLength
+        vf = pop_word(); // retOffset
+        vg = pop_word(); // retLength
 
-          for (size_t i = static_cast<size_t>(vc); i < static_cast<size_t>(vd); i++) {
-            std::map<size_t,word>::iterator it;
-            it = memory.find(i);
-            if (it != memory.end()) {
-              contract_args.push_back(it->second);
-            }
-            else {
-              contract_args.push_back(word(0));
-            }
+        for (size_t i = static_cast<size_t>(vd); i < static_cast<size_t>(vd) + static_cast<size_t>(ve); i++) {
+          std::map<size_t,word>::iterator it;
+          it = memory.find(i);
+          if (it != memory.end()) {
+            contract_args.push_back(it->second);
           }
+          else {
+            contract_args.push_back(word(0));
+          }
+        }
 
-          std::vector<word> contract_callcode_return = adapter.contract_callcode(*ss, static_cast<uint64_t>(va), vb, contract_args);
+        contract_call_return = adapter.contract_callcode(vb, static_cast<uint64_t>(va), vc, contract_args);
+
+        if (contract_call_return.second.size() > 0) {
+          ext_return_data = contract_call_return.second;
 
           for (size_t i = 0; i < static_cast<size_t>(vf); i++)
-            memory[static_cast<size_t>(ve) + i] = contract_callcode_return[i];
+            memory[static_cast<size_t>(ve) + i] = contract_call_return.second[i];
+        }
 
-          // TODO revise stack return value?
-          push_word("Success"); // success
-        }
-        else {
-          push_word("Failure"); // success
-          state = machine_state::error;
-          error_message.emplace("Callcode operation type error");
-        }
+        push_word(big_word(contract_call_return.first));
         break;
       case return_opcode:
         logger << "op return" << std::endl;
@@ -2862,30 +2859,26 @@ namespace machine
         va = pop_word(); // value
         vb = pop_word(); // offset
         vc = pop_word(); // length
+        vd = pop_word(); // salt
 
-        sv = stack.front(); // salt
-        ss = boost::get<std::string>(&sv);
-        if (ss)
-        {
-          std::vector<word> args;
-
-          for (size_t i = static_cast<size_t>(vb); i < static_cast<size_t>(vc); i++) {
-            std::map<size_t,word>::iterator it;
-            it = memory.find(i);
-            if (it != memory.end()) {
-              args.push_back(it->second);
+        for (size_t i = static_cast<size_t>(vb); i < static_cast<size_t>(vb) + static_cast<size_t>(vc); i++) {
+          std::map<size_t, word>::iterator it;
+          it = memory.find(i);
+          if (it != memory.end()) {
+            for (size_t i = 0; i < 31; i++) {
+              contract_args.push_back(word(0));
             }
-            else {
-              args.push_back(word(0));
+            contract_args.push_back(it->second);
+          }
+          else {
+            for (size_t i = 0; i < 32; i++) {
+              contract_args.push_back(word(0));
             }
           }
+        }
 
-          push_word( adapter.contract_create2( args, va, *ss ) );
-        }
-        else {
-          state = machine_state::error;
-          error_message.emplace("Create2 operation type error");
-        }
+        push_word( adapter.contract_create2( contract_args, va, vd ) );
+
         break;
       case staticcall_opcode:
         logger << "op staticcall" << std::endl;
@@ -3020,9 +3013,13 @@ namespace machine
         }
         s << "\",";
 
-        word current_instruction = code[pc];
-        opcode op = (opcode)current_instruction;
-        s << "\"opcode\":" << std::hex << op << ",";
+        if (code.size() != 0) {
+          word current_instruction = code[pc];
+          opcode op = (opcode)current_instruction;
+          s << "\"opcode\":" << std::hex << op << ",";
+        } else {
+          s << "\"opcode\":null,";
+        }
 
         if (error_message == boost::none)
           s << "\"exceptionError\":" << "null";

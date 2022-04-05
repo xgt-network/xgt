@@ -5,6 +5,8 @@ require 'json'
 require 'bigdecimal'
 require 'shellwords'
 require 'rake/testtask'
+import 'tasks/contracts.rake'
+import 'tasks/lazy_wallets.rake'
 autoload :Xgt, 'xgt/ruby'
 autoload :Etc, 'etc'
 
@@ -24,7 +26,7 @@ def from_genesis?
 end
 
 def mining_disabled?
-  ENV['MINING_DISABLED']&.upcase == 'TRUE'
+  ENV['MINING_DISABLED']&.upcase == 'FALSE'
 end
 
 def mining_threads
@@ -51,23 +53,23 @@ def mining_error(message)
 end
 
 def wallet
-  ENV['XGT_WALLET'] || mining_error("Wallet not specificed, please specify a wallet with 'XGT_WALLET'")
+  'XGT0000000000000000000000000000000000000000'
 end
 
 def wif
-  ENV['XGT_WIF'] || mining_error("XGT_WIF not specified")
+  '5JQMNhd5L9ML99ZoH2FaZ1PUHrYb4Jw7U3CgA73V8rgBfoipkxt'
 end
 
 def recovery_private_key
-  ENV['XGT_RECOVERY_PRIVATE_KEY'] || mining_error("XGT_RECOVERY_PRIVATE_KEY not specified")
+  '5JQMNhd5L9ML99ZoH2FaZ1PUHrYb4Jw7U3CgA73V8rgBfoipkxt'
 end
 
 def witness_private_key
-  ENV['XGT_WITNESS_PRIVATE_KEY'] || mining_error("XGT_WITNESS_PRIVATE_KEY not specified")
+  '5JQMNhd5L9ML99ZoH2FaZ1PUHrYb4Jw7U3CgA73V8rgBfoipkxt'
 end
 
 def host
-  ENV['XGT_HOST'] || 'http://localhost:8799'
+  ENV['XGT_HOST'] || 'http://localhost:8755'
 end
 
 def seed_hosts
@@ -118,7 +120,7 @@ end
 
 desc 'Runs CMake to prepare the project'
 task :configure => "../xgt-build" do
-  sh %( cmake -G Ninja -B ../xgt-build -S . -D CMAKE_BUILD_TYPE=RelWithDebInfo )
+  sh %( cmake -G Ninja -B ../xgt-build -S . -D CMAKE_BUILD_TYPE=debug )
 end
 
 task :test do
@@ -377,201 +379,7 @@ def create_wallet!(keys)
   $stderr.puts(%(Creating wallet with master key "#{keys['master']}"...))
   signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
   rpc.call('transaction_api.broadcast_transaction', [signed])
-end
-
-def create_contract!(owner, keys, code)
-  txn = {
-    'extensions' => [],
-    'operations' => [
-      {
-        'type' => 'contract_create_operation',
-        'value' => {
-          'owner' => owner,
-          'wallet' => keys['wallet_name'],
-          'code' => code
-          #'code' => '600260030100',
-          #'code' => '00',
-        }
-      }
-    ]
-  }
-  signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
-  $stderr.puts(%(Registering contract... #{signed.to_json}))
-  response = rpc.call('transaction_api.broadcast_transaction', [signed])
-  $stderr.puts(%(Received response contract... #{response}))
-end
-
-def invoke_contract!(contract_hash, invoker, args)
-  txn = {
-    'extensions' => [],
-    'operations' => [
-      {
-        'type' => 'contract_invoke_operation',
-        'value' => {
-          'contract_hash' => contract_hash,
-          'caller' => invoker,
-          'args' => args
-        }
-      }
-    ]
-  }
-  $stderr.puts(%(Signing contract contract... #{txn.to_json}))
-  signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
-  $stderr.puts(%(Registering contract... #{signed.to_json}))
-  response = rpc.call('transaction_api.broadcast_transaction', [signed])
-  $stderr.puts(%(Received response contract... #{response}))
-  response
-end
-
-namespace :contracts do
-  desc 'Create a sample contract'
-  task :create do
-    keys = generate_keys
-    create_wallet!(keys)
-    # Bytecode explanation:
-    #
-    #     60   03 60   04 01  00
-    #     PUSH 3  PUSH 4  ADD HALT
-    #
-    create_contract!(wallet, keys, '600360040100')
-
-    response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}
-    p response
-    contract_hash = response['contracts'].first['contract_hash']
-    response = rpc.call('contract_api.get_contract', { 'contract_hash' => contract_hash }) || {}
-    p response
-
-    invoke_contract!(contract_hash, keys['wallet_name'], [])
-  end
-
-  desc 'Create a sample contract which calls another'
-  task :create_and_call do
-    create_contract = lambda { |code|
-      keys = generate_keys
-      create_wallet!(keys)
-      create_contract!(wallet, keys, code)
-
-      response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}
-      p response
-      contract_hash = response['contracts'].first['contract_hash']
-      response = rpc.call('contract_api.get_contract', { 'contract_hash' => contract_hash }) || {}
-      p response
-
-      [contract_hash, keys]
-    }
-
-    # Arguments to `call` opcode are:
-    #
-    #     energy contract_hash value argsOffset argsLength retOffset retLength
-    #
-    # Bytecode explanation:
-    #
-    #     PUSH 0 PUSH 0 RETURN HALT
-    #     60 00 60 00 F3 00
-    #
-    contract_hash1, keys1 = create_contract.(%(60006000F300))
-    #
-    # Bytecode explanation:
-    #
-    #     PUSH 0 PUSH #{contract_hash1} 0 0 0 0 0 CALL HALT
-    #     60 00 60 #{contract_hash1} 60 00 60 00 60 00 60 00 60 00 F1 00
-    #
-    contract_hash2, keys2 = create_contract.(%(600060#{contract_hash1}60006000600060006000F100))
-
-    invoke_contract!(contract_hash2, keys2['wallet_name'], [])
-  end
-
-  desc 'The "Do Nothing" contract'
-  task :do_nothing do
-    create_contract = lambda { |code|
-      keys = generate_keys
-      create_wallet!(keys)
-      create_contract!(wallet, keys, code)
-
-      response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}
-      p response
-      contract_hash = response['contracts'].first['contract_hash']
-      response = rpc.call('contract_api.get_contract', { 'contract_hash' => contract_hash }) || {}
-      p response
-
-      [contract_hash, keys]
-    }
-
-    contract_hash, keys = create_contract.(%(6080604052348015600f57600080fd5b50606d80601d6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c80632f576f2014602d575b600080fd5b60336035565b005b56fea2646970667358221220975bdb6949442538b90c14c420b0a2f547f0437e85a73da12faf4e6834f0817264736f6c63430008070033))
-
-    invoke_contract!(contract_hash, keys['wallet_name'], [])
-  end
-end
-
-namespace :lazy_wallets do
-  task :name_test do
-    master = Xgt::Ruby::Auth.random_wif
-    private_key = Xgt::Ruby::Auth.generate_wif(wallet, master, 'recovery')
-    public_key = Xgt::Ruby::Auth.wif_to_public_key(private_key, address_prefix)
-
-    response = rpc.call('wallet_by_key_api.generate_wallet_name', {
-      'recovery_keys' => [public_key]
-    })
-    wallet_name = response['wallet_name']
-
-    txn = {
-      'extensions' => [],
-      'operations' => [
-         {
-           'type' => 'transfer_operation',
-           'value' => {
-             'amount' => {
-               'amount' => '1',
-               'precision' =>  8,
-               'nai' => '@@000000021'
-             },
-             'from' => 'XGT0000000000000000000000000000000000000000',
-             'to' => wallet_name,
-             'json_metadata' => '',
-             'extensions' => []
-           }
-        }
-      ]
-    }
-
-    id = rpc.broadcast_transaction(txn, [wif], chain_id)
-    (puts 'Waiting...' or sleep 1) until rpc.transaction_ready?(id)
-
-    keys = generate_keys
-    txn = {
-      'extensions' => [],
-      'operations' => [
-        {
-          'type' => 'wallet_update_operation',
-          'value' => {
-            'wallet' => wallet_name,
-            'recovery' => {
-              'weight_threshold' => 1,
-              'account_auths' => [],
-              'key_auths' => [[keys['recovery_public'], 1]]
-            },
-            'money' => {
-              'weight_threshold' => 1,
-              'account_auths' => [],
-              'key_auths' => [[keys['money_public'], 1]]
-            },
-            'social' => {
-              'weight_threshold' => 1,
-              'account_auths' => [],
-              'key_auths' => [[keys['social_public'], 1]]
-            },
-            'memo_key' => keys['memo_public'],
-            'json_metadata' => '',
-            'extensions' => []
-          }
-        }
-      ]
-    }
-
-    p txn
-    id = rpc.broadcast_transaction(txn, [private_key], chain_id)
-    (puts 'Waiting...' or sleep 1) until rpc.transaction_ready?(id)
-  end
+  name
 end
 
 namespace :machine do

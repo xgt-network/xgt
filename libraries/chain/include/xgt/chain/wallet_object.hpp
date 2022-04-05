@@ -44,6 +44,7 @@ namespace xgt { namespace chain {
          uint32_t          comment_count = 0;
          uint32_t          lifetime_vote_count = 0;
          uint32_t          post_count = 0;
+         uint32_t          nonce = 0;
 
          bool              can_vote = true;
          util::energybar   energybar;

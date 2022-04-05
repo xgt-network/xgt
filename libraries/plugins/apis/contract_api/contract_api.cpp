@@ -78,8 +78,8 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
 
       std::stringstream ss;
       ss << std::hex << r160.str();
-      std::string en_address;
-      ss >> en_address;
+      std::string address_ripemd160;
+      ss >> address_ripemd160;
 
       api_contract_object ac;
       ac.id = c.id;
@@ -87,7 +87,7 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
       ac.contract_hash = c.contract_hash;
       ac.wallet = c.wallet;
       ac.code = c.code;
-      ac.en_address = en_address;
+      ac.address_ripemd160 = address_ripemd160;
       result.contracts.push_back(ac);
       ++itr;
    }

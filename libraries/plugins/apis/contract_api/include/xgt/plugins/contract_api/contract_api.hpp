@@ -19,7 +19,7 @@ struct api_contract_object
   chain::wallet_name_type owner;
   chain::wallet_name_type wallet;
   chain::contract_hash_type contract_hash;
-  std::string en_address;
+  std::string address_ripemd160;
   vector<char> code;
 };
 
@@ -69,7 +69,7 @@ FC_REFLECT( xgt::plugins::contract::api_contract_object,
             (wallet)
             (contract_hash)
             (code)
-            (en_address) )
+            (address_ripemd160) )
 
 FC_REFLECT( xgt::plugins::contract::get_contract_args, (contract_hash) )
 FC_REFLECT( xgt::plugins::contract::get_contract_return, (contract) )

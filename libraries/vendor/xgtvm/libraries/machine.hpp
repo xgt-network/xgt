@@ -242,7 +242,7 @@ namespace machine
     std::function< std::pair< word, std::vector<word> >(big_word, uint64_t, big_word, std::vector<word>) > contract_call;
 
     // TODO call a method from another contract(?) -- callcode opcode -- address, energy, value, args
-    std::function< std::vector<word>(std::string, uint64_t, big_word, std::vector<word>) > contract_callcode;
+    std::function< std::pair< word, std::vector<word> >(big_word, uint64_t, big_word, std::vector<word>) > contract_callcode;
 
     // TODO call a method from another contract using the storage of the current
     // opcode -- delegatecall opcode -- address, energy, args
@@ -252,7 +252,7 @@ namespace machine
     std::function< std::pair< word, std::vector<word> >(big_word, uint64_t, std::vector<word>) > contract_staticcall;
 
     // TODO creates a child contract -- create2 opcode
-    std::function< big_word(std::vector<word>, big_word, std::string) > contract_create2;
+    std::function< big_word(std::vector<word>, big_word, big_word) > contract_create2;
 
     // TODO revert opcode
     std::function< bool(std::vector<word>) > revert;
