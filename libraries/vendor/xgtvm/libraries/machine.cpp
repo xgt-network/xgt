@@ -506,8 +506,7 @@ namespace machine
             }
           }
 
-          sstream << std::hex << adapter.sha3( retval );
-          sstream >> vc;
+          vc = adapter.sha3( retval );
           push_word( vc ); // hash
         }
 

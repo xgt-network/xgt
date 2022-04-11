@@ -46,12 +46,12 @@ namespace xgt {
       namespace detail {
 
          //////////////////////////////////////////////
-         // address_ripemd160_type                   //
+         // en_address_type                          //
          //////////////////////////////////////////////
 
-         struct schema_address_ripemd160_type_impl : public abstract_schema
+         struct schema_en_address_type_impl : public abstract_schema
          {
-            XGT_SCHEMA_CLASS_BODY( schema_address_ripemd160_type_impl )
+            XGT_SCHEMA_CLASS_BODY( schema_en_address_type_impl )
          };
 
       }

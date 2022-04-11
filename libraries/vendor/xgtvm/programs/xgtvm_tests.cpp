@@ -11,7 +11,7 @@
 
 machine::chain_adapter make_chain_adapter()
 {
-  std::function< std::string(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> std::string
+  std::function< machine::big_word(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> machine::big_word
   {
     std::cout << "chain_adapter::sha3" << std::endl;
     return 0;

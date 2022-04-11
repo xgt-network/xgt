@@ -629,19 +629,19 @@ const wallet_object& database::get_account( const wallet_name_type& name )const
    return get< wallet_object, by_name >( name );
 } FC_CAPTURE_AND_RETHROW( (name) ) }
 
-const wallet_object& database::get_account_by_ripemd160( const address_ripemd160_type& address_ripemd160 )const
+const wallet_object& database::get_account_by_en_address( const en_address_type& en_address )const
 { try {
-   return get< wallet_object, by_address_ripemd160 >( address_ripemd160 );
-} FC_CAPTURE_AND_RETHROW( (address_ripemd160) ) }
+   return get< wallet_object, by_en_address >( en_address );
+} FC_CAPTURE_AND_RETHROW( (en_address) ) }
 
 const wallet_object* database::find_account( const wallet_name_type& name )const
 {
    return find< wallet_object, by_name >( name );
 }
 
-const wallet_object* database::find_account_by_ripemd160( const address_ripemd160_type& address_ripemd160 )const
+const wallet_object* database::find_account_by_en_address( const en_address_type& en_address )const
 {
-   return find< wallet_object, by_address_ripemd160 >( address_ripemd160 );
+   return find< wallet_object, by_en_address >( en_address );
 }
 
 const comment_object& database::get_comment( const wallet_name_type& author, const shared_string& permlink )const
@@ -1365,13 +1365,13 @@ void database::init_genesis( uint64_t init_supply )
       create< wallet_object >( [&]( wallet_object& a )
       {
          a.name = XGT_MINER_WALLET;
-         a.address_ripemd160 = fc::ripemd160::hex_digest(XGT_MINER_WALLET);
+         a.en_address = fc::ripemd160::hex_digest(XGT_MINER_WALLET);
       } );
 
       create< account_authority_object >( [&]( account_authority_object& auth )
       {
          auth.account = XGT_MINER_WALLET;
-         auth.address_ripemd160 = fc::ripemd160::hex_digest(XGT_MINER_WALLET);
+         auth.en_address = fc::ripemd160::hex_digest(XGT_MINER_WALLET);
          auth.recovery.weight_threshold = 1;
          auth.money.weight_threshold = 1;
       });
@@ -1379,7 +1379,7 @@ void database::init_genesis( uint64_t init_supply )
       create< wallet_object >( [&]( wallet_object& a )
       {
          a.name = XGT_INIT_MINER_NAME;
-         a.address_ripemd160 = fc::ripemd160::hex_digest(XGT_INIT_MINER_NAME);
+         a.en_address = fc::ripemd160::hex_digest(XGT_INIT_MINER_NAME);
          a.memo_key = init_public_key;
          a.balance  = asset( init_supply, XGT_SYMBOL );
       } );
@@ -1387,7 +1387,7 @@ void database::init_genesis( uint64_t init_supply )
       create< account_authority_object >( [&]( account_authority_object& auth )
       {
          auth.account = XGT_INIT_MINER_NAME;
-         auth.address_ripemd160 = fc::ripemd160::hex_digest(XGT_INIT_MINER_NAME);
+         auth.en_address = fc::ripemd160::hex_digest(XGT_INIT_MINER_NAME);
          auth.recovery.add_authority( init_public_key, 1 );
          auth.recovery.weight_threshold = 1;
          auth.money   = auth.recovery;
@@ -1403,13 +1403,13 @@ void database::init_genesis( uint64_t init_supply )
       create< wallet_object >( [&]( wallet_object& a )
       {
          a.name = XGT_NULL_WALLET;
-         a.address_ripemd160 = fc::ripemd160::hex_digest(XGT_NULL_WALLET);
+         a.en_address = fc::ripemd160::hex_digest(XGT_NULL_WALLET);
       } );
 
       create< account_authority_object >( [&]( account_authority_object& auth )
       {
          auth.account = XGT_NULL_WALLET;
-         auth.address_ripemd160 = fc::ripemd160::hex_digest(XGT_NULL_WALLET);
+         auth.en_address = fc::ripemd160::hex_digest(XGT_NULL_WALLET);
          auth.recovery.weight_threshold = 1;
          auth.money.weight_threshold = 1;
       });
@@ -1417,19 +1417,19 @@ void database::init_genesis( uint64_t init_supply )
       create< wallet_object >( [&]( wallet_object& a )
       {
          a.name = XGT_TREASURY_WALLET;
-         a.address_ripemd160 = fc::ripemd160::hex_digest(XGT_TREASURY_WALLET);
+         a.en_address = fc::ripemd160::hex_digest(XGT_TREASURY_WALLET);
       } );
 
       create< wallet_object >( [&]( wallet_object& a )
       {
          a.name = XGT_TEMP_WALLET;
-         a.address_ripemd160 = fc::ripemd160::hex_digest(XGT_TEMP_WALLET);
+         a.en_address = fc::ripemd160::hex_digest(XGT_TEMP_WALLET);
       } );
 
       create< account_authority_object >( [&]( account_authority_object& auth )
       {
          auth.account = XGT_TEMP_WALLET;
-         auth.address_ripemd160 = fc::ripemd160::hex_digest(XGT_TEMP_WALLET);
+         auth.en_address = fc::ripemd160::hex_digest(XGT_TEMP_WALLET);
          auth.recovery.weight_threshold = 0;
          auth.money.weight_threshold = 0;
       });

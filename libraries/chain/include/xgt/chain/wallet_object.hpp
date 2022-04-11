@@ -31,7 +31,10 @@ namespace xgt { namespace chain {
          id_type           id;
 
          wallet_name_type  name;
-         address_ripemd160_type address_ripemd160;
+         // TODO EN_ADDRESS INSTEAD OF en_address if possible, in addition to otherwise.
+         // Machine processes en_address_type as a uint256_t, but en_address needs to be preserved
+         // Maybe lookup wallet based on en_address and grab en_address
+         en_address_type en_address;
          public_key_type   memo_key;
 
          time_point_sec    last_account_update;
@@ -92,7 +95,7 @@ namespace xgt { namespace chain {
          id_type           id;
 
          wallet_name_type  account;
-         address_ripemd160_type address_ripemd160;
+         en_address_type en_address;
 
          shared_authority  recovery; ///< used for backup control, can set recovery or money
          shared_authority  money;    ///< used for all monetary operations, can set money or social
@@ -167,8 +170,8 @@ namespace xgt { namespace chain {
             member< wallet_object, wallet_id_type, &wallet_object::id > >,
          ordered_unique< tag< by_name >,
             member< wallet_object, wallet_name_type, &wallet_object::name > >,
-         ordered_unique< tag< by_address_ripemd160 >,
-            member< wallet_object, address_ripemd160_type, &wallet_object::address_ripemd160 > >
+         ordered_unique< tag< by_en_address >,
+            member< wallet_object, en_address_type, &wallet_object::en_address > >
       >,
       allocator< wallet_object >
    > wallet_index;

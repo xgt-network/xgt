@@ -16,7 +16,7 @@ namespace xgt { namespace protocol {
       asset             fee;
       wallet_name_type  creator;
       wallet_name_type  new_wallet_name;
-      string            address_ripemd160;
+      string            en_address;
       authority         recovery;
       authority         money;
       authority         social;

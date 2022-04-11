@@ -222,10 +222,10 @@ namespace :contracts do
     bob_balance_before = get_wallet(bob)['balance']['amount']
     charlie_balance_before = get_wallet(charlie)['balance']['amount']
 
-    creator_address_r160 = get_wallet(creator)['address_ripemd160']
-    alice_address_r160 = get_wallet(alice)['address_ripemd160']
-    bob_address_r160 = get_wallet(bob)['address_ripemd160']
-    charlie_address_r160 = get_wallet(charlie)['address_ripemd160']
+    creator_address_r160 = get_wallet(creator)['en_address']
+    alice_address_r160 = get_wallet(alice)['en_address']
+    bob_address_r160 = get_wallet(bob)['en_address']
+    charlie_address_r160 = get_wallet(charlie)['en_address']
 
     puts "\n\nCreator address: #{creator}\nRipemd160: #{creator_address_r160}"
     puts "\n\nAlice address: #{alice}\nRipemd160: #{alice_address_r160}"
@@ -375,7 +375,7 @@ namespace :contracts do
     puts JSON.pretty_generate response
     contract_hash = response['contracts'].first['contract_hash']
 
-    calculator_contract_address = response['contracts'].select { |contract| contract['code'] == stripped_calculator_code}.first['address_ripemd160']
+    calculator_contract_address = response['contracts'].select { |contract| contract['code'] == stripped_calculator_code}.first['en_address']
     packed_calculator_contract_address = "000000000000000000000000#{calculator_contract_address}"
 
     puts "\n\nCalculator contract address: ", calculator_contract_address, "\n"

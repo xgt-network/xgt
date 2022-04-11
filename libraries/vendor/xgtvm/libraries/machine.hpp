@@ -222,7 +222,7 @@ namespace machine
   struct chain_adapter
   {
     // TODO sha3 opcode
-    std::function< std::string(std::vector<word>) > sha3;
+    std::function< big_word(std::vector<word>) > sha3;
 
     std::function< big_word(big_word) > get_balance;
 
