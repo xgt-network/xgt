@@ -15,9 +15,10 @@
 #include <memory>
 #include <mutex>
 
-#include "options/configurable_helper.h"
 #include "port/port.h"
+#include "rocksdb/convenience.h"
 #include "rocksdb/slice.h"
+#include "rocksdb/utilities/customizable_util.h"
 #include "rocksdb/utilities/object_registry.h"
 
 namespace ROCKSDB_NAMESPACE {
@@ -230,12 +231,12 @@ const Comparator* ReverseBytewiseComparator() {
 #ifndef ROCKSDB_LITE
 static int RegisterBuiltinComparators(ObjectLibrary& library,
                                       const std::string& /*arg*/) {
-  library.Register<const Comparator>(
+  library.AddFactory<const Comparator>(
       BytewiseComparatorImpl::kClassName(),
       [](const std::string& /*uri*/,
          std::unique_ptr<const Comparator>* /*guard */,
          std::string* /* errmsg */) { return BytewiseComparator(); });
-  library.Register<const Comparator>(
+  library.AddFactory<const Comparator>(
       ReverseBytewiseComparatorImpl::kClassName(),
       [](const std::string& /*uri*/,
          std::unique_ptr<const Comparator>* /*guard */,
@@ -255,20 +256,11 @@ Status Comparator::CreateFromString(const ConfigOptions& config_options,
 #endif  // ROCKSDB_LITE
   std::string id;
   std::unordered_map<std::string, std::string> opt_map;
-  Status status =
-      ConfigurableHelper::GetOptionsMap(value, *result, &id, &opt_map);
+  Status status = Customizable::GetOptionsMap(config_options, *result, value,
+                                              &id, &opt_map);
   if (!status.ok()) {  // GetOptionsMap failed
     return status;
   }
-  std::string curr_opts;
-#ifndef ROCKSDB_LITE
-  if (*result != nullptr && (*result)->GetId() == id) {
-    // Try to get the existing options, ignoring any errors
-    ConfigOptions embedded = config_options;
-    embedded.delimiter = ";";
-    (*result)->GetOptionString(embedded, &curr_opts).PermitUncheckedError();
-  }
-#endif
   if (id == BytewiseComparatorImpl::kClassName()) {
     *result = BytewiseComparator();
   } else if (id == ReverseBytewiseComparatorImpl::kClassName()) {
@@ -292,10 +284,9 @@ Status Comparator::CreateFromString(const ConfigOptions& config_options,
       } else {
         return status;
       }
-    } else if (!curr_opts.empty() || !opt_map.empty()) {
+    } else if (!opt_map.empty()) {
       Comparator* comparator = const_cast<Comparator*>(*result);
-      status = ConfigurableHelper::ConfigureNewObject(
-          config_options, comparator, id, curr_opts, opt_map);
+      status = comparator->ConfigureFromMap(config_options, opt_map);
     }
   }
   return status;

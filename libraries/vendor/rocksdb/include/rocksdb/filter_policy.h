@@ -177,6 +177,9 @@ class FilterPolicy {
   // passed to methods of this type.
   virtual const char* Name() const = 0;
 
+  // DEPRECATED: This function is part of the deprecated block-based
+  // filter, which will be removed in a future release.
+  //
   // keys[0,n-1] contains a list of keys (potentially with duplicates)
   // that are ordered according to the user supplied comparator.
   // Append a filter that summarizes keys[0,n-1] to *dst.
@@ -186,6 +189,9 @@ class FilterPolicy {
   virtual void CreateFilter(const Slice* keys, int n,
                             std::string* dst) const = 0;
 
+  // DEPRECATED: This function is part of the deprecated block-based
+  // filter, which will be removed in a future release.
+  //
   // "filter" contains the data appended by a preceding call to
   // CreateFilter() on this class.  This method must return true if
   // the key was in the list of keys passed to CreateFilter().
@@ -198,6 +204,7 @@ class FilterPolicy {
   // NOTE: This function is only called by GetBuilderWithContext() below for
   // custom FilterPolicy implementations. Thus, it is not necessary to
   // override this function if overriding GetBuilderWithContext().
+  // DEPRECATED: This function will be removed in a future release.
   virtual FilterBitsBuilder* GetFilterBitsBuilder() const { return nullptr; }
 
   // A newer variant of GetFilterBitsBuilder that allows a FilterPolicy
@@ -250,6 +257,20 @@ extern const FilterPolicy* NewBloomFilterPolicy(
 // you pass in 10 for bloom_equivalent_bits_per_key, you'll get the same
 // 0.95% FP rate as Bloom filter but only using about 7 bits per key.
 //
+// The space savings of Ribbon filters makes sense for lower (higher
+// numbered; larger; longer-lived) levels of LSM, whereas the speed of
+// Bloom filters make sense for highest levels of LSM. Setting
+// bloom_before_level allows for this design with Level and Universal
+// compaction styles. For example, bloom_before_level=1 means that Bloom
+// filters will be used in level 0, including flushes, and Ribbon
+// filters elsewhere, including FIFO compaction and external SST files.
+// For this option, memtable flushes are considered level -1 (so that
+// flushes can be distinguished from intra-L0 compaction).
+// bloom_before_level=0 (default) -> Generate Bloom filters only for
+// flushes under Level and Universal compaction styles.
+// bloom_before_level=-1 -> Always generate Ribbon filters (except in
+// some extreme or exceptional cases).
+//
 // Ribbon filters are compatible with RocksDB >= 6.15.0. Earlier
 // versions reading the data will behave as if no filter was used
 // (degraded performance until compaction rebuilds filters). All
@@ -266,12 +287,12 @@ extern const FilterPolicy* NewBloomFilterPolicy(
 // Also consider using optimize_filters_for_memory to save filter
 // memory.
 extern const FilterPolicy* NewRibbonFilterPolicy(
-    double bloom_equivalent_bits_per_key);
+    double bloom_equivalent_bits_per_key, int bloom_before_level = 0);
 
-// Old name
+// Old name and old default behavior (DEPRECATED)
 inline const FilterPolicy* NewExperimentalRibbonFilterPolicy(
     double bloom_equivalent_bits_per_key) {
-  return NewRibbonFilterPolicy(bloom_equivalent_bits_per_key);
+  return NewRibbonFilterPolicy(bloom_equivalent_bits_per_key, -1);
 }
 
 }  // namespace ROCKSDB_NAMESPACE
