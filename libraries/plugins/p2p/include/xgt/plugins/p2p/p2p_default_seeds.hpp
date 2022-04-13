@@ -10,6 +10,7 @@ const std::vector< std::string > default_seeds;
 #else
 const std::vector< std::string > default_seeds = {
     "seed-node-1.xgt.co.in:2001",
+    "mainnet.xgtcrypto.com:2001",
     "xgt.rag.pub:2001",
     "68.129.31.2:2001",
     "95.216.69.92:2001",
