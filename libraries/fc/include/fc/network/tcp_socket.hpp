@@ -54,6 +54,8 @@ namespace fc {
       class impl;
       #ifdef _WIN32
       fc::fwd<impl,0xc0> my;
+      #elif __APPLE__
+      fc::fwd<impl,0x78> my;
       #else
       fc::fwd<impl,0x70> my;
       #endif
