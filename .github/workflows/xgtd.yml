@@ -9,9 +9,20 @@ jobs:
       fail-fast: false
 
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
 
     steps:
+    - name: Set mingw64 environment
+      run:
+        echo "MSYSTEM=MINGW64" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append ;
+        echo "PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;$ENV:PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
+      if: startsWith(matrix.os, 'windows')
+
+    - name: Set macOS environment
+      run:
+        echo "CMAKE_PREFIX_PATH=`brew --prefix openssl@1.1`" >> $GITHUB_ENV
+      if: startsWith(matrix.os, 'macOS')
+
     - uses: actions/checkout@v2
     - name: Cache paths
       uses: actions/cache@v2
@@ -19,26 +30,18 @@ jobs:
         path: |
           ~/.ccache
           ~/.cache/ccache
+          ~/AppData/Roaming/ccache
         key: ${{matrix.os}}-ccache
+
     - name: Install build dependencies (Ubuntu)
       run: sudo apt update && sudo apt install -y 
         cmake
-        g++
         libssl-dev
         libtool
-        pkg-config
-        python3
         python3-jinja2
-        scrypt
-        dnsutils
         ccache
         libboost-all-dev
         build-essential
-        curl
-        libreadline-dev
-        libyaml-dev
-        libxml2-dev
-        libxslt-dev
         ninja-build
       if: startsWith(matrix.os, 'ubuntu')
     - name: Install build dependencies (macOS)
@@ -51,11 +54,20 @@ jobs:
         python3
         ninja && python3 -m pip install jinja2
       if: startsWith(matrix.os, 'macOS')
-    - name: Configure cmake (Ubuntu)
+    - name: Install build dependencies (mingw64)
+      run: pacman --noconfirm -S
+        mingw-w64-x86_64-binutils
+        mingw-w64-x86_64-boost
+        mingw-w64-x86_64-ccache
+        mingw-w64-x86_64-gcc
+        mingw-w64-x86_64-cmake
+        mingw-w64-x86_64-ninja
+        mingw-w64-x86_64-openssl
+        mingw-w64-x86_64-python-jinja2-time
+        mingw-w64-x86_64-winpthreads
+      if: startsWith(matrix.os, 'windows')
+
+    - name: Configure cmake
       run: cmake -D CMAKE_BUILD_TYPE=Debug -G Ninja -B build -S .
-      if: startsWith(matrix.os, 'ubuntu')
-    - name: Configure cmake (macOS)
-      run: CMAKE_PREFIX_PATH=`brew --prefix openssl@1.1` cmake -D CMAKE_BUILD_TYPE=Debug -G Ninja -B build -S .
-      if: startsWith(matrix.os, 'macOS')
     - name: Build xgtd
       run: ninja -C build xgtd
