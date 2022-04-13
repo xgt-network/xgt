@@ -118,7 +118,7 @@ endif()
 
 # When using ccache colored diagnostics are suppressed by default (as they also
 # often are using Ninja, etc). This option forcefully re-enables them.
-option (COLOR_DIAGNOSTICS "Force colored diagnostics" OFF)
+option (COLOR_DIAGNOSTICS "Force colored diagnostics" ON)
 if (COLOR_DIAGNOSTICS)
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
        add_compile_options (-fdiagnostics-color=always)
