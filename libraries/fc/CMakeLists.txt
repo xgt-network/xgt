@@ -58,20 +58,6 @@ if(MINGW)
   target_link_libraries(fc PUBLIC wsock32 ws2_32 userenv bcrypt)
 endif()
 
-IF(APPLE)
-  # cmake 3.24 will get:
-  # set(ZLIB_USE_STATIC_LIBS ON)
-
-  # As of 10.10 yosemite, the OpenSSL static libraries shipped with os x have a dependency
-  # on zlib, so any time you link in openssl you also need to link zlib.  .  We really want to detect whether openssl was configured with the --no-zlib
-  # option or not when it was built, but that's difficult to do in practice, so we
-  # just always try to link it in on mac.
-  find_package( ZLIB REQUIRED )
-
-  # TODO: make static, see above
-  target_link_libraries(fc PUBLIC ZLIB::ZLIB)
-ENDIF(APPLE)
-
 target_include_directories(fc
   PUBLIC
     include

@@ -35,7 +35,6 @@ jobs:
         libboost-all-dev
         build-essential
         curl
-        zlib1g-dev
         libreadline-dev
         libyaml-dev
         libxml2-dev
@@ -48,7 +47,6 @@ jobs:
         boost
         libtool
         openssl@1.1
-        zlib
         ccache
         python3
         ninja && python3 -m pip install jinja2

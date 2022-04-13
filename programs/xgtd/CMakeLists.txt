@@ -13,9 +13,14 @@ else()
 endif()
 endif()
 
+if (NOT APPLE)
 target_link_libraries( xgtd PRIVATE
 	-static-libgcc
 	-static-libstdc++
+)
+endif()
+
+target_link_libraries( xgtd PRIVATE
    appbase
    xgt_protocol
    xgt_utilities
