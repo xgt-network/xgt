@@ -220,7 +220,9 @@ void application::exec() {
    /** To avoid killing process by broken pipe and continue regular app shutdown.
     *  Useful for usecase: `xgtd | tee xgtd.log` and pressing Ctrl+C
     **/
+   #ifdef SIGPIPE
    signal(SIGPIPE, SIG_IGN);
+   #endif
 
    std::shared_ptr<boost::asio::signal_set> sigint_set(new boost::asio::signal_set(*io_serv, SIGINT));
    sigint_set->async_wait([sigint_set,this](const boost::system::error_code& err, int num) {

@@ -26,8 +26,6 @@ jobs:
         automake
         cmake
         g++
-        libbz2-dev
-        libsnappy-dev
         libssl-dev
         libtool
         make
@@ -56,7 +54,6 @@ jobs:
         icu4c
         libtool
         openssl
-        snappy
         zlib
         bzip2
         ccache

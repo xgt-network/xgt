@@ -1,12 +1,6 @@
 add_subdirectory(db_fixture)
 add_subdirectory(bmic_objects)
 
-find_package( Gperftools QUIET )
-if( GPERFTOOLS_FOUND )
-    message( STATUS "Found gperftools; compiling tests with TCMalloc")
-    list( APPEND PLATFORM_SPECIFIC_LIBS tcmalloc )
-endif()
-
 INCLUDE(CTest)
 
 ENABLE_TESTING()
@@ -284,7 +278,7 @@ add_boost_test( chain_test
    undo_tests/undo_generate_blocks
 )
 
-target_link_libraries( chain_test db_fixture chainbase xgt_chain xgt_protocol chain_plugin wallet_history_plugin witness_plugin debug_node_plugin fc ${PLATFORM_SPECIFIC_LIBS} )
+target_link_libraries( chain_test db_fixture chainbase xgt_chain xgt_protocol chain_plugin wallet_history_plugin witness_plugin debug_node_plugin fc)
 
 file(GLOB PLUGIN_TESTS "plugin_tests/*.cpp")
 
@@ -303,10 +297,6 @@ add_boost_test( plugin_test
    transaction_status/transaction_status_test
 )
 
-target_link_libraries( plugin_test db_fixture xgt_chain xgt_protocol wallet_history_plugin witness_plugin debug_node_plugin transaction_status_plugin transaction_status_api_plugin xgt_utilities xgt_plugins ${PLATFORM_SPECIFIC_LIBS} )
-
-if(MSVC)
-  set_source_files_properties( tests/serialization_tests.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )
-endif(MSVC)
+target_link_libraries( plugin_test db_fixture xgt_chain xgt_protocol wallet_history_plugin witness_plugin debug_node_plugin transaction_status_plugin transaction_status_api_plugin xgt_utilities xgt_plugins)
 
 #add_subdirectory( generate_empty_blocks )

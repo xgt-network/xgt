@@ -65,7 +65,7 @@ namespace fc {
   void file_mutex::lock() {
      my->_write_lock.lock();
      while( my->_reader_count.load() > 0 ) {
-        fc::usleep( fc::microseconds(10) );
+        fc::yield();
      }
      my->_file_mutex.lock();
   }

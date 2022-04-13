@@ -678,7 +678,7 @@ namespace fc {
         void yield_until( const time_point& tp, bool reschedule ) {
           check_fiber_exceptions();
 
-          if( tp <= (time_point::now()+fc::microseconds(10000)) )
+          if( tp <= time_point::now() )
             return;
 
           FC_ASSERT(std::current_exception() == std::exception_ptr(),

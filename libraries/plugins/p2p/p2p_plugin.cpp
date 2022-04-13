@@ -195,7 +195,7 @@ bool p2p_plugin_impl::handle_block( const graphene::net::block_message& blk_msg,
                ("head", head_block_num));
 
       try {
-         // TODO: in the case where this block is valid but on a fork that's too old for us to switch to,
+         // In the case where this block is valid but on a fork that's too old for us to switch to,
          // you can help the network code out by throwing a block_older_than_undo_history exception.
          // when the net code sees that, it will stop trying to push blocks from that chain, but
          // leave that peer connected so that they can get sync blocks from us
@@ -212,6 +212,14 @@ bool p2p_plugin_impl::handle_block( const graphene::net::block_message& blk_msg,
          }
 
          return result;
+      } catch ( const chain::block_too_old_exception& e ) {
+         // translate to a graphene::net exception
+         fc_elog(fc::logger::get("sync"),
+               "Error when pushing block, current head block is ${head}:\n${e}",
+               ("e", e.to_detail_string())
+               ("head", head_block_num));
+         elog("Error when pushing block:\n${e}", ("e", e.to_detail_string()));
+         FC_THROW_EXCEPTION(graphene::net::block_older_than_undo_history, "Error when pushing block:\n${e}", ("e", e.to_detail_string()));
       } catch ( const chain::unlinkable_block_exception& e ) {
          // translate to a graphene::net exception
          fc_elog(fc::logger::get("sync"),

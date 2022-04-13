@@ -1036,7 +1036,7 @@ namespace chainbase {
 #endif
          unsigned long long get_total_system_memory() const
          {
-#if !defined( __APPLE__ ) // OS X does not support _SC_AVPHYS_PAGES
+#if !defined( __APPLE__ ) && !defined(_WIN32) // OS X does not support _SC_AVPHYS_PAGES
             long pages = sysconf(_SC_AVPHYS_PAGES);
             long page_size = sysconf(_SC_PAGE_SIZE);
             return pages * page_size;

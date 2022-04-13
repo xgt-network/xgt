@@ -290,7 +290,6 @@ uint32_t database::reindex( const open_args& args )
 
       if( head_block_num() < last_block_num )
       {
-         _block_log.set_locking( false );
          if( args.benchmark.first > 0 )
          {
             args.benchmark.second( 0, get_abstract_index_cntr() );
@@ -344,7 +343,6 @@ uint32_t database::reindex( const open_args& args )
          if( (args.benchmark.first > 0) && (note.last_block_number % args.benchmark.first == 0) )
             args.benchmark.second( note.last_block_number, get_abstract_index_cntr() );
 
-         _block_log.set_locking( true );
       }
 
       if( _block_log.head()->block_num() )
@@ -1315,10 +1313,14 @@ std::shared_ptr< custom_operation_interpreter > database::get_custom_json_evalua
 }
 
 void initialize_core_indexes( database& db );
+void initialize_core_indexes2( database& db );
+void initialize_core_indexes3( database& db );
 
 void database::initialize_indexes()
 {
    initialize_core_indexes( *this );
+   initialize_core_indexes2( *this );
+   initialize_core_indexes3( *this );
    _plugin_index_signal();
 }
 
@@ -1767,7 +1769,7 @@ void database::_apply_block( const signed_block& next_block )
             double value = base_reward.amount.value * (1.0 / static_cast<double>(divisor));
             long price = static_cast<long>(floor(value));
             asset reward = asset(price, base_reward.symbol);
-            ilog("Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
+            // ilog("Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
 
             const wallet_object* w = find_account( worker_account );
             const witness_object* cur_witness = find_witness( worker_account );

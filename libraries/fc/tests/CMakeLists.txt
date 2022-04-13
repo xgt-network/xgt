@@ -34,13 +34,6 @@ target_link_libraries( saturation_test fc )
 add_executable( ecdsa_canon_test crypto/ecdsa_canon_test.cpp )
 target_link_libraries( ecdsa_canon_test fc )
 
-#add_executable( test_aes aes_test.cpp )
-#target_link_libraries( test_aes fc ${rt_library} ${pthread_library} )
-#add_executable( test_sleep sleep.cpp )
-#target_link_libraries( test_sleep fc )
-#add_executable( test_rate_limiting rate_limiting.cpp )
-#target_link_libraries( test_rate_limiting fc )
-
 add_executable( all_tests all_tests.cpp
                           crypto/aes_test.cpp
                           crypto/base_n_tests.cpp

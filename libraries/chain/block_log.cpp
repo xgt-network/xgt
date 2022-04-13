@@ -2,18 +2,15 @@
 #include <fstream>
 #include <fc/io/raw.hpp>
 
-#include <boost/thread/mutex.hpp>
-#include <boost/interprocess/sync/scoped_lock.hpp>
-#include <boost/interprocess/sync/lock_options.hpp>
+#include <fc/thread/mutex.hpp>
+#include <fc/thread/scoped_lock.hpp>
 
-#define LOG_READ  (std::ios::in | std::ios::binary)
-#define LOG_WRITE (std::ios::out | std::ios::binary | std::ios::app)
+
+#define LOG_WRITE (std::ios::in | std::ios::out | std::ios::binary | std::ios::app | std::ios::ate)
 
 namespace xgt { namespace chain {
 
-   typedef boost::interprocess::scoped_lock< boost::mutex > scoped_lock;
-
-   boost::interprocess::defer_lock_type defer_lock;
+   typedef fc::scoped_lock<fc::mutex> scoped_lock;
 
    namespace detail {
       class block_log_impl {
@@ -24,76 +21,15 @@ namespace xgt { namespace chain {
             std::fstream             index_stream;
             fc::path                 block_file;
             fc::path                 index_file;
-            bool                     block_write = false;
-            bool                     index_write = false;
 
-            bool                     use_locking = true;
-
-            boost::mutex             mtx;
-
-            inline void check_block_read()
-            {
-               try
-               {
-                  if( block_write )
-                  {
-                     block_stream.close();
-                     block_stream.open( block_file.generic_string().c_str(), LOG_READ );
-                     block_write = false;
-                  }
-               }
-               FC_LOG_AND_RETHROW()
-            }
-
-            inline void check_block_write()
-            {
-               try
-               {
-                  if( !block_write )
-                  {
-                     block_stream.close();
-                     block_stream.open( block_file.generic_string().c_str(), LOG_WRITE );
-                     block_write = true;
-                  }
-               }
-               FC_LOG_AND_RETHROW()
-            }
-
-            inline void check_index_read()
-            {
-               try
-               {
-                  if( index_write )
-                  {
-                     index_stream.close();
-                     index_stream.open( index_file.generic_string().c_str(), LOG_READ );
-                     index_write = false;
-                  }
-               }
-               FC_LOG_AND_RETHROW()
-            }
-
-            inline void check_index_write()
-            {
-               try
-               {
-                  if( !index_write )
-                  {
-                     index_stream.close();
-                     index_stream.open( index_file.generic_string().c_str(), LOG_WRITE );
-                     index_write = true;
-                  }
-               }
-               FC_LOG_AND_RETHROW()
-            }
+            fc::mutex             mtx;
       };
    }
 
    block_log::block_log()
    :my( new detail::block_log_impl() )
    {
-      my->block_stream.exceptions( std::fstream::failbit | std::fstream::badbit );
-      my->index_stream.exceptions( std::fstream::failbit | std::fstream::badbit );
+
    }
 
    block_log::~block_log()
@@ -113,8 +49,9 @@ namespace xgt { namespace chain {
 
       my->block_stream.open( my->block_file.generic_string().c_str(), LOG_WRITE );
       my->index_stream.open( my->index_file.generic_string().c_str(), LOG_WRITE );
-      my->block_write = true;
-      my->index_write = true;
+
+      my->block_stream.exceptions( std::fstream::failbit | std::fstream::badbit );
+      my->index_stream.exceptions( std::fstream::failbit | std::fstream::badbit );
 
       /* On startup of the block log, there are several states the log file and the index file can be
        * in relation to eachother.
@@ -145,9 +82,6 @@ namespace xgt { namespace chain {
 
          if( index_size )
          {
-            my->check_block_read();
-            my->check_index_read();
-
             ilog( "Index is nonempty" );
             uint64_t block_pos;
             my->block_stream.seekg( -sizeof( uint64_t), std::ios::end );
@@ -180,7 +114,6 @@ namespace xgt { namespace chain {
          my->index_stream.close();
          fc::remove_all( my->index_file );
          my->index_stream.open( my->index_file.generic_string().c_str(), LOG_WRITE );
-         my->index_write = true;
       }
    }
 
@@ -198,15 +131,10 @@ namespace xgt { namespace chain {
    {
       try
       {
-         scoped_lock lock( my->mtx, defer_lock );
+         scoped_lock lock(my->mtx);
 
-         if( my->use_locking )
-         {
-            lock.lock();;
-         }
-
-         my->check_block_write();
-         my->check_index_write();
+         my->block_stream.seekg(0, std::ios::end);
+         my->index_stream.seekg(0, std::ios::end);
 
          uint64_t pos = my->block_stream.tellp();
          FC_ASSERT( static_cast<uint64_t>(my->index_stream.tellp()) == sizeof( uint64_t ) * ( b.block_num() - 1 ),
@@ -226,12 +154,7 @@ namespace xgt { namespace chain {
 
    void block_log::flush()
    {
-      scoped_lock lock( my->mtx, defer_lock );
-
-            if( my->use_locking )
-            {
-               lock.lock();;
-            }
+      scoped_lock lock(my->mtx);
 
       my->block_stream.flush();
       my->index_stream.flush();
@@ -239,12 +162,7 @@ namespace xgt { namespace chain {
 
    std::pair< signed_block, uint64_t > block_log::read_block( uint64_t pos )const
    {
-      scoped_lock lock( my->mtx, defer_lock );
-
-      if( my->use_locking )
-      {
-         lock.lock();;
-      }
+      scoped_lock lock(my->mtx);
 
       return read_block_helper( pos );
    }
@@ -253,8 +171,6 @@ namespace xgt { namespace chain {
    {
       try
       {
-         my->check_block_read();
-
          my->block_stream.seekg( pos );
          std::pair<signed_block,uint64_t> result;
          fc::raw::unpack( my->block_stream, result.first );
@@ -268,12 +184,7 @@ namespace xgt { namespace chain {
    {
       try
       {
-         scoped_lock lock( my->mtx, defer_lock );
-
-         if( my->use_locking )
-         {
-            lock.lock();;
-         }
+         scoped_lock lock(my->mtx);
 
          optional< signed_block > b;
          uint64_t pos = get_block_pos_helper( block_num );
@@ -289,12 +200,7 @@ namespace xgt { namespace chain {
 
    uint64_t block_log::get_block_pos( uint32_t block_num ) const
    {
-      scoped_lock lock( my->mtx, defer_lock );
-
-      if( my->use_locking )
-      {
-         lock.lock();;
-      }
+      scoped_lock lock(my->mtx);
 
       return get_block_pos_helper( block_num );
    }
@@ -303,8 +209,6 @@ namespace xgt { namespace chain {
    {
       try
       {
-         my->check_index_read();
-
          if( !( my->head.valid() && block_num <= protocol::block_header::num_from_id( my->head_id ) && block_num > 0 ) )
             return npos;
          my->index_stream.seekg( sizeof( uint64_t ) * ( block_num - 1 ) );
@@ -319,14 +223,7 @@ namespace xgt { namespace chain {
    {
       try
       {
-         scoped_lock lock( my->mtx, defer_lock );
-
-         if( my->use_locking )
-         {
-            lock.lock();;
-         }
-
-         my->check_block_read();
+         scoped_lock lock(my->mtx);
 
          uint64_t pos;
          my->block_stream.seekg( -sizeof(pos), std::ios::end );
@@ -338,12 +235,7 @@ namespace xgt { namespace chain {
 
    const optional< signed_block >& block_log::head()const
    {
-      scoped_lock lock( my->mtx, defer_lock );
-
-      if( my->use_locking )
-      {
-         lock.lock();;
-      }
+      scoped_lock lock(my->mtx);
 
       return my->head;
    }
@@ -356,17 +248,30 @@ namespace xgt { namespace chain {
          my->index_stream.close();
          fc::remove_all( my->index_file );
          my->index_stream.open( my->index_file.generic_string().c_str(), LOG_WRITE );
-         my->index_write = true;
 
          uint64_t pos = 0;
-         uint64_t end_pos;
-         my->check_block_read();
+         uint64_t end_pos = 0;
 
-         my->block_stream.seekg( -sizeof( uint64_t), std::ios::end );
-         my->block_stream.read( (char*)&end_pos, sizeof( end_pos ) );
+         my->block_stream.clear();
+
+         my->block_stream.seekg( -(sizeof(uint64_t)), std::ios::end );
+
+         std::cerr << "failed?: " << my->block_stream.fail() << std::endl;
+
+         my->block_stream.read( (char*)(&end_pos), sizeof(uint64_t) );
+
+         std::cerr << "failed?: " << my->block_stream.fail() << std::endl;
+         std::cerr << "gcount: " << my->block_stream.gcount() << std::endl;
+         std::cerr << "end_pos: " << end_pos << std::endl;
+         FC_ASSERT(my->block_stream.gcount() == sizeof(uint64_t), "failed to read end pos");
+
          signed_block tmp;
 
+         std::cerr << "file size: " << fc::file_size(my->block_file.generic_string().c_str()) << std::endl;
+
          my->block_stream.seekg( pos );
+
+         FC_ASSERT(fc::file_size(my->block_file.generic_string().c_str()) >= end_pos, "invalid block log end post, is block_log corrupt?");
 
          while( pos < end_pos )
          {
@@ -376,10 +281,5 @@ namespace xgt { namespace chain {
          }
       }
       FC_LOG_AND_RETHROW()
-   }
-
-   void block_log::set_locking( bool use_locking )
-   {
-      my->use_locking = true;
    }
 } } // xgt::chain

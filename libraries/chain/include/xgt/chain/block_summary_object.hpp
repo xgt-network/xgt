@@ -1,5 +1,6 @@
 #pragma once
 
+#include <xgt/chain/xgt_fwd.hpp>
 #include <xgt/chain/xgt_object_types.hpp>
 
 namespace xgt { namespace chain {

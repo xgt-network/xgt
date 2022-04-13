@@ -283,8 +283,6 @@ namespace fc {
 
    void thread::sleep_until( const time_point& tp )
    {
-     if( tp <= (time_point::now()+fc::microseconds(10000)) )
-       yield(true);
      my->yield_until( tp, false );
    }
 

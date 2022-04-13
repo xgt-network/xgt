@@ -1,6 +1,5 @@
 #pragma once
 
-#include <xgt/chain/xgt_fwd.hpp>
 #include <xgt/plugins/chain/chain_plugin.hpp>
 
 #define XGT_WALLET_HISTORY_PLUGIN_NAME "wallet_history"

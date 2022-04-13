@@ -13,8 +13,6 @@ RUN apt-get clean \
     cmake \
     g++ \
     git \
-    libbz2-dev \
-    libsnappy-dev \
     libssl-dev \
     libtool \
     make \
