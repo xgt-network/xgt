@@ -212,34 +212,17 @@ bool p2p_plugin_impl::handle_block( const graphene::net::block_message& blk_msg,
          }
 
          return result;
-      } catch ( const chain::block_too_old_exception& e ) {
-         // translate to a graphene::net exception
-         fc_elog(fc::logger::get("sync"),
-               "Error when pushing block, current head block is ${head}:\n${e}",
-               ("e", e.to_detail_string())
-               ("head", head_block_num));
-         elog("Error when pushing block:\n${e}", ("e", e.to_detail_string()));
-         FC_THROW_EXCEPTION(graphene::net::block_older_than_undo_history, "Error when pushing block:\n${e}", ("e", e.to_detail_string()));
-      } catch ( const chain::unlinkable_block_exception& e ) {
-         // translate to a graphene::net exception
-         fc_elog(fc::logger::get("sync"),
-               "Error when pushing block, current head block is ${head}:\n${e}",
-               ("e", e.to_detail_string())
-               ("head", head_block_num));
-         elog("Error when pushing block:\n${e}", ("e", e.to_detail_string()));
-         FC_THROW_EXCEPTION(graphene::net::unlinkable_block_exception, "Error when pushing block:\n${e}", ("e", e.to_detail_string()));
-      } catch( const fc::exception& e ) {
-         fc_elog(fc::logger::get("sync"),
-               "Error when pushing block, current head block is ${head}:\n${e}",
-               ("e", e.to_detail_string())
-               ("head", head_block_num));
-         elog("Error when pushing block:\n${e}", ("e", e.to_detail_string()));
-         if (e.code() == 4080000) {
-           elog("Rethrowing as graphene::net exception");
-           FC_THROW_EXCEPTION(graphene::net::unlinkable_block_exception, "Error when pushing block:\n${e}", ("e", e.to_detail_string()));
-         } else {
-           throw;
+      } catch (const fc::exception &e) {
+         switch (e.code()) {
+         case chain::unlinkable_block_exception::code_value:
+            FC_THROW_EXCEPTION(graphene::net::unlinkable_block_exception, "unlinkable block");
+         case chain::block_too_old_exception::code_value:
+            FC_THROW_EXCEPTION(graphene::net::block_older_than_undo_history, "old block");
          }
+         fc_elog(fc::logger::get("sync"),
+                  "Error when pushing block, current head block is ${head}:\n${e}",
+                  ("e", e.to_detail_string())("head", head_block_num));
+         throw;
       }
    }
    else

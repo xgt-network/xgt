@@ -114,13 +114,6 @@
       } \
     } invocation_logger(&total_ ## name ## _counter, &active_ ## name ## _counter)
 
-//log these messages even at warn level when operating on the test network
-#ifdef GRAPHENE_TEST_NETWORK
-#define testnetlog wlog
-#else
-#define testnetlog(...) do {} while (0)
-#endif
-
 namespace graphene { namespace net {
 
   namespace detail
@@ -1291,8 +1284,6 @@ namespace graphene { namespace net {
                 items_to_advertise_by_type[item_to_advertise.item_type].push_back(item_to_advertise.item_hash);
                 peer->inventory_advertised_to_peer.insert(peer_connection::timestamped_item_id(item_to_advertise, fc::time_point::now()));
                 ++total_items_to_send_to_this_peer;
-                if (item_to_advertise.item_type == trx_message_type)
-                  testnetlog("advertising transaction ${id} to peer ${endpoint}", ("id", item_to_advertise.item_hash)("endpoint", peer->get_remote_endpoint()));
                 dlog("advertising item ${id} to peer ${endpoint}", ("id", item_to_advertise.item_hash)("endpoint", peer->get_remote_endpoint()));
               }
             }
@@ -3106,19 +3097,11 @@ namespace graphene { namespace net {
       try
       {
         std::vector<fc::uint160_t> contained_transaction_message_ids;
-        fc_ilog(fc::logger::get("sync"),
+        fc_dlog(fc::logger::get("sync"),
                 "p2p pushing sync block #${block_num} ${block_hash}",
                 ("block_num", block_message_to_send.block.block_num())
                 ("block_hash", block_message_to_send.block_id));
         _delegate->handle_block(block_message_to_send, true, contained_transaction_message_ids);
-
-        auto bn = block_message_to_send.block.block_num();
-        //if(bn % 1000 == 0)
-        {
-         ilog("Successfully pushed sync block ${num} (id:${id})",
-               ("num", bn)
-               ("id", block_message_to_send.block_id));
-        }
 
         _most_recent_blocks_accepted.push_back(block_message_to_send.block_id);
 
@@ -3126,17 +3109,16 @@ namespace graphene { namespace net {
       }
       catch (const block_older_than_undo_history& e)
       {
-        fc_wlog(fc::logger::get("sync"),
+        fc_ilog(fc::logger::get("sync"),
+                "p2p failed to push block #${block_num} ${block_hash}: block is too old.",
+                ("block_num", block_message_to_send.block.block_num())
+                ("block_hash", block_message_to_send.block_id));
+        fc_dlog(fc::logger::get("sync"),
                 "p2p failed to push sync block #${block_num} ${block_hash}: block is on a fork older than our undo history would "
                 "allow us to switch to: ${e}",
                 ("block_num", block_message_to_send.block.block_num())
                 ("block_hash", block_message_to_send.block_id)
                 ("e", (fc::exception)e));
-        wlog("Failed to push sync block ${num} (id:${id}): block is on a fork older than our undo history would "
-             "allow us to switch to: ${e}",
-             ("num", block_message_to_send.block.block_num())
-             ("id", block_message_to_send.block_id)
-             ("e", (fc::exception)e));
         handle_message_exception = e;
       }
       catch (const fc::canceled_exception&)
@@ -3149,10 +3131,6 @@ namespace graphene { namespace net {
                 "p2p failed to push sync block #${block_num} ${block_hash}: client rejected sync block sent by peer: ${e}",
                 ("block_num", block_message_to_send.block.block_num())
                 ("block_hash", block_message_to_send.block_id)("e", e));
-        wlog("Failed to push sync block ${num} (id:${id}): client rejected sync block sent by peer: ${e}",
-             ("num", block_message_to_send.block.block_num())
-             ("id", block_message_to_send.block_id)
-             ("e", e));
         handle_message_exception = e;
       }
 
@@ -3237,15 +3215,6 @@ namespace graphene { namespace net {
             }
           }
         }
-      }
-      else
-      {
-         // Invalid message received
-         for (const peer_connection_ptr& peer : _active_connections)
-         {
-            wlog("Invalid message received from peer ${endpoint}, ignoring",
-               ("endpoint", peer->get_remote_endpoint()));
-         }
       }
 
       for (const peer_connection_ptr& peer : peers_with_newly_empty_item_lists)
@@ -4552,11 +4521,7 @@ namespace graphene { namespace net {
       {
         _node_configuration = node_configuration();
 
-#ifdef GRAPHENE_TEST_NETWORK
-        uint32_t port = GRAPHENE_NET_TEST_P2P_PORT + GRAPHENE_TEST_NETWORK_VERSION;
-#else
         uint32_t port = GRAPHENE_NET_DEFAULT_P2P_PORT;
-#endif
         _node_configuration.listen_endpoint.set_port( port );
         _node_configuration.accept_incoming_connections = true;
         _node_configuration.wait_if_endpoint_is_busy = false;
