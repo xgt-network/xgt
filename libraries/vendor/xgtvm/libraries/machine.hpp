@@ -547,10 +547,6 @@ namespace machine
     std::vector<word> code;
     message msg;
     std::map<size_t, typed_word> memory;
-    // TODO writing to memory requires type information to be added to memory_type_data
-    // 0 for string and bytes / tightly packed
-    // 1 for array / sparsely packed data
-    // XXX Refers to non-standard packed mode in solidity ABI spec
     std::map<typed_big_word, typed_big_word> storage;
     std::vector<word> return_value;
     std::vector<word> ext_return_data;

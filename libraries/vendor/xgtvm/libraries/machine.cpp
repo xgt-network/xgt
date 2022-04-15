@@ -595,8 +595,6 @@ namespace machine
 
         for (size_t i = 0; i < length; ++i) {
           memory[dest_offset + i] = typed_word(msg.input_data[offset + i], true);
-          // TODO This isn't being set correctly in the constructor
-          memory[dest_offset + i].is_sparse = true;
         }
 
         break;
@@ -613,8 +611,6 @@ namespace machine
 
         for (size_t i = 0; i < length; ++i) {
           memory[dest_offset + i] = typed_word(code[offset + i], true);
-          // TODO This isn't being set correctly in the constructor
-          memory[dest_offset + i].is_sparse = true;
         }
 
         break;
@@ -644,8 +640,6 @@ namespace machine
 
         for (size_t i = 0; i < length; ++i) {
           memory[dest_offset + i] = typed_word(ext_contract_code[offset + i], true);
-          // TODO This isn't being set correctly in the constructor
-          memory[dest_offset + i].is_sparse = true;
         }
 
         break;
@@ -2590,7 +2584,6 @@ namespace machine
         }
       case create_opcode:
         logger << "op create" << std::endl;
-        // TODO REVIEW
         va = pop_word(); // value
         vb = pop_word(); // offset
         vc = pop_word(); // length
@@ -2676,19 +2669,6 @@ namespace machine
         break;
       case return_opcode:
         logger << "op return" << std::endl;
-        // XXX
-        // TODO REVIEW
-        // a = pop_word(); // offset
-        // b = pop_word(); // length
-        // logger << std::to_string(a) << std::endl;
-        // logger << std::to_string(b) << std::endl; // return_value.resize(b);
-        // // TODO: Bounds checking
-        // // TODO: Check if size needs to be capped
-        // // TODO: Optimize
-        // for (int i = 0; i < return_value.size(); i++)
-        //   return_value[i] = memory[a + i];
-        // state = machine_state::stopped;
-
         va = pop_word(); // offset
         vb = pop_word(); // length
 
