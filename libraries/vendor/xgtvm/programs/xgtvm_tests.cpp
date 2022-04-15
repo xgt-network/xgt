@@ -14,25 +14,25 @@ machine::chain_adapter make_chain_adapter()
   std::function< machine::big_word(std::vector<machine::word>) > sha3 = [](std::vector<machine::word> memory) -> machine::big_word
   {
     std::cout << "chain_adapter::sha3" << std::endl;
-    return 0;
+    return machine::big_word(0);
   };
 
   std::function< machine::big_word(machine::big_word) > get_balance = [](machine::big_word address_ripemd160) -> machine::big_word
   {
     std::cout << "chain_adapter::get_balance" << std::endl;
-    return 0;
+    return machine::big_word(0);
   };
 
-  std::function< std::string(std::string) > get_code_hash = [](std::string address) -> std::string
+  std::function< machine::big_word(machine::big_word) > get_code_hash = [](machine::big_word address) -> machine::big_word
   {
     std::cout << "chain_adapter::get_code_hash" << std::endl;
-    return "";
+    return machine::big_word(0);
   };
 
   std::function< machine::big_word(uint64_t) > get_block_hash = [](uint64_t block_num) -> machine::big_word
   {
     std::cout << "chain_adapter::get_block_hash" << std::endl;
-    return {};
+    return machine::big_word(0);
   };
 
   std::function< std::vector<machine::word>(machine::big_word) > get_code_at_addr = [](machine::big_word address) -> std::vector<machine::word>
@@ -86,7 +86,8 @@ machine::chain_adapter make_chain_adapter()
   std::function< machine::big_word(machine::big_word) > get_storage = [](machine::big_word) -> machine::big_word
   {
     std::cout << "chain_adapter::get_storage" << std::endl;
-    return 0;
+
+    return machine::big_word(0);
   };
 
   std::function< bool(machine::big_word, machine::big_word) > set_storage = [](machine::big_word, machine::big_word value) -> bool
@@ -101,15 +102,9 @@ machine::chain_adapter make_chain_adapter()
     return {};
   };
 
-  std::function< bool(std::string) > self_destruct = [](std::string address) -> bool
+  std::function< bool(machine::big_word) > self_destruct = [](machine::big_word address) -> bool
   {
     std::cout << "chain_adapter::self_destruct" << std::endl;
-    return {};
-  };
-
-  std::function< std::vector<machine::word>(std::string) > get_input_data = [](std::string address) -> std::vector<machine::word>
-  {
-    std::cout << "chain_adapter::get_input_data" << std::endl;
     return {};
   };
 
@@ -130,7 +125,6 @@ machine::chain_adapter make_chain_adapter()
     set_storage,
     contract_return,
     self_destruct,
-    get_input_data
   };
 
   return adapter;

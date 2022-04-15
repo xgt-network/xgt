@@ -38,125 +38,130 @@ namespace machine
     return x.convert_to<size_t>();
   }
 
-  big_word to_big_word(int64_t a)
+  typed_big_word to_typed_big_word(int64_t a, bool is_sparse = false)
   {
-    return a;
+    return typed_big_word(a, is_sparse);
   }
 
-  big_word to_big_word(size_t a)
+  typed_big_word to_typed_big_word(size_t a, bool is_sparse = false)
   {
-    return a;
+    return typed_big_word(a, is_sparse);
   }
 
-  big_word to_big_word(word a)
+  typed_big_word to_typed_big_word(typed_word a, bool is_sparse = false)
   {
-    return a;
+    return typed_big_word(a.value, is_sparse);
   }
 
-  big_word to_big_word(word a, word b)
+  typed_big_word to_typed_big_word(typed_word a, typed_word b, bool is_sparse = false)
   {
-    big_word va = ((big_word)a << 8) | b;
+    typed_big_word va = (to_typed_big_word(a).value << 8) | to_typed_big_word(b).value;
+    va.is_sparse = is_sparse;
     return va;
   }
 
-  big_word to_big_word(word a, word b, word c, word d)
+  typed_big_word to_typed_big_word(typed_word a, typed_word b, typed_word c, typed_word d, bool is_sparse = false)
   {
-    big_word va = ((big_word)a << 8) | b;
-    big_word vb = (va << 8) | c;
-    big_word vc = (vb << 8) | d;
+    typed_big_word va = (to_typed_big_word(a).value << 8) | to_typed_big_word(b).value;
+    typed_big_word vb = (va.value << 8) | c.value;
+    typed_big_word vc = (vb.value << 8) | d.value;
+    vc.is_sparse = is_sparse;
     return vc;
   }
 
-  big_word to_big_word(word a, word b, word c, word d, word e, word f, word g, word h)
+  typed_big_word to_typed_big_word(typed_word a, typed_word b, typed_word c, typed_word d, typed_word e, typed_word f, typed_word g, typed_word h, bool is_sparse = false)
   {
-    big_word va = ((big_word)a << 8) | b;
-    big_word vb = (va << 8) | c;
-    big_word vc = (vb << 8) | d;
-    big_word vd = (vc << 8) | e;
-    big_word ve = (vd << 8) | f;
-    big_word vf = (ve << 8) | g;
-    big_word vg = (vf << 8) | h;
+    typed_big_word va = (to_typed_big_word(a).value << 8) | to_typed_big_word(b).value;
+    typed_big_word vb = (va.value << 8) | c.value;
+    typed_big_word vc = (vb.value << 8) | d.value;
+    typed_big_word vd = (vc.value << 8) | e.value;
+    typed_big_word ve = (vd.value << 8) | f.value;
+    typed_big_word vf = (ve.value << 8) | g.value;
+    typed_big_word vg = (vf.value << 8) | h.value;
+    vg.is_sparse = is_sparse;
     return vg;
   }
 
-  big_word to_big_word(word a, word b, word c, word d, word e, word f, word g,
-      word h, word i, word j, word k, word l, word m, word n, word o, word p)
+  typed_big_word to_typed_big_word(typed_word a, typed_word b, typed_word c, typed_word d, typed_word e, typed_word f, typed_word g,
+      typed_word h, typed_word i, typed_word j, typed_word k, typed_word l, typed_word m, typed_word n, typed_word o, typed_word p, bool is_sparse = false)
   {
-    big_word va = ((big_word)a << 8) | b;
-    big_word vb = (va << 8) | c;
-    big_word vc = (vb << 8) | d;
-    big_word vd = (vc << 8) | e;
-    big_word ve = (vd << 8) | f;
-    big_word vf = (ve << 8) | g;
-    big_word vg = (vf << 8) | h;
-    big_word vh = (vg << 8) | i;
-    big_word vi = (vh << 8) | j;
-    big_word vj = (vi << 8) | k;
-    big_word vk = (vj << 8) | l;
-    big_word vl = (vk << 8) | m;
-    big_word vm = (vl << 8) | n;
-    big_word vn = (vm << 8) | o;
-    big_word vo = (vn << 8) | p;
+    typed_big_word va = (to_typed_big_word(a).value << 8) | to_typed_big_word(b).value;
+    typed_big_word vb = (va.value << 8) | c.value;
+    typed_big_word vc = (vb.value << 8) | d.value;
+    typed_big_word vd = (vc.value << 8) | e.value;
+    typed_big_word ve = (vd.value << 8) | f.value;
+    typed_big_word vf = (ve.value << 8) | g.value;
+    typed_big_word vg = (vf.value << 8) | h.value;
+    typed_big_word vh = (vg.value << 8) | i.value;
+    typed_big_word vi = (vh.value << 8) | j.value;
+    typed_big_word vj = (vi.value << 8) | k.value;
+    typed_big_word vk = (vj.value << 8) | l.value;
+    typed_big_word vl = (vk.value << 8) | m.value;
+    typed_big_word vm = (vl.value << 8) | n.value;
+    typed_big_word vn = (vm.value << 8) | o.value;
+    typed_big_word vo = (vn.value << 8) | p.value;
+    vo.is_sparse = is_sparse;
     return vo;
   }
 
-  big_word to_big_word(word a, word b, word c, word d, word e, word f, word g,
-      word h, word i, word j, word k, word l, word m, word n, word o, word p,
-      word q, word r, word s, word t, word u, word v, word w, word x, word y,
-      word z, word aa, word ab, word ac, word ad, word ae, word af)
+  typed_big_word to_typed_big_word(typed_word a, typed_word b, typed_word c, typed_word d, typed_word e, typed_word f, typed_word g,
+      typed_word h, typed_word i, typed_word j, typed_word k, typed_word l, typed_word m, typed_word n, typed_word o, typed_word p,
+      typed_word q, typed_word r, typed_word s, typed_word t, typed_word u, typed_word v, typed_word w, typed_word x, typed_word y,
+      typed_word z, typed_word aa, typed_word ab, typed_word ac, typed_word ad, typed_word ae, typed_word af, bool is_sparse = false)
   {
-    big_word va  = ((big_word)a << 8) | b;
-    big_word vb  = (va << 8)  | c;
-    big_word vc  = (vb << 8)  | d;
-    big_word vd  = (vc << 8)  | e;
-    big_word ve  = (vd << 8)  | f;
-    big_word vf  = (ve << 8)  | g;
-    big_word vg  = (vf << 8)  | h;
-    big_word vh  = (vg << 8)  | i;
-    big_word vi  = (vh << 8)  | j;
-    big_word vj  = (vi << 8)  | k;
-    big_word vk  = (vj << 8)  | l;
-    big_word vl  = (vk << 8)  | m;
-    big_word vm  = (vl << 8)  | n;
-    big_word vn  = (vm << 8)  | o;
-    big_word vo  = (vn << 8)  | p;
-    big_word vp  = (vo << 8)  | q;
-    big_word vq  = (vp << 8)  | r;
-    big_word vr  = (vq << 8)  | s;
-    big_word vs  = (vr << 8)  | t;
-    big_word vt  = (vs << 8)  | u;
-    big_word vu  = (vt << 8)  | v;
-    big_word vv  = (vu << 8)  | w;
-    big_word vw  = (vv << 8)  | x;
-    big_word vx  = (vw << 8)  | y;
-    big_word vy  = (vx << 8)  | z;
-    big_word vz  = (vy << 8)  | aa;
-    big_word vaa = (vz << 8)  | ab;
-    big_word vab = (vaa << 8) | ac;
-    big_word vac = (vab << 8) | ad;
-    big_word vad = (vac << 8) | ae;
-    big_word vae = (vad << 8) | af;
+    typed_big_word va  = (to_typed_big_word(a).value << 8) | to_typed_big_word(b).value;
+    typed_big_word vb  = (va.value << 8)  | c.value;
+    typed_big_word vc  = (vb.value << 8)  | d.value;
+    typed_big_word vd  = (vc.value << 8)  | e.value;
+    typed_big_word ve  = (vd.value << 8)  | f.value;
+    typed_big_word vf  = (ve.value << 8)  | g.value;
+    typed_big_word vg  = (vf.value << 8)  | h.value;
+    typed_big_word vh  = (vg.value << 8)  | i.value;
+    typed_big_word vi  = (vh.value << 8)  | j.value;
+    typed_big_word vj  = (vi.value << 8)  | k.value;
+    typed_big_word vk  = (vj.value << 8)  | l.value;
+    typed_big_word vl  = (vk.value << 8)  | m.value;
+    typed_big_word vm  = (vl.value << 8)  | n.value;
+    typed_big_word vn  = (vm.value << 8)  | o.value;
+    typed_big_word vo  = (vn.value << 8)  | p.value;
+    typed_big_word vp  = (vo.value << 8)  | q.value;
+    typed_big_word vq  = (vp.value << 8)  | r.value;
+    typed_big_word vr  = (vq.value << 8)  | s.value;
+    typed_big_word vs  = (vr.value << 8)  | t.value;
+    typed_big_word vt  = (vs.value << 8)  | u.value;
+    typed_big_word vu  = (vt.value << 8)  | v.value;
+    typed_big_word vv  = (vu.value << 8)  | w.value;
+    typed_big_word vw  = (vv.value << 8)  | x.value;
+    typed_big_word vx  = (vw.value << 8)  | y.value;
+    typed_big_word vy  = (vx.value << 8)  | z.value;
+    typed_big_word vz  = (vy.value << 8)  | aa.value;
+    typed_big_word vaa = (vz.value << 8)  | ab.value;
+    typed_big_word vab = (vaa.value << 8) | ac.value;
+    typed_big_word vac = (vab.value << 8) | ad.value;
+    typed_big_word vad = (vac.value << 8) | ae.value;
+    typed_big_word vae = (vad.value << 8) | af.value;
+    vae.is_sparse = is_sparse;
     return vae;
   }
 
-  std::vector<word> from_big_word(big_word a)
+  std::vector<typed_word> from_typed_big_word(typed_big_word a)
   {
-    std::vector<word> vec;
-    vec.push_back(static_cast<word>(a & 0xFF));
+    std::vector<typed_word> vec;
+    vec.push_back( typed_word( static_cast<word>(a.value & 0xFF), a.is_sparse ) );
     for (size_t i = 0; i < 31; i++) {
-      vec.push_back(static_cast<word>(((a >>= 8) & 0xFF)));
+      vec.push_back( typed_word( static_cast<word>( (a.value >>= 8) & 0xFF ), a.is_sparse ) );
     }
 
     return vec;
   }
 
-  std::string inspect(std::vector<word> words)
+  std::string inspect(std::vector<typed_word> words)
   {
     std::stringstream ss;
     ss << "[";
     for (size_t i = 0; i < words.size(); i++)
     {
-      ss << std::to_string(words.at(i));
+      ss << std::to_string(words.at(i).value);
       if (i != words.size() - 1)
         ss << ", ";
     }
@@ -164,21 +169,21 @@ namespace machine
     return ss.str();
   }
 
-  std::string inspect(std::map<size_t, word> words)
+  std::string inspect(std::map<size_t, typed_word> words)
   {
     std::stringstream ss;
     ss << "[";
-    std::map<size_t,word>::iterator it;
+    std::map<size_t,typed_word>::iterator it;
     size_t i = 0;
     while(true)
     {
       it = words.find(i);
       if (it != words.end()) {
-        ss << std::to_string(it->second);
+        ss << std::to_string(it->second.value);
         ss << ", ";
       }
       else {
-        ss << std::to_string(it->second);
+        ss << std::to_string(it->second.value);
         break;
       }
       i++;
@@ -187,46 +192,30 @@ namespace machine
     return ss.str();
   }
 
-  void machine::push_word(stack_variant v)
+  void machine::push_word(typed_big_word v)
   {
     stack.push_front(v);
   }
 
-  big_word machine::pop_word()
+  typed_big_word machine::pop_word()
   {
-    stack_variant& stack_object = stack.front();
-    if (big_word* it = boost::get<big_word>(&stack_object))
-    {
-      stack.pop_front();
-      return *it;
-    }
-    throw;
+    typed_big_word& stack_object = stack.front();
+    stack.pop_front();
+    return stack_object;
   }
 
-  big_word machine::peek_word()
+  typed_big_word machine::peek_word()
   {
-    stack_variant& stack_object = stack.front();
-    if (big_word* it = boost::get<big_word>(&stack_object))
-    {
-      stack.pop_front();
-      return *it;
-    }
-    else {
-      throw;
-    }
-  }
-
-  void machine::push_string(std::string s)
-  {
-    stack.push_front(s);
+    typed_big_word& stack_object = stack.front();
+    return stack_object;
   }
 
   void machine::print_stack()
   {
     for (auto it = stack.cbegin(); it != stack.cend(); ++it)
     {
-      stack_variant w = *it;
-      logger << w;
+      typed_big_word w = *it;
+      logger << w.value;
       if (it + 1 != stack.cend())
         logger << " ";
     }
@@ -255,22 +244,21 @@ namespace machine
 
     // Allow to skip evaluation by throwing exception.
     // TODO: Verify this behavior.
-    word a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
+    typed_word a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x,
          y, z, aa, ab, ac, ad, ae, af;
-    big_word va, vb, vc, vd, ve, vf, vg, vh, vi, vj, vk, vl, vm, vn, vo, vp, vq;
+    typed_big_word va, vb, vc, vd, ve, vf, vg, vh, vi, vj, vk, vl, vm, vn, vo, vp, vq;
 
     word jumpdest_instruction;
     opcode jumpdest_op;
-    stack_variant sv;
-    signed_big_word sa, sb, sc;
+    typed_signed_big_word sa, sb, sc;
     size_t offset, dest_offset, length, code_size = 0;
-    std::vector<word> vec1;
+    // TODO XXX convert words to typed_words
+    std::vector<typed_word> vec1;
     std::vector<word> contract_args;
     std::vector<word> retval;
     std::vector<word> ext_contract_code;
     std::pair< word, std::vector<word> > contract_call_return;
-    std::vector<word>::const_iterator first, last;
-    std::string* ss;
+    std::vector<typed_word>::const_iterator first, last;
     std::stringstream sstream;
     switch (op)
     {
@@ -304,18 +292,18 @@ namespace machine
         logger << "op div" << std::endl;
         va = pop_word();
         vb = pop_word();
-        if (vb == 0)
-          push_word(word(0));
+        if ( vb == typed_big_word(0) )
+          push_word( typed_big_word(0) );
         else
           vc = va / vb;
         push_word(vc);
         break;
       case sdiv_opcode:
         logger << "op sdiv" << std::endl;
-        sa = alias_to_int256_t( pop_word() );
-        sb = alias_to_int256_t( pop_word() );
+        sa = alias_to_int256_t( pop_word().value );
+        sb = alias_to_int256_t( pop_word().value );
         sc = sa / sb;
-        push_word( alias_to_uint256_t(sc) );
+        push_word( alias_to_uint256_t(sc.value) );
         break;
       case mod_opcode:
         logger << "op mod" << std::endl;
@@ -326,10 +314,10 @@ namespace machine
         break;
       case smod_opcode:
         logger << "op smod" << std::endl;
-        sa = alias_to_int256_t( pop_word() );
-        sb = alias_to_int256_t( pop_word() );
+        sa = alias_to_int256_t( pop_word().value );
+        sb = alias_to_int256_t( pop_word().value );
         sc = sa % sb;
-        push_word( alias_to_uint256_t(sc) );
+        push_word( alias_to_uint256_t(sc.value) );
         break;
       case addmod_opcode:
         logger << "op addmod" << std::endl;
@@ -354,69 +342,69 @@ namespace machine
         logger << "op exp" << std::endl;
         va = pop_word(); // base
         vb = pop_word(); // exponent
-        vc = 1;
-        for (int i = 0; i < vb; i++) {
+        vc = typed_big_word(1);
+        for (int i = 0; i < vb.value; i++) {
           vc *= va;
         }
         push_word(vc);
         break;
       case signextend_opcode:
         logger << "op signextend" << std::endl;
-        sa = alias_to_int256_t( pop_word() ); // b
-        sb = alias_to_int256_t( pop_word() ); // x
+        sa = alias_to_int256_t( pop_word().value ); // b
+        sb = alias_to_int256_t( pop_word().value ); // x
 
-        if (sa < 31)
+        if (sa.value < 31)
         {
-          unsigned testBit = static_cast<unsigned>(sa) * 8 + 7;
-          big_word one = 1;
-          big_word mask = ((one << testBit) - 1);
-          if (sb & (one << testBit))
-            sc = sb | ~mask;
+          unsigned testBit = static_cast<unsigned>(sa.value) * 8 + 7;
+          typed_big_word one(1);
+          typed_big_word mask = ((one.value << testBit) - 1);
+          if ( (sb & static_cast<signed_big_word>( (one.value << testBit) ) ) != typed_signed_big_word(0) )
+            sc = sb.value | static_cast<signed_big_word>(~mask.value);
           else
-            sc = sb & mask;
+            sc = sb.value & static_cast<signed_big_word>(mask.value);
         }
 
-        push_word( alias_to_uint256_t(sc) );
+        push_word( alias_to_uint256_t(sc.value) );
         break;
       case lt_opcode:
         logger << "op lt" << std::endl;
         va = pop_word();
         vb = pop_word();
-        vc = va < vb;
+        vc = typed_big_word(va < vb);
         push_word(vc);
         break;
       case gt_opcode:
         logger << "op gt" << std::endl;
         va = pop_word();
         vb = pop_word();
-        vc = va > vb;
+        vc = typed_big_word(va > vb);
         push_word(vc);
         break;
       case slt_opcode:
         logger << "op stl" << std::endl;
-        sa = alias_to_int256_t( pop_word() );
-        sb = alias_to_int256_t( pop_word() );
-        sc = sa < sb;
-        push_word( alias_to_uint256_t(sc) );
+        sa = alias_to_int256_t( pop_word().value );
+        sb = alias_to_int256_t( pop_word().value );
+        sc = sa < sb ? typed_signed_big_word(1) : typed_signed_big_word(0);
+        push_word( alias_to_uint256_t(sc.value) );
         break;
       case sgt_opcode:
         logger << "op sgt" << std::endl;
-        sa = alias_to_int256_t( pop_word() );
-        sb = alias_to_int256_t( pop_word() );
-        sc = sa > sb;
-        push_word( alias_to_uint256_t(sc) );
+        sa = alias_to_int256_t( pop_word().value );
+        sb = alias_to_int256_t( pop_word().value );
+        sc = sa > sb ? typed_signed_big_word(1) : typed_signed_big_word(0);
+        push_word( alias_to_uint256_t(sc.value) );
         break;
       case eq_opcode:
         logger << "op eq" << std::endl;
         va = pop_word();
         vb = pop_word();
-        vc = va == vb;
+        vc = va == vb ? typed_big_word(1) : typed_big_word(0);
         push_word(vc);
         break;
       case iszero_opcode:
         logger << "op iszero" << std::endl;
         va = pop_word();
-        vb = va == 0;
+        vb = va == typed_big_word(0) ? typed_big_word(1) : typed_big_word(0);
         push_word(vb);
         break;
       case and_opcode:
@@ -449,12 +437,12 @@ namespace machine
       case byte_opcode:
         logger << "op byte" << std::endl;
 
-        sa = pop_word(); // index
-        sb = pop_word(); // num
+        sa = static_cast<signed_big_word>( pop_word().value ); // index
+        sb = static_cast<signed_big_word>( pop_word().value ); // num
 
-        sc = sa < 32 ? (sb >> (unsigned)(8 * (31 - sa))) & 0xff : 0;
+        sc = sa.value < 32 ? (sb.value >> (unsigned)(8 * (31 - sa.value))) & 0xff : 0;
 
-        push_word( alias_to_uint256_t(sc) );
+        push_word( alias_to_uint256_t(sc.value) );
         break;
       case shl_opcode:
         logger << "op shl" << std::endl;
@@ -462,7 +450,7 @@ namespace machine
         va = pop_word(); // shift
         vb = pop_word(); // value
 
-        vc = vb << static_cast<size_t>(va);
+        vc = vb.value << static_cast<size_t>(va.value);
 
         push_word(vc);
         break;
@@ -472,17 +460,17 @@ namespace machine
         vb = pop_word(); // value
 
         // TODO Implement shift in a loop for va sizes larger than 256
-        vc = vb >> static_cast<size_t>(va);
+        vc = vb.value >> static_cast<size_t>(va.value);
         push_word(vc);
 
         break;
       case sar_opcode:
         logger << "op sar" << std::endl;
-        sa = alias_to_int256_t( pop_word() ); // shift
-        sb = pop_word(); // value
+        sa = alias_to_int256_t( pop_word().value ); // shift
+        sb = static_cast<signed_big_word>( pop_word().value ); // value
 
-        sc = sb >> sa.convert_to<size_t>();
-        push_word( alias_to_uint256_t(sc) );
+        sc = sb.value >> static_cast<size_t>(sa.value);
+        push_word( alias_to_uint256_t(sc.value) );
 
         break;
       case sha3_opcode:
@@ -490,19 +478,28 @@ namespace machine
         va = pop_word(); // offset
         vb = pop_word(); // length
 
-        // TODO handle case where length of memory segment is 0, stack needs a 0 pushed
-
-        if (vb == 0) {
-          push_word(0);
+        if ( vb == typed_big_word(0) ) {
+          push_word( typed_big_word(0) );
         } else {
-          for (size_t i = static_cast<size_t>(va); i < static_cast<size_t>(va) + static_cast<size_t>(vb); i++) {
-            std::map<size_t,word>::iterator it;
+          for (size_t i = static_cast<size_t>(va.value); i < static_cast<size_t>(va.value) + static_cast<size_t>(vb.value); i++) {
+            std::map<size_t,typed_word>::iterator it;
             it = memory.find(i);
             if (it != memory.end()) {
-              retval.push_back(it->second);
+              if ( it->second.is_sparse ) {
+                for (size_t i = 0; i < 31; i++) {
+                  retval.push_back( word(0) );
+                }
+              }
+              retval.push_back( word(it->second.value) );
             }
             else {
-              retval.push_back(word(0));
+              if ( it->second.is_sparse ) {
+                for (size_t i = 0; i < 32; i++) {
+                  retval.push_back( word(0) );
+                }
+              } else {
+                retval.push_back( word(0) );
+              }
             }
           }
 
@@ -513,12 +510,12 @@ namespace machine
         break;
       case address_opcode:
         logger << "op address" << std::endl;
-        push_word( msg.destination );
+        push_word( typed_big_word(msg.destination) );
         break;
       case balance_opcode:
         logger << "op balance" << std::endl;
         va = pop_word();
-        push_word( adapter.get_balance(va) );
+        push_word( typed_big_word( adapter.get_balance(va.value) ) );
         break;
       case origin_opcode:
         logger << "op origin" << std::endl;
@@ -530,18 +527,19 @@ namespace machine
         break;
       case callvalue_opcode:
         logger << "op callvalue" << std::endl;
-        push_word( msg.value );
+        push_word( typed_big_word(msg.value) );
         break;
       case calldataload_opcode:
         logger << "op calldataload" << std::endl;
-        offset = static_cast<size_t>( pop_word() );
+        va = pop_word();
+        offset = static_cast<size_t>( va.value );
 
         if (offset > msg.input_size) {
           logger << "calldataload start index is larger than message input_size" << std::endl;
           break;
         }
 
-        va = to_big_word(
+        vb = to_typed_big_word(
             msg.input_data[offset + 0],
             msg.input_data[offset + 1],
             msg.input_data[offset + 2],
@@ -573,82 +571,93 @@ namespace machine
             msg.input_data[offset + 28],
             msg.input_data[offset + 29],
             msg.input_data[offset + 30],
-            msg.input_data[offset + 31]
+            msg.input_data[offset + 31],
+            true
         );
-        push_word(va);
+
+        push_word(vb);
         break;
       case calldatasize_opcode:
         logger << "op calldatasize" << std::endl;
-        push_word( to_big_word(msg.input_size) );
+        push_word( to_typed_big_word(msg.input_size) );
         break;
       case calldatacopy_opcode:
         logger << "op calldatacopy" << std::endl;
 
-        dest_offset = static_cast<size_t>( pop_word() );
-        offset = static_cast<size_t>( pop_word() );
-        length = static_cast<size_t>( pop_word() );
+        dest_offset = static_cast<size_t>( pop_word().value );
+        offset = static_cast<size_t>( pop_word().value );
+        length = static_cast<size_t>( pop_word().value );
 
         if ((offset + length) > msg.input_size) {
           logger << "calldatacopy end index is larger than message input_size" << std::endl;
           break;
         }
 
-        for (size_t i = 0; i < length; ++i)
-          memory[dest_offset + i] = msg.input_data[offset + i];
+        for (size_t i = 0; i < length; ++i) {
+          memory[dest_offset + i] = typed_word(msg.input_data[offset + i], true);
+          // TODO This isn't being set correctly in the constructor
+          memory[dest_offset + i].is_sparse = true;
+        }
 
         break;
       case codesize_opcode:
         logger << "op codesize" << std::endl;
-        push_word( to_big_word( code.size() ) );
+        push_word( to_typed_big_word( code.size() ) );
         break;
       case codecopy_opcode:
         logger << "op codecopy" << std::endl;
 
-        dest_offset = static_cast<size_t>( pop_word() );
-        offset = static_cast<size_t>( pop_word() );
-        length = static_cast<size_t>( pop_word() );
+        dest_offset = static_cast<size_t>( pop_word().value );
+        offset = static_cast<size_t>( pop_word().value );
+        length = static_cast<size_t>( pop_word().value );
 
-        for (size_t i = 0; i < length; ++i)
-          memory[dest_offset + i] = code[offset + i];
+        for (size_t i = 0; i < length; ++i) {
+          memory[dest_offset + i] = typed_word(code[offset + i], true);
+          // TODO This isn't being set correctly in the constructor
+          memory[dest_offset + i].is_sparse = true;
+        }
 
         break;
       case energyprice_opcode:
         logger << "op energyprice" << std::endl;
-        push_word( to_big_word( ctx.tx_energyprice ) );
+        push_word( to_typed_big_word( ctx.tx_energyprice ) );
         break;
       case extcodesize_opcode:
         logger << "op extcodesize" << std::endl;
         va = pop_word(); // Address
-        ext_contract_code = adapter.get_code_at_addr(va);
-        push_word( sizeof(ext_contract_code) / sizeof(ext_contract_code[0]) );
+        ext_contract_code = adapter.get_code_at_addr(va.value);
+        push_word( typed_big_word( sizeof(ext_contract_code) / sizeof(ext_contract_code[0]) ) );
         break;
       case extcodecopy_opcode:
         logger << "op extcodecopy" << std::endl;
         va = pop_word(); // address
-        ext_contract_code = adapter.get_code_at_addr(va);
+        ext_contract_code = adapter.get_code_at_addr(va.value);
         code_size = sizeof(ext_contract_code) / sizeof(ext_contract_code[0]);
-        dest_offset = static_cast<size_t>( pop_word() );
-        offset = static_cast<size_t>( pop_word() );
-        length = static_cast<size_t>( pop_word() );
+        dest_offset = static_cast<size_t>( pop_word().value );
+        offset = static_cast<size_t>( pop_word().value );
+        length = static_cast<size_t>( pop_word().value );
 
         if ((offset + length) > code_size) {
           logger << "codecopy end index exceeds external contract code length" << std::endl;
           break;
         }
 
-        for (size_t i = 0; i < length; ++i)
-          memory[dest_offset + i] = ext_contract_code[offset + i];
+        for (size_t i = 0; i < length; ++i) {
+          memory[dest_offset + i] = typed_word(ext_contract_code[offset + i], true);
+          // TODO This isn't being set correctly in the constructor
+          memory[dest_offset + i].is_sparse = true;
+        }
 
         break;
       case returndatasize_opcode:
         logger << "op returndatasize" << std::endl;
-        push_word( ext_return_data.size() );
+        push_word( typed_big_word( ext_return_data.size() ) );
         break;
       case returndatacopy_opcode:
         logger << "op returndatacopy" << std::endl;
-        dest_offset = static_cast<size_t>( pop_word() );
-        offset = static_cast<size_t>( pop_word() );
-        length = static_cast<size_t>( pop_word() );
+        dest_offset = static_cast<size_t>( pop_word().value );
+        offset = static_cast<size_t>( pop_word().value );
+        length = static_cast<size_t>( pop_word().value );
 
         if ( (offset + length) > ext_return_data.size() ) {
           logger << "returndatacopy end index exceeds return data size" << std::endl;
@@ -661,47 +670,37 @@ namespace machine
         break;
       case extcodehash_opcode:
         logger << "op extcodehash" << std::endl;
-        sv = stack.front(); // addr
-        ss = boost::get<std::string>(&sv);
-        if (ss)
-        {
-          stack.pop_front();
-          push_word( adapter.get_code_hash(*ss) );
-        }
-        else
-        {
-          state = machine_state::error;
-          error_message.emplace("Extcodehash operation type error");
-        }
+        va = pop_word(); // addr
+        push_word( typed_big_word( adapter.get_code_hash(va.value) ) );
         break;
       case blockhash_opcode:
         logger << "op blockhash" << std::endl;
         va = pop_word();
-        push_word( adapter.get_block_hash( static_cast<uint64_t>(va) ) );
+        push_word( adapter.get_block_hash( static_cast<uint64_t>(va.value) ) );
         break;
       case coinbase_opcode:
         logger << "op coinbase" << std::endl;
-        push_word( ctx.block_coinbase );
+        push_word( typed_big_word(ctx.block_coinbase) );
         break;
       case timestamp_opcode:
         logger << "op timestamp" << std::endl;
-        push_word( ctx.block_timestamp );
+        push_word( typed_big_word(ctx.block_timestamp) );
         break;
       case number_opcode:
         logger << "op number" << std::endl;
-        push_word( ctx.block_number );
+        push_word( typed_big_word(ctx.block_number) );
         break;
       case difficulty_opcode:
         logger << "op difficulty" << std::endl;
-        push_word( ctx.block_difficulty );
+        push_word( typed_big_word(ctx.block_difficulty) );
         break;
       case energylimit_opcode:
         logger << "op energylimit" << std::endl;
-        push_word( ctx.block_energylimit );
+        push_word( typed_big_word(ctx.block_energylimit) );
         break;
       case selfbalance_opcode:
         logger << "op selfbalance" << std::endl;
-        push_word( adapter.get_balance(msg.destination) );
+        push_word( adapter.get_balance( msg.destination ) );
         break;
       case pop_opcode:
         logger << "op pop" << std::endl;
@@ -710,40 +709,42 @@ namespace machine
       case mload_opcode:
         logger << "op mload" << std::endl;
         va = pop_word(); // offset
-        vb = to_big_word(
-            memory[static_cast<size_t>(va) + 0],
-            memory[static_cast<size_t>(va) + 1],
-            memory[static_cast<size_t>(va) + 2],
-            memory[static_cast<size_t>(va) + 3],
-            memory[static_cast<size_t>(va) + 4],
-            memory[static_cast<size_t>(va) + 5],
-            memory[static_cast<size_t>(va) + 6],
-            memory[static_cast<size_t>(va) + 7],
-            memory[static_cast<size_t>(va) + 8],
-            memory[static_cast<size_t>(va) + 9],
-            memory[static_cast<size_t>(va) + 10],
-            memory[static_cast<size_t>(va) + 11],
-            memory[static_cast<size_t>(va) + 12],
-            memory[static_cast<size_t>(va) + 13],
-            memory[static_cast<size_t>(va) + 14],
-            memory[static_cast<size_t>(va) + 15],
-            memory[static_cast<size_t>(va) + 16],
-            memory[static_cast<size_t>(va) + 17],
-            memory[static_cast<size_t>(va) + 18],
-            memory[static_cast<size_t>(va) + 19],
-            memory[static_cast<size_t>(va) + 20],
-            memory[static_cast<size_t>(va) + 21],
-            memory[static_cast<size_t>(va) + 22],
-            memory[static_cast<size_t>(va) + 23],
-            memory[static_cast<size_t>(va) + 24],
-            memory[static_cast<size_t>(va) + 25],
-            memory[static_cast<size_t>(va) + 26],
-            memory[static_cast<size_t>(va) + 27],
-            memory[static_cast<size_t>(va) + 28],
-            memory[static_cast<size_t>(va) + 29],
-            memory[static_cast<size_t>(va) + 30],
-            memory[static_cast<size_t>(va) + 31]
+        vb = to_typed_big_word(
+            memory[static_cast<size_t>(va.value) + 0],
+            memory[static_cast<size_t>(va.value) + 1],
+            memory[static_cast<size_t>(va.value) + 2],
+            memory[static_cast<size_t>(va.value) + 3],
+            memory[static_cast<size_t>(va.value) + 4],
+            memory[static_cast<size_t>(va.value) + 5],
+            memory[static_cast<size_t>(va.value) + 6],
+            memory[static_cast<size_t>(va.value) + 7],
+            memory[static_cast<size_t>(va.value) + 8],
+            memory[static_cast<size_t>(va.value) + 9],
+            memory[static_cast<size_t>(va.value) + 10],
+            memory[static_cast<size_t>(va.value) + 11],
+            memory[static_cast<size_t>(va.value) + 12],
+            memory[static_cast<size_t>(va.value) + 13],
+            memory[static_cast<size_t>(va.value) + 14],
+            memory[static_cast<size_t>(va.value) + 15],
+            memory[static_cast<size_t>(va.value) + 16],
+            memory[static_cast<size_t>(va.value) + 17],
+            memory[static_cast<size_t>(va.value) + 18],
+            memory[static_cast<size_t>(va.value) + 19],
+            memory[static_cast<size_t>(va.value) + 20],
+            memory[static_cast<size_t>(va.value) + 21],
+            memory[static_cast<size_t>(va.value) + 22],
+            memory[static_cast<size_t>(va.value) + 23],
+            memory[static_cast<size_t>(va.value) + 24],
+            memory[static_cast<size_t>(va.value) + 25],
+            memory[static_cast<size_t>(va.value) + 26],
+            memory[static_cast<size_t>(va.value) + 27],
+            memory[static_cast<size_t>(va.value) + 28],
+            memory[static_cast<size_t>(va.value) + 29],
+            memory[static_cast<size_t>(va.value) + 30],
+            memory[static_cast<size_t>(va.value) + 31],
+            memory[static_cast<size_t>(va.value)].is_sparse
         );
+
         push_word(vb);
         break;
       case mstore_opcode:
@@ -752,40 +753,10 @@ namespace machine
         vb = pop_word(); // value
         logger << "memory before: " << inspect(memory) << std::endl;
 
-        vec1 = from_big_word(vb);
+        vec1 = from_typed_big_word(vb);
+        for (size_t i = 0; i < 32; i++)
+          memory[static_cast<size_t>(va.value) + i] = vec1[31 - i];
 
-        memory[static_cast<size_t>(va) + 0]  = vec1[31];
-        memory[static_cast<size_t>(va) + 1]  = vec1[30];
-        memory[static_cast<size_t>(va) + 2]  = vec1[29];
-        memory[static_cast<size_t>(va) + 3]  = vec1[28];
-        memory[static_cast<size_t>(va) + 4]  = vec1[27];
-        memory[static_cast<size_t>(va) + 5]  = vec1[26];
-        memory[static_cast<size_t>(va) + 6]  = vec1[25];
-        memory[static_cast<size_t>(va) + 7]  = vec1[24];
-        memory[static_cast<size_t>(va) + 8]  = vec1[23];
-        memory[static_cast<size_t>(va) + 9]  = vec1[22];
-        memory[static_cast<size_t>(va) + 10] = vec1[21];
-        memory[static_cast<size_t>(va) + 11] = vec1[20];
-        memory[static_cast<size_t>(va) + 12] = vec1[19];
-        memory[static_cast<size_t>(va) + 13] = vec1[18];
-        memory[static_cast<size_t>(va) + 14] = vec1[17];
-        memory[static_cast<size_t>(va) + 15] = vec1[16];
-        memory[static_cast<size_t>(va) + 16] = vec1[15];
-        memory[static_cast<size_t>(va) + 17] = vec1[14];
-        memory[static_cast<size_t>(va) + 18] = vec1[13];
-        memory[static_cast<size_t>(va) + 19] = vec1[12];
-        memory[static_cast<size_t>(va) + 20] = vec1[11];
-        memory[static_cast<size_t>(va) + 21] = vec1[10];
-        memory[static_cast<size_t>(va) + 22] = vec1[9];
-        memory[static_cast<size_t>(va) + 23] = vec1[8];
-        memory[static_cast<size_t>(va) + 24] = vec1[7];
-        memory[static_cast<size_t>(va) + 25] = vec1[6];
-        memory[static_cast<size_t>(va) + 26] = vec1[5];
-        memory[static_cast<size_t>(va) + 27] = vec1[4];
-        memory[static_cast<size_t>(va) + 28] = vec1[3];
-        memory[static_cast<size_t>(va) + 29] = vec1[2];
-        memory[static_cast<size_t>(va) + 30] = vec1[1];
-        memory[static_cast<size_t>(va) + 31] = vec1[0];
         logger << "memory after: " << inspect(memory) << std::endl;
         break;
       case mstore8_opcode:
@@ -793,14 +764,13 @@ namespace machine
         va = pop_word(); // offset
         vb = pop_word(); // value
         logger << "memory before: " << inspect(memory) << std::endl;
-        // TODO: Verify order
-        memory[static_cast<size_t>(va)] = get_byte(vb, 0); // TODO verify byte of big_word vb
+        memory[static_cast<size_t>(va.value)] = get_byte(vb.value, 0); // TODO verify byte of typed_big_word vb
         logger << "memory after: " << inspect(memory) << std::endl;
         break;
       case sload_opcode:
         logger << "op sload" << std::endl;
         va = pop_word();
-        vb = adapter.get_storage(va);
+        vb = typed_big_word( adapter.get_storage(va.value) );
 
         push_word(vb);
         break;
@@ -809,16 +779,16 @@ namespace machine
         va = pop_word();
         vb = pop_word();
 
-        adapter.set_storage(va, vb);
+        adapter.set_storage(va.value, vb.value);
         break;
       case jump_opcode:
         logger << "op jump" << std::endl;
         va = pop_word(); // destination
 
-        jumpdest_instruction = code[get_bytes(va, 0)];
+        jumpdest_instruction = code[get_bytes( va.value, 0 )];
         jumpdest_op = (opcode)jumpdest_instruction;
         if (jumpdest_op == jumpdest_opcode)
-          pc = get_bytes(va, 0);
+          pc = get_bytes( va.value, 0 );
         break;
       case jumpi_opcode:
         logger << "op jumpi" << std::endl;
@@ -826,21 +796,21 @@ namespace machine
         va = pop_word(); // destination
         vb = pop_word(); // condition
 
-        if (vb != 0) {
-          jumpdest_instruction = code[get_bytes(va, 0)];
+        if (vb != typed_big_word(0)) {
+          jumpdest_instruction = code[get_bytes( va.value, 0 )];
           jumpdest_op = (opcode)jumpdest_instruction;
           if (jumpdest_op == jumpdest_opcode)
-            pc = get_bytes(va, 0);
+            pc = get_bytes( va.value, 0 );
         }
         break;
       case pc_opcode:
         logger << "op pc" << std::endl;
-        va = pc;
+        va = typed_big_word(pc);
         push_word(va);
         break;
       case msize_opcode:
         logger << "op msize" << std::endl;
-        push_word( to_big_word( memory.size() ) );
+        push_word( to_typed_big_word( memory.size() ) );
         break;
       case energy_opcode:
         logger << "op energy" << std::endl;
@@ -853,7 +823,7 @@ namespace machine
         logger << "op push1" << std::endl;
         a = code[pc];
         pc++;
-        push_word(a);
+        push_word(to_typed_big_word(a));
         break;
       case push2_opcode:
         logger << "op push2" << std::endl;
@@ -861,7 +831,7 @@ namespace machine
         pc++;
         b = code[pc];
         pc++;
-        va = to_big_word(a, b);
+        va = to_typed_big_word(a, b);
         push_word(va);
         break;
       case push3_opcode:
@@ -872,7 +842,7 @@ namespace machine
         pc++;
         c = code[pc];
         pc++;
-        va = to_big_word(0, a, b, c);
+        va = to_typed_big_word(0, a, b, c);
         push_word(va);
         break;
       case push4_opcode:
@@ -885,7 +855,7 @@ namespace machine
         pc++;
         d = code[pc];
         pc++;
-        va = to_big_word(a, b, c, d);
+        va = to_typed_big_word(a, b, c, d);
         push_word(va);
         break;
       case push5_opcode:
@@ -900,7 +870,7 @@ namespace machine
         pc++;
         e = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, a, b, c, d, e);
+        va = to_typed_big_word(0, 0, 0, a, b, c, d, e);
         push_word(va);
         break;
       case push6_opcode:
@@ -917,7 +887,7 @@ namespace machine
         pc++;
         f = code[pc];
         pc++;
-        va = to_big_word(0, 0, a, b, c, d, e, f);
+        va = to_typed_big_word(0, 0, a, b, c, d, e, f);
         push_word(va);
         break;
       case push7_opcode:
@@ -936,7 +906,7 @@ namespace machine
         pc++;
         g = code[pc];
         pc++;
-        va = to_big_word(0, a, b, c, d, e, f, g);
+        va = to_typed_big_word(0, a, b, c, d, e, f, g);
         push_word(va);
         break;
       case push8_opcode:
@@ -957,7 +927,7 @@ namespace machine
         pc++;
         h = code[pc];
         pc++;
-        va = to_big_word(a, b, c, d, e, f, g, h);
+        va = to_typed_big_word(a, b, c, d, e, f, g, h);
         push_word(va);
         break;
       case push9_opcode:
@@ -980,7 +950,7 @@ namespace machine
         pc++;
         i = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i);
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i);
         push_word(va);
         break;
       case push10_opcode:
@@ -1005,7 +975,7 @@ namespace machine
         pc++;
         j = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j);
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j);
         push_word(va);
         break;
       case push11_opcode:
@@ -1032,7 +1002,7 @@ namespace machine
         pc++;
         k = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k);
+        va = to_typed_big_word(0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k);
         push_word(va);
         break;
       case push12_opcode:
@@ -1061,7 +1031,7 @@ namespace machine
         pc++;
         l = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l);
+        va = to_typed_big_word(0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l);
         push_word(va);
         break;
       case push13_opcode:
@@ -1092,7 +1062,7 @@ namespace machine
         pc++;
         m = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m);
+        va = to_typed_big_word(0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m);
         push_word(va);
         break;
       case push14_opcode:
@@ -1125,7 +1095,7 @@ namespace machine
         pc++;
         n = code[pc];
         pc++;
-        va = to_big_word(0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
+        va = to_typed_big_word(0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n);
         push_word(va);
         break;
       case push15_opcode:
@@ -1160,7 +1130,7 @@ namespace machine
         pc++;
         o = code[pc];
         pc++;
-        va = to_big_word(0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);
+        va = to_typed_big_word(0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o);
         push_word(va);
         break;
       case push16_opcode:
@@ -1197,7 +1167,7 @@ namespace machine
         pc++;
         p = code[pc];
         pc++;
-        va = to_big_word(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p);
+        va = to_typed_big_word(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p);
         push_word(va);
         break;
       case push17_opcode:
@@ -1236,7 +1206,7 @@ namespace machine
         pc++;
         q = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d,
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d,
             e, f, g, h, i, j, k, l, m, n, o, p, q);
         push_word(va);
         break;
@@ -1278,7 +1248,7 @@ namespace machine
         pc++;
         r = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e,
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e,
             f, g, h, i, j, k, l, m, n, o, p, q, r);
         push_word(va);
         break;
@@ -1322,7 +1292,7 @@ namespace machine
         pc++;
         s = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f,
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f,
             g, h, i, j, k, l, m, n, o, p, q, r, s);
         push_word(va);
         break;
@@ -1368,7 +1338,7 @@ namespace machine
         pc++;
         t = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g,
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g,
             h, i, j, k, l, m, n, o, p, q, r, s, t);
         push_word(va);
         break;
@@ -1416,7 +1386,7 @@ namespace machine
         pc++;
         u = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h,
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h,
             i, j, k, l, m, n, o, p, q, r, s, t, u);
         push_word(va);
         break;
@@ -1466,7 +1436,7 @@ namespace machine
         pc++;
         v = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i,
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i,
             j, k, l, m, n, o, p, q, r, s, t, u, v);
         push_word(va);
         break;
@@ -1518,7 +1488,7 @@ namespace machine
         pc++;
         w = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j,
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j,
             k, l, m, n, o, p, q, r, s, t, u, v, w);
         push_word(va);
         break;
@@ -1572,7 +1542,7 @@ namespace machine
         pc++;
         x = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k,
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k,
             l, m, n, o, p, q, r, s, t, u, v, w, x);
         push_word(va);
         break;
@@ -1628,7 +1598,7 @@ namespace machine
         pc++;
         y = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l,
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l,
             m, n, o, p, q, r, s, t, u, v, w, x, y);
         push_word(va);
         break;
@@ -1686,7 +1656,7 @@ namespace machine
         pc++;
         z = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m,
+        va = to_typed_big_word(0, 0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m,
             n, o, p, q, r, s, t, u, v, w, x, y, z);
         push_word(va);
         break;
@@ -1746,7 +1716,7 @@ namespace machine
         pc++;
         aa = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n,
+        va = to_typed_big_word(0, 0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n,
             o, p, q, r, s, t, u, v, w, x, y, z, aa);
         push_word(va);
         break;
@@ -1808,7 +1778,7 @@ namespace machine
         pc++;
         ab = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o,
+        va = to_typed_big_word(0, 0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o,
             p, q, r, s, t, u, v, w, x, y, z, aa, ab);
         push_word(va);
         break;
@@ -1872,7 +1842,7 @@ namespace machine
         pc++;
         ac = code[pc];
         pc++;
-        va = to_big_word(0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
+        va = to_typed_big_word(0, 0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
             q, r, s, t, u, v, w, x, y, z, aa, ab, ac);
         push_word(va);
         break;
@@ -1938,7 +1908,7 @@ namespace machine
         pc++;
         ad = code[pc];
         pc++;
-        va = to_big_word(0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
+        va = to_typed_big_word(0, 0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
             q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad);
         push_word(va);
         break;
@@ -2006,7 +1976,7 @@ namespace machine
         pc++;
         ae = code[pc];
         pc++;
-        va = to_big_word(0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
+        va = to_typed_big_word(0, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
             q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae);
         push_word(va);
         break;
@@ -2076,89 +2046,89 @@ namespace machine
         pc++;
         af = code[pc];
         pc++;
-        va = to_big_word(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
+        va = to_typed_big_word(a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p,
             q, r, s, t, u, v, w, x, y, z, aa, ab, ac, ad, ae, af);
         push_word(va);
         break;
       case dup1_opcode:
         logger << "op dup1" << std::endl;
-        sv = stack.at(0);
-        push_word(sv);
+        va = stack.at(0);
+        push_word(va);
         break;
       case dup2_opcode:
         logger << "op dup2" << std::endl;
-        sv = stack.at(1);
-        push_word(sv);
+        va = stack.at(1);
+        push_word(va);
         break;
       case dup3_opcode:
         logger << "op dup3" << std::endl;
-        sv = stack.at(2);
-        push_word(sv);
+        va = stack.at(2);
+        push_word(va);
         break;
       case dup4_opcode:
         logger << "op dup4" << std::endl;
-        sv = stack.at(3);
-        push_word(sv);
+        va = stack.at(3);
+        push_word(va);
         break;
       case dup5_opcode:
         logger << "op dup5" << std::endl;
-        sv = stack.at(4);
-        push_word(sv);
+        va = stack.at(4);
+        push_word(va);
         break;
       case dup6_opcode:
         logger << "op dup6" << std::endl;
-        sv = stack.at(5);
-        push_word(sv);
+        va = stack.at(5);
+        push_word(va);
         break;
       case dup7_opcode:
         logger << "op dup7" << std::endl;
-        sv = stack.at(6);
-        push_word(sv);
+        va = stack.at(6);
+        push_word(va);
         break;
       case dup8_opcode:
         logger << "op dup8" << std::endl;
-        sv = stack.at(7);
-        push_word(sv);
+        va = stack.at(7);
+        push_word(va);
         break;
       case dup9_opcode:
         logger << "op dup9" << std::endl;
-        sv = stack.at(8);
-        push_word(sv);
+        va = stack.at(8);
+        push_word(va);
         break;
       case dup10_opcode:
         logger << "op dup10" << std::endl;
-        sv = stack.at(9);
-        push_word(sv);
+        va = stack.at(9);
+        push_word(va);
         break;
       case dup11_opcode:
         logger << "op dup11" << std::endl;
-        sv = stack.at(10);
-        push_word(sv);
+        va = stack.at(10);
+        push_word(va);
         break;
       case dup12_opcode:
         logger << "op dup12" << std::endl;
-        sv = stack.at(11);
-        push_word(sv);
+        va = stack.at(11);
+        push_word(va);
         break;
       case dup13_opcode:
         logger << "op dup13" << std::endl;
-        sv = stack.at(12);
-        push_word(sv);
+        va = stack.at(12);
+        push_word(va);
         break;
       case dup14_opcode:
         logger << "op dup14" << std::endl;
-        sv = stack.at(13);
-        push_word(sv);
+        va = stack.at(13);
+        push_word(va);
         break;
       case dup15_opcode:
         logger << "op dup15" << std::endl;
-        sv = stack.at(14);
-        push_word(sv);
+        va = stack.at(14);
+        push_word(va);
         break;
       case dup16_opcode:
         logger << "op dup16" << std::endl;
-        sv = stack.at(15);
-        push_word(sv);
+        va = stack.at(15);
+        push_word(va);
         break;
       case swap1_opcode:
         logger << "op swap1" << std::endl;
@@ -2517,12 +2487,12 @@ namespace machine
           logger << "op log0" << std::endl;
           va = pop_word(); // offset
           vb = pop_word(); // length
-          offset = size_t(va);
-          length = size_t(vb);
+          offset = static_cast<size_t>(va.value);
+          length = static_cast<size_t>(vb.value);
           std::vector<word> slice;
           slice.resize(length);
           for (size_t i = 0; i < length; i++) {
-            slice[i] = memory[offset + i];
+            slice[i] = memory[offset + i].value;
           }
           const log_object o = { slice, {} };
           this->emit_log(o);
@@ -2533,24 +2503,17 @@ namespace machine
           logger << "op log1" << std::endl;
           va = pop_word(); // offset
           vb = pop_word(); // length
-          offset = size_t(va);
-          length = size_t(vb);
+          offset = static_cast<size_t>(va.value);
+          length = static_cast<size_t>(vb.value);
           std::vector<word> slice;
           slice.resize(length);
           for (size_t i = 0; i < length; i++) {
-            slice[i] = memory[offset + i];
+            slice[i] = memory[offset + i].value;
           }
 
           std::vector<big_word> topics;
-          stack_variant& stack_object = stack.front();
-          if (big_word* it = boost::get<big_word>(&stack_object))
-          {
-            stack.pop_front();
-            topics.push_back(*it);
-          }
-          else {
-            throw;
-          }
+
+          topics.push_back( pop_word().value );
 
           const log_object o = { slice, topics };
           this->emit_log(o);
@@ -2561,34 +2524,18 @@ namespace machine
           logger << "op log2" << std::endl;
           va = pop_word(); // offset
           vb = pop_word(); // length
-          offset = size_t(va);
-          length = size_t(vb);
+          offset = static_cast<size_t>(va.value);
+          length = static_cast<size_t>(vb.value);
           std::vector<word> slice;
           slice.resize(length);
           for (size_t i = 0; i < length; i++) {
-            slice[i] = memory[offset + i];
+            slice[i] = memory[offset + i].value;
           }
 
           std::vector<big_word> topics;
 
-          stack_variant& stack_object = stack.front();
-          if (big_word* it = boost::get<big_word>(&stack_object))
-          {
-            stack.pop_front();
-            topics.push_back(*it);
-          }
-          else {
-            throw;
-          }
-
-          stack_object = stack.front();
-          if (big_word* it = boost::get<big_word>(&stack_object))
-          {
-            stack.pop_front();
-            topics.push_back(*it);
-          }
-          else {
-            throw;
+          for (size_t i = 0; i < 2; i++) {
+            topics.push_back( pop_word().value );
           }
 
           const log_object o = { slice, topics };
@@ -2600,44 +2547,18 @@ namespace machine
           logger << "op log3" << std::endl;
           va = pop_word(); // offset
           vb = pop_word(); // length
-          offset = size_t(va);
-          length = size_t(vb);
+          offset = static_cast<size_t>(va.value);
+          length = static_cast<size_t>(vb.value);
           std::vector<word> slice;
           slice.resize(length);
           for (size_t i = 0; i < length; i++) {
-            slice[i] = memory[offset + i];
+            slice[i] = memory[offset + i].value;
           }
 
           std::vector<big_word> topics;
 
-          stack_variant& stack_object = stack.front();
-          if (big_word* it = boost::get<big_word>(&stack_object))
-          {
-            stack.pop_front();
-            topics.push_back(*it);
-          }
-          else {
-            throw;
-          }
-
-          stack_object = stack.front();
-          if (big_word* it = boost::get<big_word>(&stack_object))
-          {
-            stack.pop_front();
-            topics.push_back(*it);
-          }
-          else {
-            throw;
-          }
-
-          stack_object = stack.front();
-          if (big_word* it = boost::get<big_word>(&stack_object))
-          {
-            stack.pop_front();
-            topics.push_back(*it);
-          }
-          else {
-            throw;
+          for (size_t i = 0; i < 3; i++) {
+            topics.push_back( pop_word().value );
           }
 
           const log_object o = { slice, topics };
@@ -2649,54 +2570,18 @@ namespace machine
           logger << "op log4" << std::endl;
           va = pop_word(); // offset
           vb = pop_word(); // length
-          offset = size_t(va);
-          length = size_t(vb);
+          offset = static_cast<size_t>(va.value);
+          length = static_cast<size_t>(vb.value);
           std::vector<word> slice;
           slice.resize(length);
           for (size_t i = 0; i < length; i++) {
-            slice[i] = memory[offset + i];
+            slice[i] = memory[offset + i].value;
           }
 
           std::vector<big_word> topics;
 
-          stack_variant& stack_object = stack.front();
-          if (big_word* it = boost::get<big_word>(&stack_object))
-          {
-            stack.pop_front();
-            topics.push_back(*it);
-          }
-          else {
-            throw;
-          }
-
-          stack_object = stack.front();
-          if (big_word* it = boost::get<big_word>(&stack_object))
-          {
-            stack.pop_front();
-            topics.push_back(*it);
-          }
-          else {
-            throw;
-          }
-
-          stack_object = stack.front();
-          if (big_word* it = boost::get<big_word>(&stack_object))
-          {
-            stack.pop_front();
-            topics.push_back(*it);
-          }
-          else {
-            throw;
-          }
-
-          stack_object = stack.front();
-          if (big_word* it = boost::get<big_word>(&stack_object))
-          {
-            stack.pop_front();
-            topics.push_back(*it);
-          }
-          else {
-            throw;
+          for (size_t i = 0; i < 4; i++) {
+            topics.push_back( pop_word().value );
           }
 
           const log_object o = { slice, topics };
@@ -2710,18 +2595,18 @@ namespace machine
         vb = pop_word(); // offset
         vc = pop_word(); // length
 
-        for (size_t i = static_cast<size_t>(vb); i < static_cast<size_t>(vb) + static_cast<size_t>(vc); i++) {
-          std::map<size_t,word>::iterator it;
+        for (size_t i = static_cast<size_t>(vb.value); i < static_cast<size_t>(vb.value) + static_cast<size_t>(vc.value); i++) {
+          std::map<size_t,typed_word>::iterator it;
           it = memory.find(i);
           if (it != memory.end()) {
-            retval.push_back(it->second);
+            retval.push_back(it->second.value);
           }
           else {
             retval.push_back(word(0));
           }
         }
 
-        push_word( adapter.contract_create( retval, va ) ); // addr
+        push_word( typed_big_word( adapter.contract_create( retval, va.value ) ) ); // addr
         break;
       case call_opcode:
         logger << "op call" << std::endl;
@@ -2734,27 +2619,27 @@ namespace machine
         vf = pop_word(); // retOffset
         vg = pop_word(); // retLength
 
-        for (size_t i = static_cast<size_t>(vd); i < static_cast<size_t>(vd) + static_cast<size_t>(ve); i++) {
-          std::map<size_t,word>::iterator it;
+        for (size_t i = static_cast<size_t>(vd.value); i < static_cast<size_t>(vd.value) + static_cast<size_t>(ve.value); i++) {
+          std::map<size_t,typed_word>::iterator it;
           it = memory.find(i);
           if (it != memory.end()) {
-            contract_args.push_back(it->second);
+            contract_args.push_back(it->second.value);
           }
           else {
             contract_args.push_back(word(0));
           }
         }
 
-        contract_call_return = adapter.contract_call(vb, static_cast<uint64_t>(va), vc, contract_args);
+        contract_call_return = adapter.contract_call(vb.value, static_cast<uint64_t>(va.value), vc.value, contract_args);
 
         if (contract_call_return.second.size() > 0) {
           ext_return_data = contract_call_return.second;
 
-          for (size_t i = 0; i < static_cast<size_t>(vf); i++)
-            memory[static_cast<size_t>(ve) + i] = contract_call_return.second[i];
+          for (size_t i = 0; i < static_cast<size_t>(vf.value); i++)
+            memory[static_cast<size_t>(ve.value) + i] = contract_call_return.second[i];
         }
 
-        push_word(big_word(contract_call_return.first));
+        push_word(typed_big_word(contract_call_return.first));
         break;
       case callcode_opcode:
         logger << "op callcode" << std::endl;
@@ -2767,27 +2652,27 @@ namespace machine
         vf = pop_word(); // retOffset
         vg = pop_word(); // retLength
 
-        for (size_t i = static_cast<size_t>(vd); i < static_cast<size_t>(vd) + static_cast<size_t>(ve); i++) {
-          std::map<size_t,word>::iterator it;
+        for (size_t i = static_cast<size_t>(vd.value); i < static_cast<size_t>(vd.value) + static_cast<size_t>(ve.value); i++) {
+          std::map<size_t,typed_word>::iterator it;
           it = memory.find(i);
           if (it != memory.end()) {
-            contract_args.push_back(it->second);
+            contract_args.push_back(it->second.value);
           }
           else {
             contract_args.push_back(word(0));
           }
         }
 
-        contract_call_return = adapter.contract_callcode(vb, static_cast<uint64_t>(va), vc, contract_args);
+        contract_call_return = adapter.contract_callcode(vb.value, static_cast<uint64_t>(va.value), vc.value, contract_args);
 
         if (contract_call_return.second.size() > 0) {
           ext_return_data = contract_call_return.second;
 
-          for (size_t i = 0; i < static_cast<size_t>(vf); i++)
-            memory[static_cast<size_t>(ve) + i] = contract_call_return.second[i];
+          for (size_t i = 0; i < static_cast<size_t>(vf.value); i++)
+            memory[static_cast<size_t>(ve.value) + i] = contract_call_return.second[i];
         }
 
-        push_word(big_word(contract_call_return.first));
+        push_word(typed_big_word(contract_call_return.first));
         break;
       case return_opcode:
         logger << "op return" << std::endl;
@@ -2807,11 +2692,11 @@ namespace machine
         va = pop_word(); // offset
         vb = pop_word(); // length
 
-        for (size_t i = static_cast<size_t>(va); i < static_cast<size_t>(va + vb); i++) {
-          std::map<size_t,word>::iterator it;
+        for (size_t i = static_cast<size_t>(va.value); i < static_cast<size_t>(va.value + vb.value); i++) {
+          std::map<size_t,typed_word>::iterator it;
           it = memory.find(i);
           if (it != memory.end()) {
-            retval.push_back(it->second);
+            retval.push_back(it->second.value);
           }
           else {
             retval.push_back(word(0));
@@ -2831,27 +2716,27 @@ namespace machine
         ve = pop_word(); // retOffset
         vf = pop_word(); // retLength
 
-        for (size_t i = static_cast<size_t>(vc); i < static_cast<size_t>(vc) + static_cast<size_t>(vd); i++) {
-          std::map<size_t,word>::iterator it;
+        for (size_t i = static_cast<size_t>(vc.value); i < static_cast<size_t>(vc.value) + static_cast<size_t>(vd.value); i++) {
+          std::map<size_t,typed_word>::iterator it;
           it = memory.find(i);
           if (it != memory.end()) {
-            contract_args.push_back(it->second);
+            contract_args.push_back(it->second.value);
           }
           else {
             contract_args.push_back(word(0));
           }
         }
 
-        contract_call_return = adapter.contract_delegatecall(vb, static_cast<uint64_t>(va), contract_args);
+        contract_call_return = adapter.contract_delegatecall(vb.value, static_cast<uint64_t>(va.value), contract_args);
 
         if (contract_call_return.second.size() > 0) {
           ext_return_data = contract_call_return.second;
 
-          for (size_t i = 0; i < static_cast<size_t>(vf); i++)
-            memory[static_cast<size_t>(ve) + i] = contract_call_return.second[i];
+          for (size_t i = 0; i < static_cast<size_t>(vf.value); i++)
+            memory[static_cast<size_t>(ve.value) + i] = contract_call_return.second[i];
         }
 
-        push_word(contract_call_return.first);
+        push_word( typed_big_word(contract_call_return.first) );
         break;
       case create2_opcode:
         logger << "op create2" << std::endl;
@@ -2860,23 +2745,29 @@ namespace machine
         vc = pop_word(); // length
         vd = pop_word(); // salt
 
-        for (size_t i = static_cast<size_t>(vb); i < static_cast<size_t>(vb) + static_cast<size_t>(vc); i++) {
-          std::map<size_t, word>::iterator it;
+        for (size_t i = static_cast<size_t>(vb.value); i < static_cast<size_t>(vb.value) + static_cast<size_t>(vc.value); i++) {
+          std::map<size_t, typed_word>::iterator it;
           it = memory.find(i);
           if (it != memory.end()) {
-            for (size_t i = 0; i < 31; i++) {
-              contract_args.push_back(word(0));
+            if ( it->second.is_sparse ) {
+              for (size_t i = 0; i < 31; i++) {
+                contract_args.push_back( word(0) );
+              }
             }
-            contract_args.push_back(it->second);
+            contract_args.push_back( word(it->second.value) );
           }
           else {
-            for (size_t i = 0; i < 32; i++) {
-              contract_args.push_back(word(0));
+            if ( it->second.is_sparse ) {
+              for (size_t i = 0; i < 32; i++) {
+                contract_args.push_back( word(0) );
+              }
+            } else {
+              contract_args.push_back( word(0) );
             }
           }
         }
 
-        push_word( adapter.contract_create2( contract_args, va, vd ) );
+        push_word( typed_big_word( adapter.contract_create2( contract_args, va.value, vd.value ) ) );
 
         break;
       case staticcall_opcode:
@@ -2889,36 +2780,36 @@ namespace machine
         ve = pop_word(); // retOffset
         vf = pop_word(); // retLength
 
-        for (size_t i = static_cast<size_t>(vc); i < static_cast<size_t>(vc) + static_cast<size_t>(vd); i++) {
-          std::map<size_t,word>::iterator it;
+        for (size_t i = static_cast<size_t>(vc.value); i < static_cast<size_t>(vc.value) + static_cast<size_t>(vd.value); i++) {
+          std::map<size_t,typed_word>::iterator it;
           it = memory.find(i);
           if (it != memory.end()) {
-            contract_args.push_back(it->second);
+            contract_args.push_back(it->second.value);
           }
           else {
             contract_args.push_back(word(0));
           }
         }
 
-        contract_call_return = adapter.contract_staticcall(vb, static_cast<uint64_t>(va), contract_args);
+        contract_call_return = adapter.contract_staticcall(vb.value, static_cast<uint64_t>(va.value), contract_args);
 
         ext_return_data = contract_call_return.second;
 
-        for (size_t i = 0; i < static_cast<size_t>(vf); i++)
-          memory[static_cast<size_t>(ve) + i] = contract_call_return.second[i];
+        for (size_t i = 0; i < static_cast<size_t>(vf.value); i++)
+          memory[static_cast<size_t>(ve.value) + i] = contract_call_return.second[i];
 
-        push_word(big_word(contract_call_return.first));
+        push_word(typed_big_word(contract_call_return.first));
         break;
       case revert_opcode:
         logger << "op revert" << std::endl;
         va = pop_word(); // offset
         vb = pop_word(); // length
 
-        for (size_t i = static_cast<size_t>(va); i < static_cast<size_t>(vb); i++) {
-          std::map<size_t,word>::iterator it;
+        for (size_t i = static_cast<size_t>(va.value); i < static_cast<size_t>(vb.value); i++) {
+          std::map<size_t,typed_word>::iterator it;
           it = memory.find(i);
           if (it != memory.end()) {
-            retval.push_back(it->second);
+            retval.push_back(it->second.value);
           }
           else {
             retval.push_back(word(0));
@@ -2934,12 +2825,8 @@ namespace machine
         break;
       case selfdestruct_opcode:
         logger << "op selfdestruct" << std::endl;
-        sv = stack.front(); // addr
-        ss = boost::get<std::string>(&sv);
-        if (ss)
-        {
-          adapter.self_destruct(*ss);
-        }
+        va = stack.front(); // addr
+        adapter.self_destruct(va.value);
         break;
     }
   }
@@ -2980,8 +2867,10 @@ namespace machine
         s << "\"stack\":" << "[";
         for (auto it = stack.cbegin(); it != stack.cend(); ++it)
         {
-          stack_variant sv = *it;
-          s << sv;
+          typed_big_word bw = *it;
+          s << bw.value;
+          s << ":";
+          s << bw.is_sparse;
           if (stack.size() > 1 && std::next(it, 1) != stack.cend())
             s << ",";
         }
@@ -3031,7 +2920,9 @@ namespace machine
         {
           s << "\"" << it->first << "\"";
           s << ":";
-          s << unsigned(it->second);
+          s << unsigned(it->second.value);
+          s << " : ";
+          s << it->second.is_sparse;
           if (memory.size() > 1 && std::next(it, 1) != memory.cend())
             s << ",";
         }

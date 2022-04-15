@@ -1267,19 +1267,14 @@ std::string generate_create2_address(std::string sender, std::string salt, std::
 
    // Recipe: keccak256( 0xff ++ address ++ salt ++ keccak256(init_code))[12:]
 
-   std::cout << "INIT CODE CREATE2: " << init_code << std::endl;
    size_t init_code_size = init_code.size() / 2;
    uint8_t init_code_bytes[init_code_size];
    hex_to_uint8(init_code, init_code_bytes);
    auto init_code_output = ethash_keccak256( init_code_bytes, init_code_size );
    std::string init_code_hash = to_hex(init_code_output);
 
-   std::cout << "INIT CODE HASH CREATE2: " << init_code_hash << std::endl;
-
    ss << "ff" << sender << salt << init_code_hash;
    std::string keccak_input_str = ss.str();
-
-   std::cout << "KECCAK INPUT CREATE2: " << keccak_input_str << std::endl;
 
    size_t size = keccak_input_str.size() / 2;
    uint8_t bytes[size];
@@ -1288,9 +1283,6 @@ std::string generate_create2_address(std::string sender, std::string salt, std::
    auto keccak_output = ethash_keccak256( bytes, size );
    std::string untrimmed_address = to_hex(keccak_output);
    std::string generated_create2_address = untrimmed_address.substr(24, 40);
-
-   std::cout << "Target create2 address: " << target_address << std::endl;
-   std::cout << "Actual create2 address: " << generated_create2_address << std::endl;
 
    return generated_create2_address;
 }
@@ -1414,8 +1406,8 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
    const uint64_t block_difficulty = static_cast<uint64_t>( _db.get_pow_summary_target() );
    const uint64_t block_energylimit = 0;
    const uint64_t tx_energyprice = 0;
-   std::string tx_origin = caller; // TODO update this
-   std::string block_coinbase = caller; // TODO update this to this block's miner
+   const uint256_t tx_origin = caller_en_address; // TODO update this
+   const uint256_t block_coinbase = caller_en_address; // TODO update this to this block's miner
 
    machine::context ctx = {
       is_debug,
@@ -1535,21 +1527,11 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
   std::function< machine::big_word(std::vector<machine::word>) > sha3 = [&](std::vector<machine::word> memory) -> machine::big_word
   {
     std::stringstream ss;
-    if (memory.size() > 32) {
-       for (size_t i = 0; i < memory.size(); i++) {
-          ss << "0000000000000000000000000000000";
-          ss << std::hex << (machine::opcode)memory[i];
-       }
-    } else {
-       for (size_t i = 0; i < memory.size(); i++) {
-          if ( (machine::opcode)memory[i] < 0x10 )
-             ss << "0";
-          ss << std::hex << (machine::opcode)memory[i];
-       }
+    for (size_t i = 0; i < memory.size(); i++) {
+       ss << std::hex << (machine::opcode)memory[i];
     }
 
     std::string memory_str = ss.str();
-    std::cout << "KECCAK INPUT SHA3: " << memory_str << std::endl;
 
     size_t memory_size = memory_str.size() / 2;
     uint8_t memory_bytes[memory_size];
@@ -1561,7 +1543,6 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     ss << std::hex << memory_hash;
     uint256_t sha3_return;
     ss >> sha3_return;
-    std::cout << "INIT CODE HASH SHA3: " << memory_hash << std::endl;
 
     return sha3_return;
   };
@@ -1575,10 +1556,14 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return static_cast<machine::big_word>(wallet.balance.amount.value);
   };
 
-  std::function< std::string(std::string) > get_code_hash = [&](std::string address) -> std::string
+  std::function< machine::big_word(machine::big_word) > get_code_hash = [&](machine::big_word address) -> machine::big_word
   {
-    fc::ripemd160 en_address(address);
-    const auto& contract = _db.get_contract(en_address);
+    // TODO XXX: convert to ethash keccak256
+    std::stringstream ss;
+    ss << address;
+    const en_address_type& en_address = ss.str();
+    const wallet_object& contract_wallet = _db.get_account_by_en_address(en_address);
+    const auto& contract = _db.get_contract_by_wallet(contract_wallet.name);
     std::string message(contract.code.begin(), contract.code.end());
     unsigned char output[32];
     SHA3_CTX ctx;
@@ -1586,7 +1571,10 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     keccak_update(&ctx, (unsigned char*)message.c_str(), message.size());
     keccak_final(&ctx, output);
     std::string fin((char*)output, 32);
-    return fin;
+    uint256_t x;
+    ss << std::hex << fin;
+    ss >> x;
+    return x;
   };
 
   // TODO: Revisit this, we may want to use the original sha256 hash
@@ -1954,9 +1942,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
       ss.str("");
 
       std::string caller_en_address = caller_contract_wallet.en_address;
-      std::cout << "CALLER EN ADDRESS: " << caller_en_address << std::endl;
       std::string new_wallet_en_address = generate_en_address(caller_en_address, caller_contract_wallet.nonce, salt_str, memory);
-      std::cout << "NEW EN WALLET NAME: " << new_wallet_en_address << std::endl;
 
       wallet_create(_db, caller_contract_wallet.nonce, new_wallet_en_address);
 
@@ -2022,8 +2008,6 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
             acc.nonce = 1;
       });
 
-      std::cout << "NEW CONTRACT WALLET ADDRESS: " << new_contract_wallet_address << std::endl;
-
       return new_contract_wallet_address;
     }
     else {
@@ -2053,13 +2037,13 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     return memory;
   };
 
-  std::function< bool(std::string) > self_destruct = [&](std::string address) -> bool
+  std::function< bool(machine::big_word) > self_destruct = [&](machine::big_word address) -> bool
   {
     // TODO send all funds from contract to address
     std::stringstream ss;
-    ss << std::hex << address;
-    const en_address_type r160 = ss.str();
-    const auto& destination_wallet = _db.get_account_by_en_address(r160);
+    ss << address;
+    const en_address_type en_address = ss.str();
+    const auto& destination_wallet = _db.get_account_by_en_address(en_address);
 
     const auto& caller_contract_wallet = _db.get_account(owner);
 
@@ -2077,12 +2061,6 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     _db.remove(contract);
 
     return true;
-  };
-
-  std::function< std::vector<machine::word>(std::string) > get_input_data = [&](std::string input) -> std::vector<machine::word>
-  {
-    // TODO
-    return std::vector<machine::word>();
   };
 
   std::function< void(const machine::log_object&) > emit_log = [&](const machine::log_object& log)
@@ -2117,7 +2095,6 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     set_storage,
     contract_return,
     self_destruct,
-    get_input_data,
     emit_log
   };
 
