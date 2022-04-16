@@ -2573,6 +2573,7 @@ void database::migrate_irreversible_state()
 
       // This deletes blocks from the fork db
       _fork_db.set_max_size( dpo.head_block_number - dpo.last_irreversible_block_num + 1 );
+      _fork_db.set_max_size( XGT_FORK_DB_MAX_SIZE );
 
       // This deletes undo state
       commit( dpo.last_irreversible_block_num );
