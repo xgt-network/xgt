@@ -115,11 +115,6 @@ if(MINGW)
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wa,-mbig-obj")
   endif()
 
-  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
-    # rocksdb mingw w/ clang
-    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=inconsistent-missing-override -Wno-error=missing-braces")
-  endif()
-
   # # rocksdb sets this flag unconditionally, so we have to in order to have a compatible exception abi
   # add_compile_options( -fno-asynchronous-unwind-tables )
 endif()
