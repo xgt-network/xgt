@@ -297,6 +297,6 @@ add_boost_test( plugin_test
    transaction_status/transaction_status_test
 )
 
-target_link_libraries( plugin_test db_fixture xgt_chain xgt_protocol wallet_history_plugin witness_plugin debug_node_plugin transaction_status_plugin transaction_status_api_plugin xgt_utilities xgt_plugins)
+target_link_libraries( plugin_test db_fixture xgt_chain xgt_protocol wallet_history_plugin witness_plugin debug_node_plugin transaction_status_plugin xgt_utilities xgt_plugins)
 
 #add_subdirectory( generate_empty_blocks )

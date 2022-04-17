@@ -12,7 +12,6 @@
 #include <xgt/plugins/block_api/block_api_plugin.hpp>
 #include <xgt/plugins/database_api/database_api_plugin.hpp>
 
-#include <fc/network/http/connection.hpp>
 #include <fc/network/ip.hpp>
 
 #include <array>

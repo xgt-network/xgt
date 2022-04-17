@@ -26,7 +26,6 @@
 
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
-#include <fc/interprocess/signals.hpp>
 #include <fc/stacktrace.hpp>
 
 #include <boost/exception/diagnostic_information.hpp>

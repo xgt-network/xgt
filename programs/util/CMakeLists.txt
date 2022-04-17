@@ -43,31 +43,6 @@ install( TARGETS
    ARCHIVE DESTINATION lib
 )
 
-add_executable( serialize_set_properties serialize_set_properties.cpp )
-
-target_link_libraries( serialize_set_properties
-                       PRIVATE xgt_chain xgt_protocol xgt_utilities fc)
-
-install( TARGETS
-   serialize_set_properties
-
-   RUNTIME DESTINATION bin
-   LIBRARY DESTINATION lib
-   ARCHIVE DESTINATION lib
-)
-
-add_executable( inflation_model inflation_model.cpp )
-target_link_libraries( inflation_model
-                       PRIVATE xgt_chain xgt_protocol fc)
-
-install( TARGETS
-   inflation_model
-
-   RUNTIME DESTINATION bin
-   LIBRARY DESTINATION lib
-   ARCHIVE DESTINATION lib
-)
-
 add_executable( dump_xgt_schema dump_xgt_schema.cpp )
 target_link_libraries( dump_xgt_schema
                        PRIVATE xgt_chain xgt_protocol fc)

@@ -25,7 +25,7 @@
 
 #include <cstdlib>
 #include <iostream>
-#include <boost/test/included/unit_test.hpp>
+#include <BoostTestTargetConfig.h>
 
 // extern uint32_t XGT_TESTING_GENESIS_TIMESTAMP;
 

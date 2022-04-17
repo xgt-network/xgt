@@ -3,11 +3,7 @@ CMAKE_MINIMUM_REQUIRED( VERSION 3.20 )
 
 # Setup module path to make visible used CMake extensions
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/GitVersionGen")
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 
-INCLUDE(GetPrerequisites)
-INCLUDE( VersionMacros )
-INCLUDE( SetupTargetMacros )
 INCLUDE(GetGitRevisionDescription)
 
 get_git_head_revision(GIT_REFSPEC FC_GIT_REVISION_SHA)
@@ -16,6 +12,7 @@ get_git_unix_timestamp(FC_GIT_REVISION_UNIX_TIMESTAMP)
 set( SECP256K1_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/secp256k1-zkp" )
 file( GLOB SECP256K1_SOURCES "${SECP256K1_DIR}/src/secp256k1.c" )
 add_library( secp256k1 ${SECP256K1_SOURCES} )
+target_link_libraries( secp256k1 PUBLIC c)
 target_compile_options(secp256k1 PRIVATE -Wno-error=unused-function)
 target_include_directories( secp256k1 PRIVATE "${SECP256K1_DIR}" PUBLIC "${SECP256K1_DIR}/include" )
 set( SECP256K1_BUILD_DEFINES
@@ -37,7 +34,7 @@ configure_file("${CMAKE_CURRENT_SOURCE_DIR}/src/git_revision.cpp.in" "${CMAKE_CU
 list(APPEND sources "${CMAKE_CURRENT_BINARY_DIR}/git_revision.cpp")
 list(APPEND sources ${fc_headers})
 
-setup_library( fc SOURCES ${sources} LIBRARY_TYPE STATIC DONT_INSTALL_LIBRARY )
+add_library( fc ${sources} )
 
 FIND_PACKAGE(Boost 1.53 QUIET REQUIRED COMPONENTS thread date_time system filesystem chrono context coroutine)
 target_compile_definitions(fc PUBLIC BOOST_ASIO_HAS_STD_CHRONO)
@@ -61,7 +58,6 @@ endif()
 target_include_directories(fc
   PUBLIC
     include
-    "vendor/diff-match-patch-cpp-stl"
     vendor/websocketpp
 
   PRIVATE 

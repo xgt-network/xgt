@@ -1,4 +1,3 @@
-#include "fc/time.hpp"
 #include <xgt/chain/xgt_fwd.hpp>
 
 #include <xgt/plugins/witness/witness_plugin.hpp>
@@ -17,6 +16,7 @@
 #include <fc/io/json.hpp>
 #include <fc/macros.hpp>
 #include <fc/smart_ref_impl.hpp>
+#include <fc/time.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>

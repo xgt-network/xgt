@@ -23,7 +23,6 @@
 #if !defined( __clang__ )
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
-#include <diff_match_patch.h>
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 #include <boost/locale/encoding_utf.hpp>
@@ -486,36 +485,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
       {
          a.last_post_edit = now;
       });
-   #ifndef IS_LOW_MEM
-      _db.modify( _db.get< comment_content_object, by_comment >( comment.id ), [&]( comment_content_object& con )
-      {
-         if( o.title.size() )         from_string( con.title, o.title );
-         if( o.json_metadata.size() )
-            from_string( con.json_metadata, o.json_metadata );
-
-         if( o.body.size() ) {
-            try {
-            diff_match_patch<std::wstring> dmp;
-            auto patch = dmp.patch_fromText( utf8_to_wstring(o.body) );
-            if( patch.size() ) {
-               auto result = dmp.patch_apply( patch, utf8_to_wstring( to_string( con.body ) ) );
-               auto patched_body = wstring_to_utf8(result.first);
-               if( !fc::is_utf8( patched_body ) ) {
-                  idump(("invalid utf8")(patched_body));
-                  from_string( con.body, fc::prune_invalid_utf8(patched_body) );
-               } else { from_string( con.body, patched_body ); }
-            }
-            else { // replace
-               from_string( con.body, o.body );
-            }
-            } catch ( ... ) {
-               from_string( con.body, o.body );
-            }
-         }
-      });
-   #endif
-
-
 
    } // end EDIT case
 

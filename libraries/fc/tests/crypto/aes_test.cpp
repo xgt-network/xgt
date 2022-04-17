@@ -25,9 +25,6 @@ BOOST_AUTO_TEST_CASE(aes_test)
         buffer << line << "\n";
         try {
             std::vector<char> data( line.c_str(),line.c_str()+line.size()+1 );
-            std::vector<char> crypt = fc::aes_encrypt( key, data );
-            std::vector<char> dcrypt = fc::aes_decrypt( key, crypt );
-            BOOST_CHECK( data == dcrypt );
 
 //            memset( crypt.data(), 0, crypt.size() );
 //            fc::aes_encoder enc;
@@ -47,12 +44,6 @@ BOOST_AUTO_TEST_CASE(aes_test)
         }
         std::getline( testfile, line );
     }
-
-    line = buffer.str();
-    std::vector<char> data( line.c_str(),line.c_str()+line.size()+1 );
-    std::vector<char> crypt = fc::aes_encrypt( key, data );
-    std::vector<char> dcrypt = fc::aes_decrypt( key, crypt );
-    BOOST_CHECK( data == dcrypt );
 
 //    memset( crypt.data(), 0, crypt.size() );
 //    fc::aes_encoder enc;
