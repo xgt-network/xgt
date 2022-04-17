@@ -663,7 +663,7 @@ void chain_plugin::plugin_shutdown()
       {
          db().undo_all();
 
-         FC_TODO( "Serializing and deserializing transaction objects does not seem to be working... :/" );
+         //FC_TODO( "Serializing and deserializing transaction objects does not seem to be working... :/" );
          //const auto& trx_idx = db().get_index< xgt::chain::transaction_index, by_id >();
          //while( trx_idx.begin() != trx_idx.end() )
          //{

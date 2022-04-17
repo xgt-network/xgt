@@ -160,7 +160,7 @@ void database::open( const open_args& args )
          {
             if( args.genesis_func )
             {
-               FC_TODO( "Load directly in to mira instead of bmic first" );
+               ////FC_TODO( "Load directly in to mira instead of bmic first" );
                (*args.genesis_func)( *this, args );
             }
             else
@@ -1435,7 +1435,7 @@ void database::init_genesis( uint64_t init_supply )
       // // Create witness scheduler
       // create< witness_schedule_object >( [&]( witness_schedule_object& wso )
       // {
-      //    FC_TODO( "Copied from witness_schedule.cpp, do we want to abstract this to a separate function?" );
+      //    //FC_TODO( "Copied from witness_schedule.cpp, do we want to abstract this to a separate function?" );
       //    wso.current_shuffled_witnesses[0] = XGT_INIT_MINER_NAME;
       //    util::rd_system_params account_subsidy_system_params;
       //    account_subsidy_system_params.resource_unit = XGT_WALLET_SUBSIDY_PRECISION;
@@ -2210,7 +2210,7 @@ void database::process_optional_actions( const optional_automated_actions& actio
    // blocks, generation of optional actions should be disabled and the expiration can be skipped.
    // For reindexing of the first 2 million blocks, this unnecessary read consumes almost 30%
    // of runtime.
-   FC_TODO( "Optimize expiration for reindex." );
+   //FC_TODO( "Optimize expiration for reindex." );
 
    // Clear out "expired" optional_actions. If the block when an optional action was generated
    // has become irreversible then a super majority of witnesses have chosen to not include it

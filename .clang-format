@@ -1,0 +1,8 @@
+BasedOnStyle: Google
+Standard: Cpp11
+AllowShortIfStatementsOnASingleLine: false
+AllowShortLoopsOnASingleLine: false
+DerivePointerAlignment: true
+PointerAlignment: Left
+ColumnLimit: 100
+IncludeBlocks: Regroup
