@@ -3,7 +3,7 @@ name: Xgtd
 on: [push, pull_request]
 
 jobs:
-  test:
+  xgtd:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
