@@ -77,3 +77,8 @@ jobs:
       run: cmake -D CMAKE_BUILD_TYPE=Release -D ENABLE_MIRA=ON -G Ninja -B build -S .
     - name: Build xgtd
       run: ninja -C build xgtd
+
+    - uses: actions/upload-artifact@v3
+      with:
+        name: xgtd
+        path: build/programs/xgtd/xgtd\*
