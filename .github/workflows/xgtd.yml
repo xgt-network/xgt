@@ -89,4 +89,4 @@ jobs:
     - uses: actions/upload-artifact@v3
       with:
         name: xgtd
-        path: build/programs/xgtd/xgtd\*
+        path: build/programs/xgtd/xgtd*
