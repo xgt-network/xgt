@@ -76,6 +76,9 @@ if ( XGT_OPT_NATIVE )
 endif()
 MESSAGE( STATUS "XGT_OPT_NATIVE: ${XGT_OPT_NATIVE}" )
 
+OPTION(FAIL_ON_WARNINGS "Fail on compiler warnings" OFF)
+MESSAGE( STATUS "FAIL_ON_WARNINGS: ${FAIL_ON_WARNINGS}" )
+
 SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
 
 # The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated. Please use
@@ -96,21 +99,26 @@ if(ENABLE_COVERAGE_TESTING)
     SET(CMAKE_CXX_FLAGS "--coverage ${CMAKE_CXX_FLAGS}")
 endif()
 
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-Wall -Wno-conversion -Wno-deprecated-declarations -Werror -Wno-error=deprecated-copy -Wno-error=pessimizing-move -Wno-error=maybe-uninitialized -Wno-error=shadow -Wno-error=sign-compare" WARNING_FLAGS)
-if(WARNING_FLAGS)
-add_compile_options(-Wall -Wno-conversion -Wno-deprecated-declarations -Werror -Wno-error=deprecated-copy -Wno-error=pessimizing-move -Wno-error=maybe-uninitialized -Wno-error=shadow -Wno-error=sign-compare)
+if(FAIL_ON_WARNINGS)
+  # add_compile_options(-Wall -Werror -Wno-conversion -Wno-deprecated-declarations -Wno-error=deprecated-copy -Wno-error=pessimizing-move -Wno-error=maybe-uninitialized -Wno-error=shadow -Wno-error=sign-compare)
 endif()
 
 if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
     add_compile_options(-fno-builtin-memcmp)
-
 endif()
 
 if(MINGW)
-  add_compile_options($<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wa,-mbig-obj>)
-  # The above seems to be insufficient sometimes, unclear why.
-  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wa,-mbig-obj")
+
+  if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )
+    add_compile_options($<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wa,-mbig-obj>)
+    # The above seems to be insufficient sometimes, unclear why.
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wa,-mbig-obj")
+  endif()
+
+  if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    # rocksdb mingw w/ clang
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=inconsistent-missing-override -Wno-error=missing-braces")
+  endif()
 
   # # rocksdb sets this flag unconditionally, so we have to in order to have a compatible exception abi
   # add_compile_options( -fno-asynchronous-unwind-tables )

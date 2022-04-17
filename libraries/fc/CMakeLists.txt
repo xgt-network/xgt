@@ -12,7 +12,6 @@ get_git_unix_timestamp(FC_GIT_REVISION_UNIX_TIMESTAMP)
 set( SECP256K1_DIR "${CMAKE_CURRENT_SOURCE_DIR}/vendor/secp256k1-zkp" )
 file( GLOB SECP256K1_SOURCES "${SECP256K1_DIR}/src/secp256k1.c" )
 add_library( secp256k1 ${SECP256K1_SOURCES} )
-target_link_libraries( secp256k1 PUBLIC c)
 target_compile_options(secp256k1 PRIVATE -Wno-error=unused-function)
 target_include_directories( secp256k1 PRIVATE "${SECP256K1_DIR}" PUBLIC "${SECP256K1_DIR}/include" )
 set( SECP256K1_BUILD_DEFINES
