@@ -70,4 +70,4 @@ jobs:
     - name: Configure cmake
       run: cmake -D CMAKE_BUILD_TYPE=Release -D ENABLE_MIRA=ON -G Ninja -B build -S .
     - name: Build xgtd
-      run: ninja -C build xgtd
+      run: ninja -C build
