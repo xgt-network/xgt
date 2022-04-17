@@ -100,7 +100,7 @@ if(ENABLE_COVERAGE_TESTING)
 endif()
 
 if(FAIL_ON_WARNINGS)
-  # add_compile_options(-Wall -Werror -Wno-conversion -Wno-deprecated-declarations -Wno-error=deprecated-copy -Wno-error=pessimizing-move -Wno-error=maybe-uninitialized -Wno-error=shadow -Wno-error=sign-compare)
+  add_compile_options(-Wall -Werror -Wno-conversion -Wno-deprecated-declarations -Wno-error=deprecated-copy -Wno-error=pessimizing-move -Wno-error=maybe-uninitialized -Wno-error=shadow -Wno-error=sign-compare)
 endif()
 
 if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" )

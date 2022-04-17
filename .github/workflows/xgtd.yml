@@ -25,9 +25,7 @@ jobs:
 
     - name: Set ubuntu environment
       run:
-        echo "CMAKE_ASM_COMPILER=clang" >> $GITHUB_ENV ;
-        echo "CMAKE_C_COMPILER=clang" >> $GITHUB_ENV ;
-        echo "CMAKE_CXX_COMPILER=clang++" >> $GITHUB_ENV ;
+        echo "CMAKE_TOOLCHAIN_FILE=$PWD/.github/workflows/clang.toolchain.cmake" >> $GITHUB_ENV
       if: startsWith(matrix.os, 'ubuntu')
 
     - uses: actions/checkout@v2
