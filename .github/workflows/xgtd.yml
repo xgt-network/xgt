@@ -14,7 +14,7 @@ jobs:
     steps:
     - name: Set mingw64 environment
       run:
-        echo "MSYSTEM=MINGW64" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append ;
+        echo "MSYSTEM=CLANG64" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append ;
         echo "PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;$ENV:PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
       if: startsWith(matrix.os, 'windows')
 
@@ -42,6 +42,7 @@ jobs:
         ccache
         libboost-all-dev
         build-essential
+        clang
         ninja-build
       if: startsWith(matrix.os, 'ubuntu')
     - name: Install build dependencies (macOS)
@@ -56,15 +57,15 @@ jobs:
       if: startsWith(matrix.os, 'macOS')
     - name: Install build dependencies (mingw64)
       run: pacman --noconfirm -S
-        mingw-w64-x86_64-binutils
-        mingw-w64-x86_64-boost
-        mingw-w64-x86_64-ccache
-        mingw-w64-x86_64-gcc
-        mingw-w64-x86_64-cmake
-        mingw-w64-x86_64-ninja
-        mingw-w64-x86_64-openssl
-        mingw-w64-x86_64-python-jinja2-time
-        mingw-w64-x86_64-winpthreads
+        mingw-w64-clang-x86_64-binutils
+        mingw-w64-clang-x86_64-boost
+        mingw-w64-clang-x86_64-ccache
+        mingw-w64-clang-x86_64-gcc
+        mingw-w64-clang-x86_64-cmake
+        mingw-w64-clang-x86_64-ninja
+        mingw-w64-clang-x86_64-openssl
+        mingw-w64-clang-x86_64-python-jinja2-time
+        mingw-w64-clang-x86_64-winpthreads
       if: startsWith(matrix.os, 'windows')
 
     - name: Configure cmake
