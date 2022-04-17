@@ -88,5 +88,5 @@ jobs:
 
     - uses: actions/upload-artifact@v3
       with:
-        name: xgtd
+        name: xgtd-${{matrix.os}}
         path: build/programs/xgtd/xgtd*
