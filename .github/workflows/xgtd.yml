@@ -36,6 +36,7 @@ jobs:
           ~/.ccache
           ~/.cache/ccache
           ~/AppData/Roaming/ccache
+          ~/Library/Caches/ccache
         key: ${{matrix.os}}-ccache
 
     - name: Install build dependencies (Ubuntu)
