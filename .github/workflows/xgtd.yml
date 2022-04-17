@@ -29,6 +29,11 @@ jobs:
       if: startsWith(matrix.os, 'ubuntu')
 
     - uses: actions/checkout@v2
+
+    - name: Get current time
+      uses: gerred/actions/current-time@master
+      id: current-time
+
     - name: Cache paths
       uses: actions/cache@v2
       with:
@@ -37,7 +42,9 @@ jobs:
           ~/.cache/ccache
           ~/AppData/Roaming/ccache
           ~/Library/Caches/ccache
-        key: ${{matrix.os}}-ccache
+        key: ${{matrix.os}}-ccache-${{ steps.current-time.outputs.time }}
+        restore-keys: |
+          ${{matrix.os}}-ccache-
 
     - name: Install build dependencies (Ubuntu)
       run: sudo apt update && sudo apt install -y 
