@@ -43,9 +43,8 @@ set(__add_boost_test YES)
 
 set(BOOST_TEST_TARGET_PREFIX "boosttest")
 
-if(NOT Boost_FOUND)
-	find_package(Boost 1.34.0 QUIET)
-endif()
+find_package(Boost 1.58 REQUIRED QUIET COMPONENTS unit_test_framework)
+
 if("${Boost_VERSION}0" LESS "1.34.0")
 	set(_shared_msg
 		"NOTE: boost::test-based targets and tests cannot "
