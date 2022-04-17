@@ -15,13 +15,20 @@ jobs:
     - name: Set mingw64 environment
       run:
         echo "MSYSTEM=CLANG64" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append ;
-        echo "PATH=C:\msys64\mingw64\bin;C:\msys64\usr\bin;$ENV:PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
+        echo "PATH=C:\msys64\clang64\bin;C:\msys64\usr\bin;$ENV:PATH" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf-8 -Append
       if: startsWith(matrix.os, 'windows')
 
     - name: Set macOS environment
       run:
         echo "CMAKE_PREFIX_PATH=`brew --prefix openssl@1.1`" >> $GITHUB_ENV
       if: startsWith(matrix.os, 'macOS')
+
+    - name: Set ubuntu environment
+      run:
+        echo "CMAKE_ASM_COMPILER=clang" >> $GITHUB_ENV
+        echo "CMAKE_C_COMPILER=clang" >> $GITHUB_ENV
+        echo "CMAKE_CXX_COMPILER=clang++" >> $GITHUB_ENV
+      if: startsWith(matrix.os, 'ubuntu')
 
     - uses: actions/checkout@v2
     - name: Cache paths
