@@ -10,6 +10,7 @@ SET(USE_RTTI ON CACHE BOOL "build with RTTI")
 SET(PORTABLE ON CACHE BOOL "build a portable binary")
 SET(WITH_TESTS OFF CACHE BOOL "build with tests")
 SET(WITH_TOOLS OFF CACHE BOOL "build with tools")
+SET(ROCKSDB_BUILD_SHARED OFF CACHE BOOL "build only static lib")
 
 file( GLOB children RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} * )
 foreach( child ${children} )
