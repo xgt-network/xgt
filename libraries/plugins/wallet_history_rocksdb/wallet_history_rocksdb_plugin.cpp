@@ -1251,7 +1251,7 @@ void wallet_history_rocksdb_plugin::impl::on_post_reindex(const xgt::chain::rein
 
 void wallet_history_rocksdb_plugin::impl::printReport(uint32_t blockNo, const char* detailText) const
 {
-   ilog("${t}Processed blocks: ${n}, containing: ${tx} transactions and ${op} operations.\n"
+   dlog("${t}Processed blocks: ${n}, containing: ${tx} transactions and ${op} operations.\n"
         "${ep} operations have been filtered out due to configured options.\n"
         "${ea} wallets have been filtered out due to configured options.",
       ("t", detailText)
@@ -1340,7 +1340,7 @@ void wallet_history_rocksdb_plugin::impl::on_post_apply_operation(const operatio
 {
    if( n.block % 10000 == 0 && n.trx_in_block == 0 && n.op_in_trx == 0 && n.virtual_op == 0 )
    {
-      ilog("RocksDb data import processed blocks: ${n}, containing: ${tx} transactions and ${op} operations.\n"
+      dlog("RocksDb data import processed blocks: ${n}, containing: ${tx} transactions and ${op} operations.\n"
            " ${ep} operations have been filtered out due to configured options.\n"
            " ${ea} wallets have been filtered out due to configured options.",
          ("n", n.block)

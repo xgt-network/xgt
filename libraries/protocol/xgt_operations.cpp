@@ -17,7 +17,7 @@ namespace xgt { namespace protocol {
 
    void wallet_create_operation::validate() const
    {
-      wlog("!!!!!! wallet_create_operation");
+      dlog("!!!!!! wallet_create_operation");
       // TODO
       // validate_wallet_name( new_wallet_name );
       FC_ASSERT( is_asset_type( fee, XGT_SYMBOL ), "Account creation fee must be XGT" );

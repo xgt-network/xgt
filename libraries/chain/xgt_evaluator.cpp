@@ -135,9 +135,9 @@ void verify_authority_accounts_exist(
 void initialize_wallet_object( wallet_object& acc, const wallet_name_type& name, const public_key_type& key,
    const dynamic_global_property_object& props, bool mined, const wallet_name_type& recovery_account, uint32_t hardfork )
 {
-   wlog("?????? initialize_wallet_object name ${n}", ("n", name));
-   wlog("?????? initialize_wallet_object key ${n}", ("n", key));
-   wlog("?????? initialize_wallet_object created ${n}", ("n", props.time));
+   dlog("?????? initialize_wallet_object name ${n}", ("n", name));
+   dlog("?????? initialize_wallet_object key ${n}", ("n", key));
+   dlog("?????? initialize_wallet_object created ${n}", ("n", props.time));
    acc.name = name;
    acc.memo_key = key;
    acc.created = props.time;
@@ -157,12 +157,12 @@ void initialize_wallet_object( wallet_object& acc, const wallet_name_type& name,
 
 void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
 {
-   wlog("?????? wallet_create_evaluator");
+   dlog("?????? wallet_create_evaluator");
    const auto& props = _db.get_dynamic_global_properties();
    const string wallet_name = o.get_wallet_name();
-   wlog("?????? wallet_create_evaluator wallet_name ${w}", ("w",wallet_name));
-   wlog("?????? wallet_create_evaluator creator ${w}", ("w",o.creator));
-   wlog("?????? wallet_create_evaluator new_wallet_name ${w}", ("w",o.new_wallet_name));
+   dlog("?????? wallet_create_evaluator wallet_name ${w}", ("w",wallet_name));
+   dlog("?????? wallet_create_evaluator creator ${w}", ("w",o.creator));
+   dlog("?????? wallet_create_evaluator new_wallet_name ${w}", ("w",o.new_wallet_name));
 
    //const auto& creator = _db.get_account( o.creator );
 
@@ -206,13 +206,13 @@ void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
 
 void wallet_update_evaluator::do_apply( const wallet_update_operation& o )
 {
-   wlog("!!!!!! WALLET UPDATE");
+   dlog("!!!!!! WALLET UPDATE");
    FC_ASSERT( o.wallet != XGT_TEMP_WALLET, "Cannot update temp account." );
 
    if( o.social )
       o.social->validate();
 
-   wlog("!!!!!! WALLET UPDATE 2");
+   dlog("!!!!!! WALLET UPDATE 2");
 
    // Upsert
    // TODO: VALIDATE
@@ -248,7 +248,7 @@ void wallet_update_evaluator::do_apply( const wallet_update_operation& o )
       if( o.social )
          validate_auth_size( *o.social );
 
-      wlog("!!!!!! WALLET UPDATE 3");
+      dlog("!!!!!! WALLET UPDATE 3");
 
       if( o.recovery )
       {
@@ -265,7 +265,7 @@ void wallet_update_evaluator::do_apply( const wallet_update_operation& o )
       if( o.social )
          verify_authority_accounts_exist( _db, *o.social, o.wallet, authority::social );
 
-      wlog("!!!!!! WALLET UPDATE 4");
+      dlog("!!!!!! WALLET UPDATE 4");
 
       _db.modify( wallet, [&]( wallet_object& acc )
       {
@@ -289,7 +289,7 @@ void wallet_update_evaluator::do_apply( const wallet_update_operation& o )
       }
       #endif
 
-      wlog("!!!!!! WALLET UPDATE 5");
+      dlog("!!!!!! WALLET UPDATE 5");
 
       if( o.money || o.social )
       {
@@ -300,7 +300,7 @@ void wallet_update_evaluator::do_apply( const wallet_update_operation& o )
          });
       }
 
-      wlog("!!!!!! WALLET UPDATE 6");
+      dlog("!!!!!! WALLET UPDATE 6");
    }
 }
 
@@ -920,7 +920,7 @@ void pow_evaluator::do_apply( const pow_operation& o )
    double value = base_reward.amount.value * (1.0 / static_cast<double>(divisor));
    long price = static_cast<long>(floor(value));
    asset reward = asset(price, base_reward.symbol);
-   //wlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
+   //dlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
 
    const wallet_object* w = db.find_account( worker_account );
    if (w == nullptr)
@@ -987,7 +987,7 @@ fc::ripemd160 generate_random_ripmd160()
 
 void contract_create_evaluator::do_apply( const contract_create_operation& op )
 {
-   wlog("!!!!!! contract_create owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
+   dlog("!!!!!! contract_create owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
    _db.create< contract_object >( [&](contract_object& c)
    {
       //c.contract_hash = generate_random_ripmd160();

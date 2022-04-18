@@ -255,19 +255,11 @@ namespace xgt { namespace chain {
          my->block_stream.clear();
 
          my->block_stream.seekg( -(sizeof(uint64_t)), std::ios::end );
-
-         std::cerr << "failed?: " << my->block_stream.fail() << std::endl;
-
          my->block_stream.read( (char*)(&end_pos), sizeof(uint64_t) );
 
-         std::cerr << "failed?: " << my->block_stream.fail() << std::endl;
-         std::cerr << "gcount: " << my->block_stream.gcount() << std::endl;
-         std::cerr << "end_pos: " << end_pos << std::endl;
          FC_ASSERT(my->block_stream.gcount() == sizeof(uint64_t), "failed to read end pos");
 
          signed_block tmp;
-
-         std::cerr << "file size: " << fc::file_size(my->block_file.generic_string().c_str()) << std::endl;
 
          my->block_stream.seekg( pos );
 

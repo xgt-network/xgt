@@ -84,7 +84,7 @@ struct energy_cost_visitor
 
    uint64_t operator()( const transfer_operation& o )const
    {
-      wlog("!!!!!! ENERGY OPERATION VISITOR TRANSFER OPERATION");
+      dlog("!!!!!! ENERGY OPERATION VISITOR TRANSFER OPERATION");
       return 1;
    }
 };

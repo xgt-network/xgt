@@ -307,7 +307,7 @@ uint32_t database::reindex( const open_args& args )
 
                if( cur_block_num % 100000 == 0 )
                {
-                  std::cerr << "   " << double( cur_block_num * 100 ) / last_block_num << "%   " << cur_block_num << " of " << last_block_num << "   (" <<
+                  std::cerr << "replay: " << double( cur_block_num * 100 ) / last_block_num << "%   " << cur_block_num << " of " << last_block_num << "   (" <<
    #ifdef ENABLE_MIRA
                   get_cache_size()  << " objects cached using " << (get_cache_usage() >> 20) << "M"
    #else
@@ -1804,11 +1804,7 @@ void database::_apply_block( const signed_block& next_block )
    }
    else if( (XGT_STARTING_OFFSET + next_block_num) % frequency == 1 )
    {
-      wlog("MINING DIFFICULTY - Updating mining difficulty...");
-
-
       const uint32_t prior_block_num = next_block_num - XGT_MINING_RECALC_EVERY_N_BLOCKS;
-      wlog("MINING DIFFICULTY - prior_block_num ${a}", ("a",prior_block_num));
       optional<signed_block> prior_block = optional<signed_block>();
       prior_block = _block_log.read_block_by_num(prior_block_num);
       if (!prior_block)
@@ -1999,13 +1995,13 @@ void database::_apply_transaction(const signed_transaction& trx)
                }
                if (public_key == fc::optional<public_key_type>())
                {
-                  wlog("!!!!!! Wallet no public key");
+                  dlog("!!!!!! Wallet no public key");
                   throw operation_validate_exception();
                }
             }
             else if ( is_wallet_create_operation(op) )
             {
-               wlog("!!!!!! Wallet create");
+               dlog("!!!!!! Wallet create");
                break;
             }
             else if ( is_wallet_update_operation(op) )
@@ -2021,13 +2017,13 @@ void database::_apply_transaction(const signed_transaction& trx)
                   keys.push_back(key);
                }
                string wallet_name = wallet_create_operation::get_wallet_name(keys);
-               wlog("!!!!!! Wallet update wallet name ${w}", ("w",wallet_name));
+               dlog("!!!!!! Wallet update wallet name ${w}", ("w",wallet_name));
                if (o.wallet == wallet_name) {
                   // Valid, don't throw error
-                  wlog("!!!!!! Wallet update valid");
+                  dlog("!!!!!! Wallet update valid");
                } else {
                   // TODO: Invalid, throw error
-                  wlog("!!!!!! Wallet update invalid");
+                  dlog("!!!!!! Wallet update invalid");
                   throw operation_validate_exception();
                }
             }
@@ -2086,7 +2082,7 @@ void database::_apply_transaction(const signed_transaction& trx)
       try {
         apply_operation(op);
       } catch ( const fc::exception& e ) {
-        wlog("!!!!!! Error applying operation ${w}", ("w",e));
+        dlog("!!!!!! Error applying operation ${w}", ("w",e));
         throw e;
       }
       ++_current_op_in_trx;
