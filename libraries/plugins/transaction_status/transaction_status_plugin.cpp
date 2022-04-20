@@ -195,33 +195,34 @@ bool transaction_status_impl::state_is_valid()
 void transaction_status_impl::rebuild_state()
 {
    ilog( "Rebuilding transaction status state" );
+   _db.with_write_lock([&]() {
+      // Clear out the transaction status index
+      const auto& tx_status_idx = _db.get_index< transaction_status_index >().indices().get< by_trx_id >();
+      auto itr = tx_status_idx.begin();
+      while( itr != tx_status_idx.end() )
+      {
+         _db.remove( *itr );
+         itr = tx_status_idx.begin();
+      }
 
-   // Clear out the transaction status index
-   const auto& tx_status_idx = _db.get_index< transaction_status_index >().indices().get< by_trx_id >();
-   auto itr = tx_status_idx.begin();
-   while( itr != tx_status_idx.end() )
-   {
-      _db.remove( *itr );
-      itr = tx_status_idx.begin();
-   }
+      // Re-build the index from scratch
+      const auto head_block_num = _db.head_block_num();
+      uint32_t earliest_tracked_block_num = get_earliest_tracked_block_num();
 
-   // Re-build the index from scratch
-   const auto head_block_num = _db.head_block_num();
-   uint32_t earliest_tracked_block_num = get_earliest_tracked_block_num();
+      for ( uint32_t block_num = earliest_tracked_block_num; block_num <= head_block_num; block_num++ )
+      {
+         const auto block = _db.fetch_block_by_number( block_num );
 
-   for ( uint32_t block_num = earliest_tracked_block_num; block_num <= head_block_num; block_num++ )
-   {
-      const auto block = _db.fetch_block_by_number( block_num );
+         FC_ASSERT( block.valid(), "Could not read block ${n}", ("n", block_num) );
 
-      FC_ASSERT( block.valid(), "Could not read block ${n}", ("n", block_num) );
-
-      for ( const auto& e : block->transactions )
-         _db.create< transaction_status_object >( [&]( transaction_status_object& obj )
-         {
-            obj.transaction_id = e.id();
-            obj.block_num = block_num;
-         } );
-   }
+         for ( const auto& e : block->transactions )
+            _db.create< transaction_status_object >( [&]( transaction_status_object& obj )
+            {
+               obj.transaction_id = e.id();
+               obj.block_num = block_num;
+            } );
+      }
+   });
 }
 
 /**
@@ -322,20 +323,20 @@ void transaction_status_plugin::plugin_startup()
 {
    try
    {
-      ilog( "transaction_status: plugin_startup() begin" );
-      if ( my->rebuild_state_flag )
+      my->_db.with_write_lock( [&]()
       {
-         my->_db.with_write_lock( [&]()
+         ilog( "transaction_status: plugin_startup() begin" );
+         if ( my->rebuild_state_flag )
          {
-            my->rebuild_state();
-         });
-      }
-      else if ( !my->state_is_valid() )
-      {
-         wlog( "The transaction status plugin state does not contain tracking information for the last ${num_blocks} blocks. Re-run with the command line argument '--${rebuild_state_key}'.",
-            ("num_blocks", my->nominal_block_depth) ("rebuild_state_key", TRANSACTION_STATUS_REBUILD_STATE_KEY) );
-         exit( EXIT_FAILURE );
-      }
+               my->rebuild_state();
+         }
+         else if ( !my->state_is_valid() )
+         {
+            wlog( "The transaction status plugin state does not contain tracking information for the last ${num_blocks} blocks. Re-run with the command line argument '--${rebuild_state_key}'.",
+               ("num_blocks", my->nominal_block_depth) ("rebuild_state_key", TRANSACTION_STATUS_REBUILD_STATE_KEY) );
+            exit( EXIT_FAILURE );
+         }
+      });
       ilog( "transaction_status: plugin_startup() end" );
    } FC_CAPTURE_AND_RETHROW()
 }

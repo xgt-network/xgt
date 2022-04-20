@@ -640,7 +640,9 @@ void chain_plugin::plugin_startup()
       }
    }
 
-   ilog( "Started on blockchain with ${n} blocks", ("n", my->db.head_block_num()) );
+   my->db.with_read_lock([&]() {
+      ilog( "Started on blockchain with ${n} blocks", ("n", my->db.head_block_num()) );
+   });
    on_sync();
 
    if( my->stop_at_block )

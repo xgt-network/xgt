@@ -1197,27 +1197,30 @@ namespace chainbase {
             return get_index< index_type >().indices().size();
          }
 
+         read_lock lock_read() {
+            int_incrementer ii( _read_lock_count );
+            read_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
+            lock.lock();
+            return lock;
+         }
+
+         write_lock lock_write() {
+            int_incrementer ii( _write_lock_count );
+            write_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
+            lock.lock();
+            return lock;
+         }
+
          template< typename Lambda >
-         auto with_read_lock( Lambda&& callback, uint64_t wait_micro = 1000000 ) -> decltype( (*(Lambda*)nullptr)() )
+         auto with_read_lock( Lambda&& callback ) -> decltype( (*(Lambda*)nullptr)() )
          {
 #ifndef ENABLE_MIRA
             read_lock lock( _rw_manager.current_lock(), bip::defer_lock_type() );
+            lock.lock();
 #else
-            read_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
+            auto _lock = lock_read();
 #endif
-
-            BOOST_ATTRIBUTE_UNUSED
             int_incrementer ii( _read_lock_count );
-
-            if( !wait_micro )
-            {
-               lock.lock();
-            }
-            else
-            {
-               if( !lock.timed_lock( boost::posix_time::microsec_clock::universal_time() + boost::posix_time::microseconds( wait_micro ) ) )
-                  BOOST_THROW_EXCEPTION( lock_exception() );
-            }
 
             return callback();
          }
@@ -1225,11 +1228,8 @@ namespace chainbase {
          template< typename Lambda >
          auto with_write_lock( Lambda&& callback, uint64_t wait_micro = 1000000 ) -> decltype( (*(Lambda*)nullptr)() )
          {
-            write_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
-            BOOST_ATTRIBUTE_UNUSED
+            auto _lock = lock_write();
             int_incrementer ii( _write_lock_count );
-
-            lock.lock();
 
             return callback();
          }

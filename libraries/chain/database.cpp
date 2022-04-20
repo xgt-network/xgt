@@ -135,7 +135,7 @@ void set_index_helper( database& db, mira::index_type type, const boost::filesys
    for ( auto const& delegate : delegates )
    {
       ilog( "Converting index '${name}' to ${type} type.", ("name", delegate.first)("type", type_str) );
-      delegate.second.set_index_type( db, type, p, cfg );
+      db.with_write_lock([&]() { delegate.second.set_index_type( db, type, p, cfg );});
    }
 }
 #endif
@@ -149,25 +149,25 @@ void database::open( const open_args& args )
    {
       chainbase::database::open( args.shared_mem_dir, args.chainbase_flags, args.shared_file_size, args.database_cfg );
 
-      initialize_indexes();
-      initialize_evaluators();
-
-      ilog("database::open setting up global property object...");
-
-      if( !find< dynamic_global_property_object >() )
+      with_write_lock( [&]()
       {
-         with_write_lock( [&]()
-         {
-            if( args.genesis_func )
-            {
-               ////FC_TODO( "Load directly in to mira instead of bmic first" );
-               (*args.genesis_func)( *this, args );
-            }
-            else
-               init_genesis( args.initial_supply );
-         });
-      }
+         initialize_indexes();
+         initialize_evaluators();
 
+         ilog("database::open setting up global property object...");
+
+         if( !find< dynamic_global_property_object >() )
+         {
+               if( args.genesis_func )
+               {
+                  ////FC_TODO( "Load directly in to mira instead of bmic first" );
+                  (*args.genesis_func)( *this, args );
+               }
+               else
+                  init_genesis( args.initial_supply );
+         }
+
+      });
       ilog("database::open setting up block log...");
 
       _benchmark_dumper.set_enabled( args.benchmark_is_enabled );
@@ -200,19 +200,19 @@ void database::open( const open_args& args )
 
       ilog("database::open check for reindex...");
 
-      if( head_block_num() )
-      {
-         auto head_block = _block_log.read_block_by_num( head_block_num() );
-         // This assertion should be caught and a reindex should occur
-         FC_ASSERT( head_block.valid() && head_block->id() == head_block_id(), "Chain state does not match block log. Please reindex blockchain." );
-
-         _fork_db.start_block( *head_block );
-      }
-
-      ilog("database::open initialize versioning...");
-
       with_read_lock( [&]()
       {
+         if( head_block_num() )
+         {
+            auto head_block = _block_log.read_block_by_num( head_block_num() );
+            // This assertion should be caught and a reindex should occur
+            FC_ASSERT( head_block.valid() && head_block->id() == head_block_id(), "Chain state does not match block log. Please reindex blockchain." );
+
+            _fork_db.start_block( *head_block );
+         }
+
+         ilog("database::open initialize versioning...");
+
          init_hardforks(); // Writes to local state, but reads from db
       });
 
@@ -243,11 +243,10 @@ uint32_t database::reindex( const open_args& args )
 
    try
    {
-
       ilog( "Reindexing Blockchain" );
-#ifdef ENABLE_MIRA
-      initialize_indexes();
-#endif
+// #ifdef ENABLE_MIRA
+//       with_write_lock([&]() { initialize_indexes(); });
+// #endif
 
       wipe( args.data_dir, args.shared_mem_dir, false );
 
@@ -281,21 +280,21 @@ uint32_t database::reindex( const open_args& args )
          skip_validate_invariants |
          skip_block_log;
 
-      idump( (head_block_num()) );
+      idump( (with_read_lock([&]() { return head_block_num(); })) );
 
       auto last_block_num = _block_log.head()->block_num();
 
       if( args.stop_at_block > 0 && args.stop_at_block < last_block_num )
          last_block_num = args.stop_at_block;
 
-      if( head_block_num() < last_block_num )
+      if( with_read_lock([&]() { return head_block_num(); }) < last_block_num )
       {
          if( args.benchmark.first > 0 )
          {
             args.benchmark.second( 0, get_abstract_index_cntr() );
          }
 
-         auto itr = _block_log.read_block( _block_log.get_block_pos( head_block_num() + 1 ) );
+         auto itr = _block_log.read_block( _block_log.get_block_pos( with_read_lock([&]() { return head_block_num(); }) + 1 ) );
 
          with_write_lock( [&]()
          {
@@ -361,7 +360,7 @@ uint32_t database::reindex( const open_args& args )
 
       note.reindex_success = true;
 
-      return head_block_num();
+      return with_read_lock([&]() { return head_block_num(); });
    }
    FC_CAPTURE_AND_RETHROW( (args.data_dir)(args.shared_mem_dir) )
 

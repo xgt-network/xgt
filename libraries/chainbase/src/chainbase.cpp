@@ -241,7 +241,8 @@ namespace chainbase {
    {
       std::string err_msg = "database::" + std::string( method ) + " require_" + std::string( lock_type ) + "_lock() failed on type " + std::string( tname );
       std::cerr << err_msg << std::endl;
-      BOOST_THROW_EXCEPTION( std::runtime_error( err_msg ) );
+      abort();
+      // BOOST_THROW_EXCEPTION( std::runtime_error( err_msg ) );
    }
 
    void database::undo()
