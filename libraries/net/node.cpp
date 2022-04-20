@@ -4863,7 +4863,7 @@ namespace graphene { namespace net {
         peer_to_disconnect->we_have_requested_close = true;
         peer_to_disconnect->connection_closed_time = fc::time_point::now();
 
-        closing_connection_message closing_message( reason_for_disconnect, caused_by_error, error );
+        closing_connection_message closing_message( reason_for_disconnect, caused_by_error );
         peer_to_disconnect->send_message( closing_message );
       }
 
