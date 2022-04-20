@@ -55,12 +55,6 @@ if( LOW_MEMORY_NODE )
   add_compile_definitions("IS_LOW_MEM")
 endif()
 
-OPTION( CHAINBASE_CHECK_LOCKING "Check locks in chainbase (ON or OFF)" ON )
-MESSAGE( STATUS "CHAINBASE_CHECK_LOCKING: ${CHAINBASE_CHECK_LOCKING}" )
-if( CHAINBASE_CHECK_LOCKING )
-  add_compile_definitions("CHAINBASE_CHECK_LOCKING")
-endif()
-
 OPTION( SKIP_BY_TX_ID "Skip ordering operation history by transaction id (ON or OFF)" OFF )
 MESSAGE( STATUS "SKIP_BY_TX_ID: ${SKIP_BY_TX_ID}" )
 if( SKIP_BY_TX_ID )

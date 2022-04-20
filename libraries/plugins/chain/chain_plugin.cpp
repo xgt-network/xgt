@@ -92,7 +92,7 @@ class chain_plugin_impl
       bool                             replay = false;
       bool                             resync   = false;
       bool                             readonly = false;
-      bool                             check_locks = false;
+      bool                             check_locks = true;
       bool                             validate_invariants = false;
       bool                             dump_memory_details = false;
       bool                             benchmark_is_enabled = false;
@@ -364,7 +364,7 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
          ("advanced-benchmark", "Make profiling for every plugin.")
          ("set-benchmark-interval", bpo::value<uint32_t>(), "Print time and memory usage every given number of blocks")
          ("dump-memory-details", bpo::bool_switch()->default_value(false), "Dump database objects memory usage info. Use set-benchmark-interval to set dump interval.")
-         ("check-locks", bpo::bool_switch()->default_value(false), "Check correctness of chainbase locking")
+         ("check-locks", bpo::bool_switch()->default_value(true), "Check correctness of chainbase locking")
          ("validate-database-invariants", bpo::bool_switch()->default_value(false), "Validate all supply invariants check out")
 #ifdef ENABLE_MIRA
          ("database-cfg", bpo::value<bfs::path>()->default_value("database.cfg"), "The database configuration file location")

@@ -34,13 +34,9 @@
    #define CHAINBASE_NUM_RW_LOCKS 10
 #endif
 
-#ifdef CHAINBASE_CHECK_LOCKING
-   #define CHAINBASE_REQUIRE_READ_LOCK(m, t) require_read_lock(m, typeid(t).name())
-   #define CHAINBASE_REQUIRE_WRITE_LOCK(m, t) require_write_lock(m, typeid(t).name())
-#else
-   #define CHAINBASE_REQUIRE_READ_LOCK(m, t)
-   #define CHAINBASE_REQUIRE_WRITE_LOCK(m, t)
-#endif
+#define CHAINBASE_REQUIRE_READ_LOCK(m, t) require_read_lock(m, typeid(t).name())
+#define CHAINBASE_REQUIRE_WRITE_LOCK(m, t) require_write_lock(m, typeid(t).name())
+
 
 namespace helpers
 {
@@ -179,7 +175,7 @@ namespace chainbase {
    class int_incrementer
    {
       public:
-         int_incrementer( int32_t& target ) : _target(target)
+         int_incrementer( std::atomic<int32_t>& target ) : _target(target)
          { ++_target; }
 
          int_incrementer( int_incrementer& ii ) : _target( ii._target )
@@ -192,7 +188,7 @@ namespace chainbase {
          { return _target; }
 
       private:
-         int32_t& _target;
+         std::atomic<int32_t>& _target;
    };
 
    /**
@@ -932,21 +928,19 @@ namespace chainbase {
          void resize( size_t new_shared_file_size );
          void set_require_locking( bool enable_require_locking );
 
-#ifdef CHAINBASE_CHECK_LOCKING
          void require_lock_fail( const char* method, const char* lock_type, const char* tname )const;
 
          void require_read_lock( const char* method, const char* tname )const
          {
-            if( BOOST_UNLIKELY( _enable_require_locking & (_read_lock_count <= 0) ) )
+            if( BOOST_UNLIKELY( _enable_require_locking && (_read_lock_count <= 0) && (_write_lock_count <= 0) ) )
                require_lock_fail(method, "read", tname);
          }
 
          void require_write_lock( const char* method, const char* tname )
          {
-            if( BOOST_UNLIKELY( _enable_require_locking & (_write_lock_count <= 0) ) )
+            if( BOOST_UNLIKELY( _enable_require_locking && (_write_lock_count <= 0) ) )
                require_lock_fail(method, "write", tname);
          }
-#endif
 
          struct session {
             public:
@@ -956,7 +950,7 @@ namespace chainbase {
                     _session_incrementer( s._session_incrementer )
                {}
 
-               session( vector<std::unique_ptr<abstract_session>>&& s, int32_t& session_count )
+               session( vector<std::unique_ptr<abstract_session>>&& s, std::atomic<int32_t>& session_count )
                   : _index_sessions( std::move(s) ), _session_incrementer( session_count )
                {
                   if( _index_sessions.size() )
@@ -1212,10 +1206,8 @@ namespace chainbase {
             read_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
 #endif
 
-#ifdef CHAINBASE_CHECK_LOCKING
             BOOST_ATTRIBUTE_UNUSED
             int_incrementer ii( _read_lock_count );
-#endif
 
             if( !wait_micro )
             {
@@ -1234,26 +1226,10 @@ namespace chainbase {
          auto with_write_lock( Lambda&& callback, uint64_t wait_micro = 1000000 ) -> decltype( (*(Lambda*)nullptr)() )
          {
             write_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
-#ifdef CHAINBASE_CHECK_LOCKING
             BOOST_ATTRIBUTE_UNUSED
             int_incrementer ii( _write_lock_count );
-#endif
 
-#if !defined ENABLE_MIRA || defined IS_TEST_NET
-            if( wait_micro )
-            {
-               while( !lock.timed_lock( boost::posix_time::microsec_clock::universal_time() + boost::posix_time::microseconds( wait_micro ) ) )
-               {
-                  _rw_manager.next_lock();
-                  std::cerr << "Lock timeout, moving to lock " << _rw_manager.current_lock_num() << std::endl;
-                  lock = write_lock( _rw_manager.current_lock(), boost::defer_lock_t() );
-               }
-            }
-            else
-#endif
-            {
-               lock.lock();
-            }
+            lock.lock();
 
             return callback();
          }
@@ -1359,13 +1335,13 @@ namespace chainbase {
 
          bfs::path                                                   _data_dir;
 
-         int32_t                                                     _read_lock_count = 0;
-         int32_t                                                     _write_lock_count = 0;
-         bool                                                        _enable_require_locking = false;
+         std::atomic<int32_t>                                        _read_lock_count = {0};
+         std::atomic<int32_t>                                        _write_lock_count = {0};
+         bool                                                        _enable_require_locking = true;
 
          bool                                                        _is_open = false;
 
-         int32_t                                                     _undo_session_count = 0;
+         std::atomic<int32_t>                                        _undo_session_count = {0};
          size_t                                                      _file_size = 0;
          boost::any                                                  _database_cfg = nullptr;
    };
