@@ -230,7 +230,7 @@ void chain_plugin_impl::start_write_processing()
    {
       bool is_syncing = true;
       write_context* cxt;
-      fc::time_point_sec start = fc::time_point::now();
+      fc::time_point start = fc::time_point::now();
       write_request_visitor req_visitor;
       req_visitor.db = &db;
       req_visitor.block_generator = block_generator;
@@ -274,8 +274,8 @@ void chain_plugin_impl::start_write_processing()
 
                   if( is_syncing && start - db.head_block_time() < fc::minutes(1) )
                   {
-                     start = fc::time_point::now();
                      is_syncing = false;
+                     break;
                   }
 
                   if( !is_syncing && write_lock_hold_time >= 0 && fc::time_point::now() - start > fc::milliseconds( write_lock_hold_time ) )
