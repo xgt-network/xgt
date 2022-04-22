@@ -43,7 +43,7 @@ if( XGT_MAX_MINER_WITNESSES )
   add_compile_definitions("XGT_MAX_MINER_WITNESSES=${XGT_MAX_MINER_WITNESSES}")
 endif()
 
-OPTION( ENABLE_MIRA "Build source with MIRA (ON OR OFF)" OFF )
+OPTION( ENABLE_MIRA "Build source with MIRA (ON OR OFF)" ON )
 MESSAGE( STATUS "ENABLE_MIRA: ${ENABLE_MIRA}" )
 if( ENABLE_MIRA )
   add_compile_definitions("ENABLE_MIRA")
