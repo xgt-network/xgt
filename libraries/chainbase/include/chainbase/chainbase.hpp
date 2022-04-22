@@ -1199,7 +1199,12 @@ namespace chainbase {
 
          read_lock lock_read() {
             int_incrementer ii( _read_lock_count );
+            #ifdef ENABLE_MIRA
             read_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
+            #else
+            read_lock lock( _rw_manager.current_lock(), bip::defer_lock_type() );
+            #endif
+
             lock.lock();
             return lock;
          }
@@ -1214,12 +1219,7 @@ namespace chainbase {
          template< typename Lambda >
          auto with_read_lock( Lambda&& callback ) -> decltype( (*(Lambda*)nullptr)() )
          {
-#ifndef ENABLE_MIRA
-            read_lock lock( _rw_manager.current_lock(), bip::defer_lock_type() );
-            lock.lock();
-#else
             auto _lock = lock_read();
-#endif
             int_incrementer ii( _read_lock_count );
 
             return callback();
