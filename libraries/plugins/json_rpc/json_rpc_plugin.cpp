@@ -302,10 +302,6 @@ namespace detail
                         response.result = (*call)( func_args );
                      }
                   }
-                  catch( chainbase::lock_exception& e )
-                  {
-                     response.error = json_rpc_error( JSON_RPC_ERROR_DURING_CALL, e.what() );
-                  }
                   catch( fc::assert_exception& e )
                   {
                      response.error = json_rpc_error( JSON_RPC_ERROR_DURING_CALL, e.to_string(), fc::variant( *(e.dynamic_copy_exception()) ) );

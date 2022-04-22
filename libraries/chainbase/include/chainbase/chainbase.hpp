@@ -8,7 +8,6 @@
 #include <boost/interprocess/containers/string.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
-#include <boost/interprocess/sync/sharable_lock.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 
 #include <boost/any.hpp>
@@ -17,6 +16,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
+#include <boost/thread/pthread/shared_mutex.hpp>
 #include <boost/throw_exception.hpp>
 
 #include <chainbase/allocators.hpp>
@@ -852,46 +852,6 @@ namespace chainbase {
          index( IndexType& i ):index_impl<IndexType>( i ){}
    };
 
-
-   class read_write_mutex_manager
-   {
-      public:
-         read_write_mutex_manager()
-         {
-            _current_lock = 0;
-         }
-
-         ~read_write_mutex_manager(){}
-
-         void next_lock()
-         {
-            _current_lock++;
-            new( &_locks[ _current_lock % CHAINBASE_NUM_RW_LOCKS ] ) read_write_mutex();
-         }
-
-         read_write_mutex& current_lock()
-         {
-            return _locks[ _current_lock % CHAINBASE_NUM_RW_LOCKS ];
-         }
-
-         uint32_t current_lock_num()
-         {
-            return _current_lock;
-         }
-
-      private:
-         std::array< read_write_mutex, CHAINBASE_NUM_RW_LOCKS >     _locks;
-         std::atomic< uint32_t >                                    _current_lock;
-   };
-
-   struct lock_exception : public std::exception
-   {
-      explicit lock_exception() {}
-      virtual ~lock_exception() {}
-
-      virtual const char* what() const noexcept { return "Unable to acquire database lock"; }
-   };
-
    /**
     *  This class
     */
@@ -926,19 +886,18 @@ namespace chainbase {
          void trim_cache();
          void wipe( const bfs::path& dir );
          void resize( size_t new_shared_file_size );
-         void set_require_locking( bool enable_require_locking );
 
          void require_lock_fail( const char* method, const char* lock_type, const char* tname )const;
 
          void require_read_lock( const char* method, const char* tname )const
          {
-            if( BOOST_UNLIKELY( _enable_require_locking && (_read_lock_count <= 0) && (_write_lock_count <= 0) ) )
+            if( BOOST_UNLIKELY( (_read_lock_count <= 0) && (_write_lock_count <= 0) ) )
                require_lock_fail(method, "read", tname);
          }
 
          void require_write_lock( const char* method, const char* tname )
          {
-            if( BOOST_UNLIKELY( _enable_require_locking && (_write_lock_count <= 0) ) )
+            if( BOOST_UNLIKELY( (_write_lock_count <= 0) ) )
                require_lock_fail(method, "write", tname);
          }
 
@@ -1197,41 +1156,32 @@ namespace chainbase {
             return get_index< index_type >().indices().size();
          }
 
-         read_lock lock_read() {
+         auto lock_read() {
             int_incrementer ii( _read_lock_count );
-            #ifdef ENABLE_MIRA
-            read_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
-            #else
-            read_lock lock( _rw_manager.current_lock(), bip::defer_lock_type() );
-            #endif
-
-            lock.lock();
+            boost::shared_lock<boost::shared_mutex> lock(_mutex);
             return lock;
          }
 
-         write_lock lock_write() {
+         auto lock_write() {
             int_incrementer ii( _write_lock_count );
-            write_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
-            lock.lock();
+            boost::unique_lock<boost::shared_mutex> lock(_mutex);
             return lock;
          }
 
-         template< typename Lambda >
-         auto with_read_lock( Lambda&& callback ) -> decltype( (*(Lambda*)nullptr)() )
-         {
+         template <class Function, class... Args>
+         auto with_read_lock(Function&& func, Args&&... args) -> decltype(func(args...)) {
+            int_incrementer ii( _read_lock_count );
             auto _lock = lock_read();
-            int_incrementer ii( _read_lock_count );
 
-            return callback();
-         }
+            return func(args...);
+         };
 
-         template< typename Lambda >
-         auto with_write_lock( Lambda&& callback, uint64_t wait_micro = 1000000 ) -> decltype( (*(Lambda*)nullptr)() )
-         {
-            auto _lock = lock_write();
+         template <class Function, class... Args>
+         auto with_write_lock(Function&& func, Args&&... args) -> decltype(func(args...)) {
             int_incrementer ii( _write_lock_count );
+            auto _lock = lock_write();
 
-            return callback();
+            return func(args...);
          }
 
 #ifdef ENABLE_MIRA
@@ -1314,7 +1264,6 @@ namespace chainbase {
 #endif
          }
 
-         read_write_mutex_manager                                    _rw_manager;
 #ifndef ENABLE_MIRA
          unique_ptr<bip::managed_mapped_file>                        _segment;
          unique_ptr<bip::managed_mapped_file>                        _meta;
@@ -1335,9 +1284,9 @@ namespace chainbase {
 
          bfs::path                                                   _data_dir;
 
+         boost::shared_mutex                                         _mutex;
          std::atomic<int32_t>                                        _read_lock_count = {0};
          std::atomic<int32_t>                                        _write_lock_count = {0};
-         bool                                                        _enable_require_locking = true;
 
          bool                                                        _is_open = false;
 

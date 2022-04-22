@@ -92,7 +92,6 @@ class chain_plugin_impl
       bool                             replay = false;
       bool                             resync   = false;
       bool                             readonly = false;
-      bool                             check_locks = true;
       bool                             validate_invariants = false;
       bool                             dump_memory_details = false;
       bool                             benchmark_is_enabled = false;
@@ -364,7 +363,6 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
          ("advanced-benchmark", "Make profiling for every plugin.")
          ("set-benchmark-interval", bpo::value<uint32_t>(), "Print time and memory usage every given number of blocks")
          ("dump-memory-details", bpo::bool_switch()->default_value(false), "Dump database objects memory usage info. Use set-benchmark-interval to set dump interval.")
-         ("check-locks", bpo::bool_switch()->default_value(true), "Check correctness of chainbase locking")
          ("validate-database-invariants", bpo::bool_switch()->default_value(false), "Validate all supply invariants check out")
 #ifdef ENABLE_MIRA
          ("database-cfg", bpo::value<bfs::path>()->default_value("database.cfg"), "The database configuration file location")
@@ -405,7 +403,6 @@ void chain_plugin::plugin_initialize(const variables_map& options)
       options.count( "stop-at-block" ) ? options.at( "stop-at-block" ).as<uint32_t>() : 0;
    my->benchmark_interval  =
       options.count( "set-benchmark-interval" ) ? options.at( "set-benchmark-interval" ).as<uint32_t>() : 0;
-   my->check_locks         = options.at( "check-locks" ).as< bool >();
    my->validate_invariants = options.at( "validate-database-invariants" ).as<bool>();
    my->dump_memory_details = options.at( "dump-memory-details" ).as<bool>();
    if( options.count( "flush-state-interval" ) )
@@ -492,7 +489,6 @@ void chain_plugin::plugin_startup()
 
    my->db.set_flush_interval( my->flush_interval );
    my->db.add_checkpoints( my->loaded_checkpoints );
-   my->db.set_require_locking( my->check_locks );
 
    bool dump_memory_details = my->dump_memory_details;
    xgt::utilities::benchmark_dumper dumper;

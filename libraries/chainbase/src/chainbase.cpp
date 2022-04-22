@@ -232,11 +232,6 @@ namespace chainbase {
 #endif
    }
 
-   void database::set_require_locking( bool enable_require_locking )
-   {
-      _enable_require_locking = enable_require_locking;
-   }
-
    void database::require_lock_fail( const char* method, const char* lock_type, const char* tname )const
    {
       std::string err_msg = "database::" + std::string( method ) + " require_" + std::string( lock_type ) + "_lock() failed on type " + std::string( tname );
