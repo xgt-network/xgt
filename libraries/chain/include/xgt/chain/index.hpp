@@ -1,7 +1,5 @@
 #pragma once
 
-#include <mira/index_converter.hpp>
-
 #include <xgt/schema/schema.hpp>
 #include <xgt/protocol/schema_types.hpp>
 #include <xgt/chain/schema_types.hpp>
@@ -31,7 +29,6 @@ struct index_info
    virtual int64_t count( const database& db ) = 0;
    virtual int64_t next_id( const database& db ) = 0;
    virtual void set_next_id( database&db, int64_t next_id ) = 0;
-   virtual void set_index_type( database& db, mira::index_type type, const boost::filesystem::path& p, const boost::any& cfg ) = 0;
 };
 
 struct abstract_object
@@ -152,11 +149,6 @@ struct index_info_impl
       idx.set_next_id( next_id );
    }
 
-   virtual void set_index_type( database& db, mira::index_type type, const boost::filesystem::path& p, const boost::any& cfg ) override
-   {
-      db.template get_mutable_index< MultiIndexType >().mutable_indices().set_index_type( type, p, cfg );
-   }
-
    std::shared_ptr< abstract_schema > _schema;
 };
 
@@ -187,9 +179,6 @@ void add_plugin_index( database& db )
    do {                                                                                                      \
       xgt::chain::add_core_index< index_name >( db );                                                      \
       xgt::chain::index_delegate delegate;                                                                 \
-      delegate.set_index_type =                                                                              \
-         []( database& _db, mira::index_type type, const boost::filesystem::path& p, const boost::any& cfg ) \
-            { _db.get_mutable_index< index_name >().mutable_indices().set_index_type( type, p, cfg ); };     \
       db.set_index_delegate( #index_name, std::move( delegate ) );                                           \
    } while( false )
 
@@ -197,8 +186,5 @@ void add_plugin_index( database& db )
    do {                                                                                                      \
       xgt::chain::add_plugin_index< index_name >( db );                                                    \
       xgt::chain::index_delegate delegate;                                                                 \
-      delegate.set_index_type =                                                                              \
-         []( database& _db, mira::index_type type, const boost::filesystem::path& p, const boost::any& cfg ) \
-            { _db.get_mutable_index< index_name >().mutable_indices().set_index_type( type, p, cfg ); };     \
       db.set_index_delegate( #index_name, std::move( delegate ) );                                           \
    } while( false )

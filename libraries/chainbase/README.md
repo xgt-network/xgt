@@ -61,7 +61,7 @@ typedef multi_index_container<
      ordered_non_unique< tag<by_pages>, BOOST_MULTI_INDEX_MEMBER(book,int,pages) >,
      ordered_non_unique< tag<by_date>, BOOST_MULTI_INDEX_MEMBER(book,int,publish_date) >
   >,
-  chainbase::allocator<book> ///< required for use with chainbase::database
+  std::allocator<book> ///< required for use with chainbase::database
 > book_index;
 
 /**

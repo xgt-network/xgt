@@ -111,33 +111,6 @@ boost::multiprecision::uint256_t hash_to_bigint(fc::sha256 h)
    return boost::multiprecision::uint256_t(prepended_string_hash);
 }
 
-void set_index_helper( database& db, mira::index_type type, const boost::filesystem::path& p, const boost::any& cfg, std::vector< std::string > indices )
-{
-   index_delegate_map delegates;
-
-   if ( indices.size() > 0 )
-   {
-      for ( auto& index_name : indices )
-      {
-         if ( db.has_index_delegate( index_name ) )
-            delegates[ index_name ] = db.get_index_delegate( index_name );
-         else
-            wlog( "Encountered an unknown index name '${name}'.", ("name", index_name) );
-      }
-   }
-   else
-   {
-      delegates = db.index_delegates();
-   }
-
-   std::string type_str = type == mira::index_type::mira ? "mira" : "bmic";
-   for ( auto const& delegate : delegates )
-   {
-      ilog( "Converting index '${name}' to ${type} type.", ("name", delegate.first)("type", type_str) );
-      db.with_write_lock([&]() { delegate.second.set_index_type( db, type, p, cfg );});
-   }
-}
-
 void database::open( const open_args& args )
 {
    ilog("database::open");
@@ -246,12 +219,6 @@ uint32_t database::reindex( const open_args& args )
 
       XGT_TRY_NOTIFY(_pre_reindex_signal, note);
 
-      if( args.replay_in_memory )
-      {
-         ilog( "Configuring replay to use memory..." );
-         set_index_helper( *this, mira::index_type::bmic, args.shared_mem_dir, args.database_cfg, args.replay_memory_indices );
-      }
-
       _fork_db.reset();    // override effect of _fork_db.start_block() call in open()
 
       XGT_ASSERT( _block_log.head(), block_log_exception, "No blocks in block log. Cannot reindex an empty chain." );
@@ -332,12 +299,6 @@ uint32_t database::reindex( const open_args& args )
 
       if( _block_log.head()->block_num() )
          _fork_db.start_block( *_block_log.head() );
-
-      if( args.replay_in_memory )
-      {
-         ilog( "Migrating state to disk..." );
-         set_index_helper( *this, mira::index_type::mira, args.shared_mem_dir, args.database_cfg, args.replay_memory_indices );
-      }
 
       auto end = fc::time_point::now();
       ilog( "Done reindexing, elapsed time: ${t} sec", ("t",double((end-start).count())/1000000.0 ) );
@@ -601,12 +562,12 @@ const wallet_object* database::find_account( const wallet_name_type& name )const
    return find< wallet_object, by_name >( name );
 }
 
-const comment_object& database::get_comment( const wallet_name_type& author, const shared_string& permlink )const
+const comment_object& database::get_comment( const wallet_name_type& author, const std::string& permlink )const
 { try {
    return get< comment_object, by_permlink >( boost::make_tuple( author, permlink ) );
 } FC_CAPTURE_AND_RETHROW( (author)(permlink) ) }
 
-const comment_object* database::find_comment( const wallet_name_type& author, const shared_string& permlink )const
+const comment_object* database::find_comment( const wallet_name_type& author, const std::string& permlink )const
 {
    return find< comment_object, by_permlink >( boost::make_tuple( author, permlink ) );
 }

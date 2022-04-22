@@ -72,19 +72,19 @@ namespace multi_index{
 #pragma warning(disable:4522) /* spurious warning on multiple operator=()'s */
 #endif
 
-template<typename Value,typename IndexSpecifierList,typename Allocator>
+template<typename Value,typename IndexSpecifierList>
 class multi_index_container:
   public detail::multi_index_base_type<
-    Value,IndexSpecifierList,Allocator>::type
+    Value,IndexSpecifierList>::type
 {
 
 private:
   BOOST_COPYABLE_AND_MOVABLE(multi_index_container)
 
-  template <typename,typename,typename> friend class  detail::index_base;
+  template <typename,typename> friend class  detail::index_base;
 
   typedef typename detail::multi_index_base_type<
-      Value,IndexSpecifierList,Allocator>::type   super;
+      Value,IndexSpecifierList>::type   super;
 
    int64_t                                         _revision = -1;
 
@@ -108,7 +108,6 @@ public:
   typedef typename super::const_iterator_type_list const_iterator_type_list;
   typedef typename super::value_type               value_type;
   typedef typename value_type::id_type             id_type;
-  typedef typename super::final_allocator_type     allocator_type;
   typedef typename super::iterator                 iterator;
   typedef typename super::const_iterator           const_iterator;
 
@@ -367,11 +366,6 @@ public:
       detail::cache_manager::get()->adjust_capacity();
    }
 
-  allocator_type get_allocator()const BOOST_NOEXCEPT
-  {
-    return allocator_type();
-  }
-
   /* retrieval of indices by number */
 
   template<int N>
@@ -614,6 +608,12 @@ primary_iterator erase( primary_iterator position )
    bool emplace_rocksdb_( Args&&... args )
    {
       Value v( std::forward< Args >(args)... );
+      return insert_( v );
+   }
+   
+   bool emplace_rocksdb_(  )
+   {
+      Value v{};
       return insert_( v );
    }
 

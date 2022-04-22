@@ -1,12 +1,11 @@
 #pragma once
 
 #include <fc/variant.hpp>
-#include <boost/interprocess/allocators/allocator.hpp>
-#include <boost/interprocess/containers/deque.hpp>
-#include <boost/interprocess/containers/flat_map.hpp>
-#include <boost/interprocess/containers/map.hpp>
-#include <boost/interprocess/containers/set.hpp>
-#include <boost/interprocess/containers/vector.hpp>
+#include <boost/container/deque.hpp>
+#include <boost/container/flat_map.hpp>
+#include <boost/container/map.hpp>
+#include <boost/container/set.hpp>
+#include <boost/container/vector.hpp>
 #include <fc/crypto/hex.hpp>
 #include <fc/io/raw_fwd.hpp>
 
@@ -16,10 +15,8 @@
 
 namespace fc {
 
-   namespace bip = boost::interprocess;
-
     template<typename... T >
-    void to_variant( const bip::deque< T... >& t, fc::variant& v ) {
+    void to_variant( const boost::container::deque< T... >& t, fc::variant& v ) {
       std::vector<variant> vars(t.size());
       for( size_t i = 0; i < t.size(); ++i ) {
          vars[i] = t[i];
@@ -28,7 +25,7 @@ namespace fc {
     }
 
     template<typename T, typename... A>
-    void from_variant( const fc::variant& v, bip::deque< T, A... >& d ) {
+    void from_variant( const fc::variant& v, boost::container::deque< T, A... >& d ) {
       const variants& vars = v.get_array();
       d.clear();
       d.resize( vars.size() );
@@ -37,9 +34,9 @@ namespace fc {
       }
     }
 
-    //bip::map == boost::map
+    //boost::container::map == boost::map
     template<typename K, typename V, typename... T >
-    void to_variant( const bip::map< K, V, T... >& var, fc::variant& vo ) {
+    void to_variant( const boost::container::map< K, V, T... >& var, fc::variant& vo ) {
        std::vector< variant > vars(var.size());
        size_t i = 0;
        for( auto itr = var.begin(); itr != var.end(); ++itr, ++i )
@@ -48,7 +45,7 @@ namespace fc {
     }
 /*
     template<typename K, typename V, typename... A>
-    void from_variant( const variant& var,  bip::map<K, V, A...>& vo )
+    void from_variant( const variant& var,  boost::container::map<K, V, A...>& vo )
     {
        const variants& vars = var.get_array();
        vo.clear();
@@ -58,7 +55,7 @@ namespace fc {
 */
 
     template<typename... T >
-    void to_variant( const bip::vector< T... >& t, fc::variant& v ) {
+    void to_variant( const boost::container::vector< T... >& t, fc::variant& v ) {
       std::vector<variant> vars(t.size());
       for( size_t i = 0; i < t.size(); ++i ) {
          vars[i] = t[i];
@@ -67,7 +64,7 @@ namespace fc {
     }
 
     template<typename T, typename... A>
-    void from_variant( const fc::variant& v, bip::vector< T, A... >& d ) {
+    void from_variant( const fc::variant& v, boost::container::vector< T, A... >& d ) {
       const variants& vars = v.get_array();
       d.clear();
       d.resize( vars.size() );
@@ -77,7 +74,7 @@ namespace fc {
     }
 
     template<typename... T >
-    void to_variant( const bip::set< T... >& t, fc::variant& v ) {
+    void to_variant( const boost::container::set< T... >& t, fc::variant& v ) {
       std::vector<variant> vars;
       vars.reserve(t.size());
       for( const auto& item : t ) {
@@ -88,7 +85,7 @@ namespace fc {
 
 /*
     template<typename T, typename... A>
-    void from_variant( const fc::variant& v, bip::set< T, A... >& d ) {
+    void from_variant( const fc::variant& v, boost::container::set< T, A... >& d ) {
       const variants& vars = v.get_array();
       d.clear();
       d.reserve( vars.size() );
@@ -99,7 +96,7 @@ namespace fc {
 */
 
     template<typename... A>
-    void to_variant( const bip::vector<char, A...>& t, fc::variant& v )
+    void to_variant( const boost::container::vector<char, A...>& t, fc::variant& v )
     {
         if( t.size() )
             v = variant(fc::to_hex(t.data(), t.size()));
@@ -108,7 +105,7 @@ namespace fc {
     }
 
     template<typename... A>
-    void from_variant( const fc::variant& v, bip::vector<char, A...>& d )
+    void from_variant( const fc::variant& v, boost::container::vector<char, A...>& d )
     {
          auto str = v.as_string();
          d.resize( str.size() / 2 );
@@ -122,10 +119,9 @@ namespace fc {
     }
 
    namespace raw {
-       namespace bip = boost::interprocess;
 
        template<typename Stream, typename T, typename... A>
-       inline void pack( Stream& s, const bip::vector<T,A...>& value ) {
+       inline void pack( Stream& s, const boost::container::vector<T,A...>& value ) {
          pack( s, unsigned_int((uint32_t)value.size()) );
          auto itr = value.begin();
          auto end = value.end();
@@ -135,7 +131,7 @@ namespace fc {
          }
        }
        template<typename Stream, typename T, typename... A>
-       inline void unpack( Stream& s, bip::vector<T,A...>& value, uint32_t depth = 0 ) {
+       inline void unpack( Stream& s, boost::container::vector<T,A...>& value, uint32_t depth = 0 ) {
          depth++;
          FC_ASSERT( depth <= MAX_RECURSION_DEPTH );
          unsigned_int size;
@@ -149,54 +145,54 @@ namespace fc {
        }
    }
 
-template< typename E, typename Allocator >
-struct get_typename< bip::deque< E, Allocator > >
+template< typename E >
+struct get_typename< boost::container::deque< E > >
 {
    static const char* name()
    {
-      static std::string n = std::string("bip::deque<") + get_typename<E>::name() + ">";
+      static std::string n = std::string("boost::container::deque<") + get_typename<E>::name() + ">";
       return n.c_str();
    }
 };
 
-template< typename K, typename V, typename Comp, typename Allocator >
-struct get_typename< bip::flat_map< K, V, Comp, Allocator > >
+template< typename K, typename V, typename Comp >
+struct get_typename< boost::container::flat_map< K, V, Comp > >
 {
    static const char* name()
    {
-      static std::string n = std::string("bip::flat_map<")
+      static std::string n = std::string("boost::container::flat_map<")
          + get_typename<K>::name() + std::string(",")
          + get_typename<V>::name() + std::string(">");
       return n.c_str();
    }
 };
 
-template< typename E, typename Allocator >
-struct get_typename< bip::map< E, Allocator > >
+template< typename K, typename V >
+struct get_typename< boost::container::map< K, V > >
 {
    static const char* name()
    {
-      static std::string n = std::string("bip::map<") + get_typename<E>::name() + ">";
+      static std::string n = std::string("boost::container::map<") + get_typename<K>::name() + ", " + get_typename<V>::name() + ">";
       return n.c_str();
    }
 };
 
-template< typename E, typename Allocator >
-struct get_typename< bip::set< E, Allocator > >
+template< typename E >
+struct get_typename< boost::container::set< E > >
 {
    static const char* name()
    {
-      static std::string n = std::string("bip::set<") + get_typename<E>::name() + ">";
+      static std::string n = std::string("boost::container::set<") + get_typename<E>::name() + ">";
       return n.c_str();
    }
 };
 
-template< typename E, typename Allocator >
-struct get_typename< bip::vector< E, Allocator > >
+template< typename E >
+struct get_typename< boost::container::vector< E > >
 {
    static const char* name()
    {
-      static std::string n = std::string("bip::vector<") + get_typename<E>::name() + ">";
+      static std::string n = std::string("boost::container::vector<") + get_typename<E>::name() + ">";
       return n.c_str();
    }
 };

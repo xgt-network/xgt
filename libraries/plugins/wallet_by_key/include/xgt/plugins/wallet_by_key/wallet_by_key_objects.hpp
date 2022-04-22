@@ -19,12 +19,6 @@ enum wallet_by_key_object_types
 class key_lookup_object : public object< key_lookup_object_type, key_lookup_object >
 {
    public:
-      template< typename Constructor, typename Allocator >
-      key_lookup_object( Constructor&& c, allocator< Allocator > a )
-      {
-         c( *this );
-      }
-
       key_lookup_object() {}
 
       id_type           id;
@@ -46,8 +40,7 @@ typedef multi_index_container<
             member< key_lookup_object, public_key_type, &key_lookup_object::key >
          >
       >
-   >,
-   allocator< key_lookup_object >
+   >
 > key_lookup_index;
 
 } } } // xgt::plugins::wallet_by_key

@@ -22,12 +22,6 @@ enum witness_object_types
 class witness_custom_op_object : public object< witness_custom_op_object_type, witness_custom_op_object >
 {
    public:
-      template< typename Constructor, typename Allocator >
-      witness_custom_op_object( Constructor&& c, allocator< Allocator > a )
-      {
-         c( *this );
-      }
-
       witness_custom_op_object() {}
 
       id_type              id;
@@ -40,8 +34,7 @@ typedef multi_index_container<
    indexed_by<
       ordered_unique< tag< by_id >, member< witness_custom_op_object, witness_custom_op_object::id_type, &witness_custom_op_object::id > >,
       ordered_unique< tag< by_account >, member< witness_custom_op_object, wallet_name_type, &witness_custom_op_object::account > >
-   >,
-   allocator< witness_custom_op_object >
+   >
 > witness_custom_op_index;
 
 } } }

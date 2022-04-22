@@ -1,6 +1,7 @@
 #pragma once
 #include <fc/reflect/reflect.hpp>
 #include <fc/variant_object.hpp>
+#include <fc/container.hpp>
 
 namespace fc
 {

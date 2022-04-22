@@ -8,8 +8,10 @@
 #include <boost/thread.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/throw_exception.hpp>
+#include <boost/container/deque.hpp>
+#include <boost/container/set.hpp>
+#include <boost/container/map.hpp>
 
-#include <chainbase/allocators.hpp>
 #include <chainbase/util/object_id.hpp>
 
 #include <array>
@@ -26,7 +28,6 @@
 
 #define CHAINBASE_REQUIRE_READ_LOCK(m, t) require_read_lock(m, typeid(t).name())
 #define CHAINBASE_REQUIRE_WRITE_LOCK(m, t) require_write_lock(m, typeid(t).name())
-
 
 namespace helpers
 {
@@ -77,7 +78,7 @@ namespace chainbase {
 
    struct strcmp_less
    {
-      bool operator()( const shared_string& a, const shared_string& b )const
+      bool operator()( const std::string& a, const std::string& b )const
       {
          return less( a.c_str(), b.c_str() );
       }
@@ -109,26 +110,19 @@ namespace chainbase {
    #define CHAINBASE_SET_INDEX_TYPE( OBJECT_TYPE, INDEX_TYPE )  \
    namespace chainbase { template<> struct get_index_type<OBJECT_TYPE> { typedef INDEX_TYPE type; }; }
 
-   #define CHAINBASE_DEFAULT_CONSTRUCTOR( OBJECT_TYPE ) \
-   template<typename Constructor, typename Allocator> \
-   OBJECT_TYPE( Constructor&& c, Allocator&&  ) { c(*this); }
-
    template< typename value_type >
    class undo_state
    {
       public:
          typedef typename value_type::id_type                      id_type;
-         typedef allocator< std::pair<const id_type, value_type> > id_value_allocator_type;
-         typedef allocator< id_type >                              id_allocator_type;
 
-         template<typename T>
-         undo_state( allocator<T> al )
-         :old_values( id_value_allocator_type( al ) ),
-          removed_values( id_value_allocator_type( al ) ),
-          new_ids( id_allocator_type( al ) ){}
+         undo_state(  )
+         :old_values(  ),
+          removed_values(  ),
+          new_ids(  ){}
 
-         typedef boost::interprocess::map< id_type, value_type, std::less<id_type>, id_value_allocator_type >  id_value_type_map;
-         typedef boost::interprocess::set< id_type, std::less<id_type>, id_allocator_type >                    id_type_set;
+         typedef boost::container::map< id_type, value_type, std::less<id_type>>  id_value_type_map;
+         typedef boost::container::set< id_type, std::less<id_type>>                    id_type_set;
 
          id_value_type_map            old_values;
          id_value_type_map            removed_values;
@@ -202,8 +196,6 @@ namespace chainbase {
    /**
     *  The value_type stored in the multiindex container must have a integer field with the name 'id'.  This will
     *  be the primary key and it will be assigned and managed by generic_index.
-    *
-    *  Additionally, the constructor for value_type must take an allocator
     */
    template<typename MultiIndexType>
    class generic_index
@@ -211,17 +203,16 @@ namespace chainbase {
       public:
          typedef MultiIndexType                                        index_type;
          typedef typename index_type::value_type                       value_type;
-         typedef allocator< generic_index >                            allocator_type;
          typedef undo_state< value_type >                              undo_state_type;
 
-         generic_index( allocator<value_type> a, bfs::path p )
-         :_stack(a),_indices( a, p ),_size_of_value_type( sizeof(typename MultiIndexType::value_type) ),_size_of_this(sizeof(*this))
+         generic_index( bfs::path p )
+         :_stack(),_indices( p ),_size_of_value_type( sizeof(typename MultiIndexType::value_type) ),_size_of_this(sizeof(*this))
          {
             _revision = _indices.revision();
          }
 
-         generic_index( allocator<value_type> a )
-         :_stack(a),_indices( a ),_size_of_value_type( sizeof(typename MultiIndexType::value_type) ),_size_of_this(sizeof(*this))
+         generic_index( )
+         :_stack(),_indices( ),_size_of_value_type( sizeof(typename MultiIndexType::value_type) ),_size_of_this(sizeof(*this))
          {
             _revision = _indices.revision();
          }
@@ -235,16 +226,18 @@ namespace chainbase {
           * Construct a new element in the multi_index_container.
           * Set the ID to the next available ID, then increment _next_id and fire off on_create().
           */
-         template<typename Constructor>
-         const value_type& emplace( Constructor&& c ) {
+         const value_type& emplace( const std::function <void (value_type&)>& f) {
             auto new_id = _next_id;
 
-            auto constructor = [&]( value_type& v ) {
-               v.id = new_id;
-               c( v );
-            };
+            // auto constructor = [&]( value_type& v ) {
+            //    v.id = new_id;
+            //    f(v);
+            // };
 
-            auto insert_result = _indices.emplace( constructor, _indices.get_allocator() );
+            value_type v{};
+            v.id = new_id;
+            f(v);
+            auto insert_result = _indices.emplace( v );
 
             if( !insert_result.second ) {
                BOOST_THROW_EXCEPTION( std::logic_error("could not insert object, most likely a uniqueness constraint was violated") );
@@ -376,7 +369,7 @@ namespace chainbase {
             ++_revision;
             _indices.set_revision( _revision );
             assert( _indices.revision() == _revision );
-            _stack.emplace_back( _indices.get_allocator() );
+            _stack.emplace_back( );
             _stack.back().old_next_id = _next_id;
             _stack.back().revision = _revision;
             return session( *this, _revision );
@@ -619,7 +612,7 @@ namespace chainbase {
             head.new_ids.insert( v.id );
          }
 
-         boost::interprocess::deque< undo_state_type, allocator<undo_state_type> > _stack;
+         boost::container::deque< undo_state_type> _stack;
 
          /**
           *  Each new session increments the revision, a squash will decrement the revision by combining
@@ -1082,12 +1075,12 @@ namespace chainbase {
              return get_mutable_index<index_type>().remove( obj );
          }
 
-         template<typename ObjectType, typename Constructor>
-         const ObjectType& create( Constructor&& con )
+         template<typename ObjectType>
+         const ObjectType& create( const std::function <void (ObjectType&)> f)
          {
              CHAINBASE_REQUIRE_WRITE_LOCK("create", ObjectType);
              typedef typename get_index_type<ObjectType>::type index_type;
-             return get_mutable_index<index_type>().emplace( std::forward<Constructor>(con) );
+             return get_mutable_index<index_type>().emplace(f);
          }
 
          template< typename ObjectType >
@@ -1168,7 +1161,6 @@ namespace chainbase {
          void add_index_helper() {
             const uint16_t type_id = generic_index<MultiIndexType>::value_type::type_id;
             typedef generic_index<MultiIndexType>          index_type;
-            typedef typename index_type::allocator_type    index_alloc;
 
             std::string type_name = boost::core::demangle( typeid( typename index_type::value_type ).name() );
 
@@ -1177,7 +1169,7 @@ namespace chainbase {
             }
 
             index_type* idx_ptr =  nullptr;
-            idx_ptr = new index_type( index_alloc() );
+            idx_ptr = new index_type( );
             idx_ptr->validate();
 
             if( type_id >= _index_map.size() )

@@ -3,11 +3,6 @@ target_link_libraries( get_dev_key
                        PRIVATE xgt_chain xgt_protocol xgt_utilities fc)
 
 
-add_executable( test_shared_mem test_shared_mem.cpp )
-add_test(NAME test_shared_mem COMMAND test_shared_mem)
-target_link_libraries( test_shared_mem
-                       PRIVATE  xgt_chain xgt_protocol xgt_utilities fc)
-
 add_executable( sign_digest sign_digest.cpp )
 target_link_libraries( sign_digest
                        PRIVATE xgt_chain xgt_protocol xgt_utilities fc)

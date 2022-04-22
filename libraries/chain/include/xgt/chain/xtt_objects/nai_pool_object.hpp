@@ -13,12 +13,6 @@ namespace xgt { namespace chain {
    public:
       using pool_type = fc::array< asset_symbol_type, XTT_MAX_NAI_POOL_COUNT >;
 
-      template< typename Constructor, typename Allocator >
-      nai_pool_object( Constructor&& c, allocator< Allocator > a )
-      {
-         c( *this );
-      }
-
       id_type id;
 
       uint8_t num_available_nais    = 0;
@@ -44,8 +38,7 @@ namespace xgt { namespace chain {
       nai_pool_object,
       indexed_by<
          ordered_unique< tag< by_id >, member< nai_pool_object, nai_pool_id_type, &nai_pool_object::id > >
-      >,
-      allocator< nai_pool_object >
+      >
    > nai_pool_index;
 
 } } // namespace xgt::chain

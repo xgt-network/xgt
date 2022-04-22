@@ -27,13 +27,6 @@ class xtt_token_object : public object< xtt_token_object_type, xtt_token_object 
    XGT_STD_ALLOCATOR_CONSTRUCTOR( xtt_token_object );
 
 public:
-
-   template< typename Constructor, typename Allocator >
-   xtt_token_object( Constructor&& c, allocator< Allocator > a )
-   {
-      c( *this );
-   }
-
    asset_symbol_type get_stripped_symbol() const
    {
       return asset_symbol_type::from_asset_num( liquid_symbol.get_stripped_precision_xtt_num() );
@@ -72,12 +65,6 @@ class xtt_ico_object : public object< xtt_ico_object_type, xtt_ico_object >
    XGT_STD_ALLOCATOR_CONSTRUCTOR( xtt_ico_object );
 
 public:
-   template< typename Constructor, typename Allocator >
-   xtt_ico_object( Constructor&& c, allocator< Allocator > a )
-   {
-      c( *this );
-   }
-
    id_type id;
    asset_symbol_type             symbol;
    time_point_sec                contribution_begin_time;
@@ -93,16 +80,9 @@ public:
 struct shared_xtt_generation_unit
 {
    XGT_STD_ALLOCATOR_CONSTRUCTOR( shared_xtt_generation_unit );
+   public:
 
-   template< typename Allocator >
-   shared_xtt_generation_unit( const Allocator& alloc ) :
-      xgt_unit( unit_pair_allocator_type( alloc ) ),
-      token_unit( unit_pair_allocator_type( alloc ) )
-   {}
-
-   typedef chainbase::t_flat_map< xgt::protocol::unit_target_type, uint16_t > unit_map_type;
-
-   using unit_pair_allocator_type = chainbase::t_allocator_pair< xgt::protocol::unit_target_type, uint16_t >;
+   typedef boost::container::flat_map< xgt::protocol::unit_target_type, uint16_t > unit_map_type;
 
    unit_map_type xgt_unit;
    unit_map_type token_unit;
@@ -148,13 +128,6 @@ class xtt_ico_tier_object : public object< xtt_ico_tier_object_type, xtt_ico_tie
    XGT_STD_ALLOCATOR_CONSTRUCTOR( xtt_ico_tier_object );
 
 public:
-   template< typename Constructor, typename Allocator >
-   xtt_ico_tier_object( Constructor&& c, allocator< Allocator > a )
-      : generation_unit( a )
-   {
-      c( *this );
-   }
-
    id_type                                id;
    asset_symbol_type                      symbol;
    share_type                             xgt_units_cap = -1;
@@ -164,13 +137,7 @@ public:
 class xtt_contribution_object : public object< xtt_contribution_object_type, xtt_contribution_object >
 {
    XGT_STD_ALLOCATOR_CONSTRUCTOR( xtt_contribution_object );
-
-   template< typename Constructor, typename Allocator >
-   xtt_contribution_object( Constructor&& c, allocator< Allocator > a )
-   {
-      c( *this );
-   }
-
+   public:
    id_type                               id;
    asset_symbol_type                     symbol;
    wallet_name_type                      contributor;
@@ -210,8 +177,7 @@ typedef multi_index_container <
          >
       >
 #endif
-   >,
-   allocator< xtt_contribution_object >
+   >
 > xtt_contribution_index;
 
 struct by_symbol;
@@ -230,8 +196,7 @@ typedef multi_index_container <
             member< xtt_token_object, asset_symbol_type, &xtt_token_object::liquid_symbol >
          >
       >
-   >,
-   allocator< xtt_token_object >
+   >
 > xtt_token_index;
 
 typedef multi_index_container <
@@ -241,8 +206,7 @@ typedef multi_index_container <
          member< xtt_ico_object, xtt_ico_object_id_type, &xtt_ico_object::id > >,
       ordered_unique< tag< by_symbol >,
          member< xtt_ico_object, asset_symbol_type, &xtt_ico_object::symbol > >
-   >,
-   allocator< xtt_ico_object >
+   >
 > xtt_ico_index;
 
 struct by_symbol_xgt_units_cap;
@@ -259,8 +223,7 @@ typedef multi_index_container <
          >,
          composite_key_compare< std::less< asset_symbol_type >, std::less< share_type > >
       >
-   >,
-   allocator< xtt_ico_tier_object >
+   >
 > xtt_ico_tier_index;
 
 } } // namespace xgt::chain

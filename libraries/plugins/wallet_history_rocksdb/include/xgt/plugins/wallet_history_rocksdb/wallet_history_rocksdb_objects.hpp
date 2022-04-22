@@ -24,13 +24,6 @@ class volatile_operation_object : public object< volatile_operation_object_type,
    XGT_STD_ALLOCATOR_CONSTRUCTOR( volatile_operation_object )
 
    public:
-      template< typename Constructor, typename Allocator >
-      volatile_operation_object( Constructor&& c, allocator< Allocator > a )
-         :serialized_op( a ), impacted( a )
-      {
-         c( *this );
-      }
-
       id_type                    id;
 
       chain::transaction_id_type trx_id;
@@ -40,7 +33,7 @@ class volatile_operation_object : public object< volatile_operation_object_type,
       uint32_t                   virtual_op = 0;
       time_point_sec             timestamp;
       chain::buffer_type         serialized_op;
-      chainbase::t_vector< wallet_name_type > impacted;
+      boost::container::vector< wallet_name_type > impacted;
 };
 
 typedef volatile_operation_object::id_type volatile_operation_id_type;
@@ -88,8 +81,7 @@ typedef multi_index_container<
                member< volatile_operation_object, volatile_operation_id_type, &volatile_operation_object::id>
             >
          >
-      >,
-      allocator< volatile_operation_object >
+      >
    > volatile_operation_index;
 
 } } } // xgt::plugins::wallet_history_rocksdb

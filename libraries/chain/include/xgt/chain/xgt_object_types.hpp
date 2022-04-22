@@ -13,7 +13,8 @@
 
 #define XGT_STD_ALLOCATOR_CONSTRUCTOR( object_type )   \
    public:                                             \
-      object_type () {}
+      object_type () = default;
+
 
 #define XGT_OBJECT_ID_TYPE( object ) typedef oid< object ## _object > object ## _id_type;
 
@@ -30,7 +31,6 @@ namespace chain {
 
 using chainbase::object;
 using chainbase::oid;
-using chainbase::allocator;
 
 using xgt::protocol::block_id_type;
 using xgt::protocol::transaction_id_type;
@@ -38,10 +38,10 @@ using xgt::protocol::chain_id_type;
 using xgt::protocol::wallet_name_type;
 using xgt::protocol::share_type;
 
-using chainbase::shared_string;
+using std::string;
 
-inline std::string to_string( const shared_string& str ) { return std::string( str.begin(), str.end() ); }
-inline void from_string( shared_string& out, const string& in ){ out.assign( in.begin(), in.end() ); }
+inline std::string to_string( const std::string& str ) { return std::string( str.begin(), str.end() ); }
+inline void from_string( std::string& out, const string& in ){ out.assign( in.begin(), in.end() ); }
 
 struct by_id;
 struct by_name;
@@ -241,7 +241,7 @@ void unpack( Stream& s, chainbase::oid<T>& id, uint32_t )
 }
 
 template< typename Stream, typename E, typename A >
-void pack( Stream& s, const boost::interprocess::deque<E, A>& dq )
+void pack( Stream& s, const boost::container::deque<E, A>& dq )
 {
    // This could be optimized
    std::vector<E> temp;
@@ -250,7 +250,7 @@ void pack( Stream& s, const boost::interprocess::deque<E, A>& dq )
 }
 
 template< typename Stream, typename E, typename A >
-void unpack( Stream& s, boost::interprocess::deque<E, A>& dq, uint32_t depth )
+void unpack( Stream& s, boost::container::deque<E, A>& dq, uint32_t depth )
 {
    depth++;
    FC_ASSERT( depth <= MAX_RECURSION_DEPTH );
@@ -262,7 +262,7 @@ void unpack( Stream& s, boost::interprocess::deque<E, A>& dq, uint32_t depth )
 }
 
 template< typename Stream, typename K, typename V, typename C, typename A >
-void pack( Stream& s, const boost::interprocess::flat_map< K, V, C, A >& value )
+void pack( Stream& s, const boost::container::flat_map< K, V, C, A >& value )
 {
    fc::raw::pack( s, unsigned_int((uint32_t)value.size()) );
    auto itr = value.begin();
@@ -275,7 +275,7 @@ void pack( Stream& s, const boost::interprocess::flat_map< K, V, C, A >& value )
 }
 
 template< typename Stream, typename K, typename V, typename C, typename A >
-void unpack( Stream& s, boost::interprocess::flat_map< K, V, C, A >& value, uint32_t depth )
+void unpack( Stream& s, boost::container::flat_map< K, V, C, A >& value, uint32_t depth )
 {
    depth++;
    FC_ASSERT( depth <= MAX_RECURSION_DEPTH );

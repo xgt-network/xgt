@@ -52,19 +52,12 @@ namespace xgt { namespace chain {
       XGT_STD_ALLOCATOR_CONSTRUCTOR( witness_object )
 
       public:
-         template< typename Constructor, typename Allocator >
-         witness_object( Constructor&& c, allocator< Allocator > a )
-            :url( a )
-         {
-            c( *this );
-         }
-
          id_type           id;
 
          /** the account that has authority over this witness */
          wallet_name_type  owner;
          time_point_sec    created;
-         shared_string     url;
+         std::string     url;
          uint32_t          total_missed = 0;
          uint64_t          last_aslot = 0;
          uint64_t          last_confirmed_block_num = 0;
@@ -135,12 +128,6 @@ namespace xgt { namespace chain {
    class witness_vote_object : public object< witness_vote_object_type, witness_vote_object >
    {
       public:
-         template< typename Constructor, typename Allocator >
-         witness_vote_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
          witness_vote_object(){}
 
          id_type           id;
@@ -187,8 +174,7 @@ namespace xgt { namespace chain {
                member< witness_object, witness_id_type, &witness_object::id >
             >
          >
-      >,
-      allocator< witness_object >
+      >
    > witness_index;
 
    struct by_account_witness;
@@ -211,8 +197,7 @@ namespace xgt { namespace chain {
             >,
             composite_key_compare< std::less< wallet_name_type >, std::less< wallet_name_type > >
          >
-      >, // indexed_by
-      allocator< witness_vote_object >
+      >
    > witness_vote_index;
 
 } }

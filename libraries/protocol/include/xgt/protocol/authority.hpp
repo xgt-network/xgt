@@ -1,6 +1,5 @@
 #pragma once
 #include <xgt/protocol/types.hpp>
-#include <fc/interprocess/container.hpp>
 
 namespace xgt { namespace protocol {
 

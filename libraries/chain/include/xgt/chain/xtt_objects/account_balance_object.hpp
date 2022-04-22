@@ -17,12 +17,6 @@ class account_regular_balance_object : public object< account_regular_balance_ob
    XGT_STD_ALLOCATOR_CONSTRUCTOR( account_regular_balance_object );
 
 public:
-   template <typename Constructor, typename Allocator>
-   account_regular_balance_object(Constructor&& c, allocator< Allocator > a)
-   {
-      c( *this );
-   }
-
    id_type             id;
    wallet_name_type    name;
    asset               liquid;
@@ -70,8 +64,7 @@ typedef multi_index_container <
             const_mem_fun< account_regular_balance_object, asset_symbol_type, &account_regular_balance_object::get_liquid_symbol >
          >
       >
-   >,
-   allocator< account_regular_balance_object >
+   >
 > account_regular_balance_index;
 
 } } // namespace xgt::chain

@@ -8,23 +8,14 @@
 
 namespace xgt { namespace chain {
 
-   using chainbase::t_vector;
-
    class hardfork_property_object : public object< hardfork_property_object_type, hardfork_property_object >
    {
       XGT_STD_ALLOCATOR_CONSTRUCTOR( hardfork_property_object )
 
       public:
-         template< typename Constructor, typename Allocator >
-         hardfork_property_object( Constructor&& c, allocator< Allocator > a )
-            :processed_hardforks( a )
-         {
-            c( *this );
-         }
-
          id_type                                                              id;
 
-         using t_processed_hardforks = t_vector< fc::time_point_sec >;
+         using t_processed_hardforks = boost::container::vector< fc::time_point_sec >;
 
          t_processed_hardforks                                                processed_hardforks;
          uint32_t                                                             last_hardfork = 0;
@@ -37,8 +28,7 @@ namespace xgt { namespace chain {
       hardfork_property_object,
       indexed_by<
          ordered_unique< tag< by_id >, member< hardfork_property_object, hardfork_property_object::id_type, &hardfork_property_object::id > >
-      >,
-      allocator< hardfork_property_object >
+      >
    > hardfork_property_index;
 
 } } // xgt::chain

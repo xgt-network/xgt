@@ -466,8 +466,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
       {
          com.last_update   = _db.head_block_time();
          com.active        = com.last_update;
-         std::function< bool( const shared_string& a, const string& b ) > equal;
-         equal = []( const shared_string& a, const string& b ) -> bool { return a.size() == b.size() && std::strcmp( a.c_str(), b.c_str() ) == 0; };
+         std::function< bool( const std::string& a, const string& b ) > equal;
+         equal = []( const std::string& a, const string& b ) -> bool { return a.size() == b.size() && std::strcmp( a.c_str(), b.c_str() ) == 0; };
 
          if( !parent )
          {

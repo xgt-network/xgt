@@ -11,12 +11,9 @@
 
 namespace xgt { namespace chain {
 
-   using chainbase::t_vector;
-   using chainbase::t_flat_map;
-
    struct strcmp_less
    {
-      bool operator()( const shared_string& a, const shared_string& b )const
+      bool operator()( const std::string& a, const std::string& b )const
       {
          return less( a.c_str(), b.c_str() );
       }
@@ -33,22 +30,13 @@ namespace xgt { namespace chain {
       XGT_STD_ALLOCATOR_CONSTRUCTOR( comment_object )
 
       public:
-         template< typename Constructor, typename Allocator >
-         comment_object( Constructor&& c, allocator< Allocator > a ) :
-            category( a ),
-            parent_permlink( a ),
-            permlink( a )
-         {
-            c( *this );
-         }
-
          id_type           id;
 
-         shared_string     category;
+         std::string     category;
          wallet_name_type  parent_author;
-         shared_string     parent_permlink;
+         std::string     parent_permlink;
          wallet_name_type  author;
-         shared_string     permlink;
+         std::string     permlink;
 
          time_point_sec    last_update;
          time_point_sec    created;
@@ -70,20 +58,13 @@ namespace xgt { namespace chain {
       XGT_STD_ALLOCATOR_CONSTRUCTOR( comment_content_object )
 
       public:
-         template< typename Constructor, typename Allocator >
-         comment_content_object( Constructor&& c, allocator< Allocator > a ) :
-            title( a ), body( a ), json_metadata( a )
-         {
-            c( *this );
-         }
-
          id_type           id;
 
          comment_id_type   comment;
 
-         shared_string     title;
-         shared_string     body;
-         shared_string     json_metadata;
+         std::string     title;
+         std::string     body;
+         std::string     json_metadata;
    };
 
    class comment_vote_object : public object< comment_vote_object_type, comment_vote_object>
@@ -91,12 +72,6 @@ namespace xgt { namespace chain {
       XGT_STD_ALLOCATOR_CONSTRUCTOR( comment_vote_object )
 
       public:
-         template< typename Constructor, typename Allocator >
-         comment_vote_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
          id_type           id;
 
          wallet_id_type    voter;
@@ -144,8 +119,7 @@ namespace xgt { namespace chain {
                member< comment_vote_object, comment_id_type, &comment_vote_object::comment >
             >
          >
-      >,
-      allocator< comment_vote_object >
+      >
    > comment_vote_index;
 
 
@@ -166,7 +140,7 @@ namespace xgt { namespace chain {
          ordered_unique< tag< by_permlink >, /// used by consensus to find posts referenced in ops
             composite_key< comment_object,
                member< comment_object, wallet_name_type, &comment_object::author >,
-               member< comment_object, shared_string, &comment_object::permlink >
+               member< comment_object, std::string, &comment_object::permlink >
             >,
             composite_key_compare< std::less< wallet_name_type >, strcmp_less >
          >,
@@ -179,7 +153,7 @@ namespace xgt { namespace chain {
          ordered_unique< tag< by_parent >, /// used by consensus to find posts referenced in ops
             composite_key< comment_object,
                member< comment_object, wallet_name_type, &comment_object::parent_author >,
-               member< comment_object, shared_string, &comment_object::parent_permlink >,
+               member< comment_object, std::string, &comment_object::parent_permlink >,
                member< comment_object, comment_id_type, &comment_object::id >
             >,
             composite_key_compare< std::less< wallet_name_type >, strcmp_less, std::less< comment_id_type > >
@@ -204,8 +178,7 @@ namespace xgt { namespace chain {
             composite_key_compare< std::less< wallet_name_type >, std::greater< time_point_sec >, std::less< comment_id_type > >
          >
 #endif
-      >,
-      allocator< comment_object >
+      >
    > comment_index;
 
    struct by_comment;
@@ -215,8 +188,7 @@ namespace xgt { namespace chain {
       indexed_by<
          ordered_unique< tag< by_id >, member< comment_content_object, comment_content_id_type, &comment_content_object::id > >,
          ordered_unique< tag< by_comment >, member< comment_content_object, comment_id_type, &comment_content_object::comment > >
-      >,
-      allocator< comment_content_object >
+      >
    > comment_content_index;
 
    struct by_comment_symbol;
@@ -252,7 +224,7 @@ CHAINBASE_SET_INDEX_TYPE( xgt::chain::comment_vote_object, xgt::chain::comment_v
 
 namespace helpers
 {
-   using xgt::chain::shared_string;
+   using std::string;
 
    template <>
    class index_statistic_provider<xgt::chain::comment_index>
@@ -268,9 +240,9 @@ namespace helpers
          {
             for(const auto& o : index)
             {
-               info._item_additional_allocation += o.category.capacity()*sizeof(shared_string::value_type);
-               info._item_additional_allocation += o.parent_permlink.capacity()*sizeof(shared_string::value_type);
-               info._item_additional_allocation += o.permlink.capacity()*sizeof(shared_string::value_type);
+               info._item_additional_allocation += o.category.capacity()*sizeof(std::string::value_type);
+               info._item_additional_allocation += o.parent_permlink.capacity()*sizeof(std::string::value_type);
+               info._item_additional_allocation += o.permlink.capacity()*sizeof(std::string::value_type);
             }
          }
 
@@ -293,9 +265,9 @@ namespace helpers
          {
             for(const auto& o : index)
             {
-               info._item_additional_allocation += o.title.capacity()*sizeof(shared_string::value_type);
-               info._item_additional_allocation += o.body.capacity()*sizeof(shared_string::value_type);
-               info._item_additional_allocation += o.json_metadata.capacity()*sizeof(shared_string::value_type);
+               info._item_additional_allocation += o.title.capacity()*sizeof(std::string::value_type);
+               info._item_additional_allocation += o.body.capacity()*sizeof(std::string::value_type);
+               info._item_additional_allocation += o.json_metadata.capacity()*sizeof(std::string::value_type);
             }
          }
 

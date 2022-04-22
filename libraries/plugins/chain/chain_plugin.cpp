@@ -98,8 +98,6 @@ class chain_plugin_impl
       uint32_t                         stop_at_block = 0;
       uint32_t                         benchmark_interval = 0;
       uint32_t                         flush_interval = 0;
-      bool                             replay_in_memory = false;
-      std::vector< std::string >       replay_memory_indices{};
       flat_map<uint32_t,block_id_type> loaded_checkpoints;
       std::string                      from_state = "";
       std::string                      to_state = "";
@@ -398,18 +396,6 @@ void chain_plugin::plugin_initialize(const variables_map& options)
       my->write_default_database_config( my->database_cfg );
    }
 
-   my->replay_in_memory = options.at( "memory-replay" ).as< bool >();
-   if ( options.count( "memory-replay-indices" ) )
-   {
-      std::vector<std::string> indices = options.at( "memory-replay-indices" ).as< vector< string > >();
-      for ( auto& element : indices )
-      {
-         std::vector< std::string > tmp;
-         boost::split( tmp, element, boost::is_any_of("\t ") );
-         my->replay_memory_indices.insert( my->replay_memory_indices.end(), tmp.begin(), tmp.end() );
-      }
-   }
-
    if( options.count( "chain-id" ) )
    {
       auto chain_id_str = options.at("chain-id").as< std::string >();
@@ -489,8 +475,6 @@ void chain_plugin::plugin_startup()
    db_open_args.stop_at_block = my->stop_at_block;
    db_open_args.benchmark_is_enabled = my->benchmark_is_enabled;
    db_open_args.database_cfg = database_config;
-   db_open_args.replay_in_memory = my->replay_in_memory;
-   db_open_args.replay_memory_indices = my->replay_memory_indices;
 
    auto benchmark_lambda = [&dumper, &get_indexes_memory_details, dump_memory_details] ( uint32_t current_block_number,
       const chainbase::database::abstract_index_cntr_t& abstract_index_cntr )

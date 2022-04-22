@@ -25,12 +25,6 @@ namespace xgt { namespace chain {
    class dynamic_global_property_object : public object< dynamic_global_property_object_type, dynamic_global_property_object>
    {
       public:
-         template< typename Constructor, typename Allocator >
-         dynamic_global_property_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
          dynamic_global_property_object(){}
 
          id_type           id;
@@ -117,8 +111,7 @@ namespace xgt { namespace chain {
       indexed_by<
          ordered_unique< tag< by_id >,
             member< dynamic_global_property_object, dynamic_global_property_object::id_type, &dynamic_global_property_object::id > >
-      >,
-      allocator< dynamic_global_property_object >
+      >
    > dynamic_global_property_index;
 
 } } // xgt::chain

@@ -21,12 +21,7 @@ namespace xgt { namespace chain {
    class wallet_object : public object< wallet_object_type, wallet_object >
    {
          XGT_STD_ALLOCATOR_CONSTRUCTOR( wallet_object )
-
-         template<typename Constructor, typename Allocator>
-         wallet_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c(*this);
-         };
+         public:
 
          id_type           id;
 
@@ -61,18 +56,12 @@ namespace xgt { namespace chain {
    class account_metadata_object : public object< account_metadata_object_type, account_metadata_object >
    {
       XGT_STD_ALLOCATOR_CONSTRUCTOR( account_metadata_object )
-
-      template< typename Constructor, typename Allocator >
-      account_metadata_object( Constructor&& c, allocator< Allocator > a )
-         : json_metadata( a ), social_json_metadata( a )
-      {
-         c( *this );
-      }
+      public:
 
       id_type           id;
       wallet_id_type    account;
-      shared_string     json_metadata;
-      shared_string     social_json_metadata;
+      std::string     json_metadata;
+      std::string     social_json_metadata;
    };
 
    class account_authority_object : public object< account_authority_object_type, account_authority_object >
@@ -80,13 +69,6 @@ namespace xgt { namespace chain {
       XGT_STD_ALLOCATOR_CONSTRUCTOR( account_authority_object )
 
       public:
-         template< typename Constructor, typename Allocator >
-         account_authority_object( Constructor&& c, allocator< Allocator > a )
-            : recovery( a ), money( a ), social( a )
-         {
-            c( *this );
-         }
-
          id_type           id;
 
          wallet_name_type  account;
@@ -103,13 +85,6 @@ namespace xgt { namespace chain {
       XGT_STD_ALLOCATOR_CONSTRUCTOR( recovery_authority_history_object )
 
       public:
-         template< typename Constructor, typename Allocator >
-         recovery_authority_history_object( Constructor&& c, allocator< Allocator > a )
-            :previous_recovery_authority( allocator< shared_authority >( a ) )
-         {
-            c( *this );
-         }
-
          id_type           id;
 
          wallet_name_type  account;
@@ -122,13 +97,6 @@ namespace xgt { namespace chain {
       XGT_STD_ALLOCATOR_CONSTRUCTOR( account_recovery_request_object )
 
       public:
-         template< typename Constructor, typename Allocator >
-         account_recovery_request_object( Constructor&& c, allocator< Allocator > a )
-            :new_recovery_authority( allocator< shared_authority >( a ) )
-         {
-            c( *this );
-         }
-
          id_type           id;
 
          wallet_name_type  account_to_recover;
@@ -141,12 +109,6 @@ namespace xgt { namespace chain {
       XGT_STD_ALLOCATOR_CONSTRUCTOR( change_recovery_account_request_object )
 
       public:
-         template< typename Constructor, typename Allocator >
-         change_recovery_account_request_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
          id_type           id;
 
          wallet_name_type  account_to_recover;
@@ -164,8 +126,7 @@ namespace xgt { namespace chain {
             member< wallet_object, wallet_id_type, &wallet_object::id > >,
          ordered_unique< tag< by_name >,
             member< wallet_object, wallet_name_type, &wallet_object::name > >
-      >,
-      allocator< wallet_object >
+      >
    > wallet_index;
 
    struct by_account;
@@ -177,8 +138,7 @@ namespace xgt { namespace chain {
             member< account_metadata_object, account_metadata_id_type, &account_metadata_object::id > >,
          ordered_unique< tag< by_account >,
             member< account_metadata_object, wallet_id_type, &account_metadata_object::account > >
-      >,
-      allocator< account_metadata_object >
+      >
    > account_metadata_index;
 
    typedef multi_index_container <
@@ -194,8 +154,7 @@ namespace xgt { namespace chain {
             >,
             composite_key_compare< std::less< wallet_name_type >, std::less< time_point_sec >, std::less< recovery_authority_history_id_type > >
          >
-      >,
-      allocator< recovery_authority_history_object >
+      >
    > recovery_authority_history_index;
 
    struct by_last_recovery_update;
@@ -219,8 +178,7 @@ namespace xgt { namespace chain {
             >,
             composite_key_compare< std::greater< time_point_sec >, std::less< account_authority_id_type > >
          >
-      >,
-      allocator< account_authority_object >
+      >
    > account_authority_index;
 
    struct by_expiration;
@@ -240,8 +198,7 @@ namespace xgt { namespace chain {
             >,
             composite_key_compare< std::less< time_point_sec >, std::less< wallet_name_type > >
          >
-      >,
-      allocator< account_recovery_request_object >
+      >
    > account_recovery_request_index;
 
    struct by_effective_date;
@@ -261,8 +218,7 @@ namespace xgt { namespace chain {
             >,
             composite_key_compare< std::less< time_point_sec >, std::less< wallet_name_type > >
          >
-      >,
-      allocator< change_recovery_account_request_object >
+      >
    > change_recovery_account_request_index;
 } }
 

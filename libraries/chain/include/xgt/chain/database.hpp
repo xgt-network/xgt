@@ -45,10 +45,7 @@ namespace xgt { namespace chain {
 
    class database;
 
-   using set_index_type_func = std::function< void(database&, mira::index_type, const boost::filesystem::path&, const boost::any&) >;
-
    struct index_delegate {
-      set_index_type_func set_index_type;
    };
 
    using index_delegate_map = std::map< std::string, index_delegate >;
@@ -120,8 +117,6 @@ namespace xgt { namespace chain {
             bool do_validate_invariants = false;
             bool benchmark_is_enabled = false;
             fc::variant database_cfg;
-            bool replay_in_memory = false;
-            std::vector< std::string > replay_memory_indices{};
 
             std::shared_ptr< std::function< void( database&, const open_args& ) > > genesis_func;
 
@@ -203,8 +198,8 @@ namespace xgt { namespace chain {
          const wallet_object&  get_account(  const wallet_name_type& name )const;
          const wallet_object*  find_account( const wallet_name_type& name )const;
 
-         const comment_object&  get_comment(  const wallet_name_type& author, const shared_string& permlink )const;
-         const comment_object*  find_comment( const wallet_name_type& author, const shared_string& permlink )const;
+         const comment_object&  get_comment(  const wallet_name_type& author, const std::string& permlink )const;
+         const comment_object*  find_comment( const wallet_name_type& author, const std::string& permlink )const;
 
          const escrow_object&   get_escrow(  const wallet_name_type& name, uint32_t escrow_id )const;
          const escrow_object*   find_escrow( const wallet_name_type& name, uint32_t escrow_id )const;

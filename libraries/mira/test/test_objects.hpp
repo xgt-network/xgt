@@ -68,13 +68,6 @@ enum test_object_type
 };
 
 struct book : public chainbase::object< book_object_type, book > {
-
-   template<typename Constructor, typename Allocator>
-   book( Constructor&& c, Allocator&& a )
-   {
-      c(*this);
-   }
-
    book() = default;
 
    id_type id;
@@ -102,18 +95,11 @@ typedef mira::multi_index_adapter<
          mira::multi_index::composite_key_compare< std::greater< int >, std::less< int > >
       >,
       mira::multi_index::ordered_unique< mira::multi_index::tag< by_sum >, mira::multi_index::const_mem_fun< book, int, &book::sum > >
-  >,
-  chainbase::allocator< book >
+  >
 > book_index;
 
 struct single_index_object : public chainbase::object< single_index_object_type, single_index_object >
 {
-   template< typename Constructor, typename Allocator >
-   single_index_object( Constructor&& c, Allocator&& a )
-   {
-      c( *this );
-   }
-
    single_index_object() = default;
 
    id_type id;
@@ -123,26 +109,11 @@ typedef mira::multi_index_adapter<
    single_index_object,
    mira::multi_index::indexed_by<
       mira::multi_index::ordered_unique< mira::multi_index::tag< by_id >, mira::multi_index::member< single_index_object, single_index_object::id_type, &single_index_object::id > >
-   >,
-   chainbase::allocator< single_index_object >
+   >
 > single_index_index;
 
 struct test_object : public chainbase::object< test_object_type, test_object >
 {
-   template <class Constructor, class Allocator>
-   test_object(Constructor&& c, Allocator a ) : id( 0 ), val( 0 ), name( a )
-   {
-      c(*this);
-   }
-
-   template <class Constructor, class Allocator>
-   test_object(Constructor&& c, int64_t _id, Allocator a ) : id( _id ), val( 0 ), name( a )
-   {
-      c(*this);
-   }
-
-   test_object() = default;
-
    id_type id;
    uint32_t val;
    std::string name;
@@ -161,18 +132,11 @@ typedef mira::multi_index_adapter<
             mira::multi_index::member< test_object, uint32_t, &test_object::val >
          >
       >
-   >,
-   chainbase::allocator< test_object >
+   >
 > test_object_index;
 
 struct test_object2 : public chainbase::object< test_object2_type, test_object2 >
 {
-   template <class Constructor, class Allocator>
-   test_object2(Constructor&& c, Allocator a ) : id( 0 ), val( 0 )
-   {
-      c(*this);
-   }
-
    test_object2() = default;
 
    id_type id;
@@ -192,18 +156,11 @@ typedef mira::multi_index_adapter<
             mira::multi_index::member< test_object2, chainbase::oid<test_object2>, &test_object2::id >
          >
       >
-   >,
-   chainbase::allocator< test_object2 >
+   >
 > test_object2_index;
 
 struct test_object3 : public chainbase::object< test_object3_type, test_object3 >
 {
-   template <class Constructor, class Allocator>
-   test_object3(Constructor&& c, Allocator a ) : id( 0 ), val( 0 ), val2( 0 ), val3( 0 )
-   {
-      c(*this);
-   }
-
    test_object3() = default;
 
    id_type id;
@@ -232,8 +189,7 @@ typedef mira::multi_index_adapter<
             mira::multi_index::member< test_object3, uint32_t, &test_object3::val3 >
          >
       >
-   >,
-   chainbase::allocator< test_object3 >
+   >
 > test_object3_index;
 
 
@@ -241,12 +197,6 @@ typedef xgt::protocol::fixed_string<16> wallet_name_type;
 
 struct wallet_object : public chainbase::object< wallet_object_type, wallet_object >
 {
-   template< typename Constructor, typename Allocator >
-   wallet_object( Constructor&& c, Allocator&& a )
-   {
-      c( *this );
-   }
-
    wallet_object() = default;
 
    id_type id;
@@ -260,8 +210,7 @@ typedef mira::multi_index_adapter<
    mira::multi_index::indexed_by<
       mira::multi_index::ordered_unique< mira::multi_index::tag< by_id >, mira::multi_index::member< wallet_object, wallet_object::id_type, &wallet_object::id > >,
       mira::multi_index::ordered_unique< mira::multi_index::tag< by_name >, mira::multi_index::member< wallet_object, wallet_name_type, &wallet_object::name > >
-   >,
-   chainbase::allocator< wallet_object >
+   >
 > wallet_index;
 
 FC_REFLECT( book::id_type, (_id) )

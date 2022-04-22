@@ -17,13 +17,6 @@ namespace xgt { namespace chain {
       XGT_STD_ALLOCATOR_CONSTRUCTOR( operation_object )
 
       public:
-         template< typename Constructor, typename Allocator >
-         operation_object( Constructor&& c, allocator< Allocator > a )
-            :serialized_op( a )
-         {
-            c( *this );
-         }
-
          id_type              id;
 
          transaction_id_type  trx_id;
@@ -58,19 +51,12 @@ namespace xgt { namespace chain {
             >
          >
 #endif
-      >,
-      allocator< operation_object >
+      >
    > operation_index;
 
    class account_history_object : public object< account_history_object_type, account_history_object >
    {
       public:
-         template< typename Constructor, typename Allocator >
-         account_history_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
          account_history_object() {}
 
          id_type           id;
@@ -93,8 +79,7 @@ namespace xgt { namespace chain {
             >,
             composite_key_compare< std::less< wallet_name_type >, std::greater< uint32_t > >
          >
-      >,
-      allocator< account_history_object >
+      >
    > account_history_index;
 } }
 

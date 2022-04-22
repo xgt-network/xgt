@@ -1,5 +1,4 @@
 add_subdirectory(db_fixture)
-add_subdirectory(bmic_objects)
 
 find_package(Boost QUIET REQUIRED COMPONENTS unit_test_framework)
 
