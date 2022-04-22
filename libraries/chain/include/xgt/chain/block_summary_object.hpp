@@ -42,13 +42,11 @@ namespace xgt { namespace chain {
 
 } } // xgt::chain
 
-#ifdef ENABLE_MIRA
 namespace mira {
 
 template<> struct is_static_length< xgt::chain::block_summary_object > : public boost::true_type {};
 
 } // mira
-#endif
 
 FC_REFLECT( xgt::chain::block_summary_object, (id)(block_id) )
 CHAINBASE_SET_INDEX_TYPE( xgt::chain::block_summary_object, xgt::chain::block_summary_index )

@@ -45,14 +45,10 @@ namespace xgt { namespace chain {
 
    class database;
 
-#ifdef ENABLE_MIRA
    using set_index_type_func = std::function< void(database&, mira::index_type, const boost::filesystem::path&, const boost::any&) >;
-#endif
 
    struct index_delegate {
-#ifdef ENABLE_MIRA
       set_index_type_func set_index_type;
-#endif
    };
 
    using index_delegate_map = std::map< std::string, index_delegate >;
@@ -209,11 +205,6 @@ namespace xgt { namespace chain {
 
          const comment_object&  get_comment(  const wallet_name_type& author, const shared_string& permlink )const;
          const comment_object*  find_comment( const wallet_name_type& author, const shared_string& permlink )const;
-
-#ifndef ENABLE_MIRA
-         const comment_object&  get_comment(  const wallet_name_type& author, const string& permlink )const;
-         const comment_object*  find_comment( const wallet_name_type& author, const string& permlink )const;
-#endif
 
          const escrow_object&   get_escrow(  const wallet_name_type& name, uint32_t escrow_id )const;
          const escrow_object*   find_escrow( const wallet_name_type& name, uint32_t escrow_id )const;

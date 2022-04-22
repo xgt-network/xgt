@@ -21,18 +21,6 @@ namespace xgt { namespace chain {
          return less( a.c_str(), b.c_str() );
       }
 
-#ifndef ENABLE_MIRA
-      bool operator()( const shared_string& a, const string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-
-      bool operator()( const string& a, const shared_string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-#endif
-
       private:
          inline bool less( const char* a, const char* b )const
          {
@@ -235,13 +223,11 @@ namespace xgt { namespace chain {
 
 } } // xgt::chain
 
-#ifdef ENABLE_MIRA
 namespace mira {
 
 template<> struct is_static_length< xgt::chain::comment_vote_object > : public boost::true_type {};
 
 } // mira
-#endif
 
 FC_REFLECT( xgt::chain::comment_object,
              (id)(author)(permlink)

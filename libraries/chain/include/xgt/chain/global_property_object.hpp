@@ -123,13 +123,11 @@ namespace xgt { namespace chain {
 
 } } // xgt::chain
 
-#ifdef ENABLE_MIRA
 namespace mira {
 
 template<> struct is_static_length< xgt::chain::dynamic_global_property_object > : public boost::true_type {};
 
 } // mira
-#endif
 
 FC_REFLECT( xgt::chain::dynamic_global_property_object,
              (id)

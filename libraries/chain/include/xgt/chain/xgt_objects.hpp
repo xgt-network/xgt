@@ -120,13 +120,11 @@ namespace xgt { namespace chain {
 
 } } // xgt::chain
 
-#ifdef ENABLE_MIRA
 namespace mira {
 
 template<> struct is_static_length< xgt::chain::escrow_object > : public boost::true_type {};
 
 } // mira
-#endif
 
 #include <xgt/chain/comment_object.hpp>
 #include <xgt/chain/wallet_object.hpp>

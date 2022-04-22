@@ -217,13 +217,11 @@ namespace xgt { namespace chain {
 
 } }
 
-#ifdef ENABLE_MIRA
 namespace mira {
 
 template<> struct is_static_length< xgt::chain::witness_vote_object > : public boost::true_type {};
 
 } // mira
-#endif
 
 FC_REFLECT( xgt::chain::chain_properties,
              (account_creation_fee)

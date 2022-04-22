@@ -307,9 +307,7 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
          ("from-state", bpo::value<string>()->default_value(""), "Load from state, then replay subsequent blocks")
          ("to-state", bpo::value<string>()->default_value(""), "File to save state to on shutdown")
          ("state-format", bpo::value<string>()->default_value("binary"), "State file save format (binary|json)")
-#ifdef ENABLE_MIRA
          ("memory-replay-indices", bpo::value<vector<string>>()->multitoken()->composing(), "Specify which indices should be in memory during replay")
-#endif
          ;
    cli.add_options()
          ("replay-blockchain", bpo::bool_switch()->default_value(false), "clear chain database and replay all blocks")
@@ -320,10 +318,8 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
          ("set-benchmark-interval", bpo::value<uint32_t>(), "Print time and memory usage every given number of blocks")
          ("dump-memory-details", bpo::bool_switch()->default_value(false), "Dump database objects memory usage info. Use set-benchmark-interval to set dump interval.")
          ("validate-database-invariants", bpo::bool_switch()->default_value(false), "Validate all supply invariants check out")
-#ifdef ENABLE_MIRA
          ("database-cfg", bpo::value<bfs::path>()->default_value("database.cfg"), "The database configuration file location")
          ("memory-replay,m", bpo::bool_switch()->default_value(false), "Replay with state in memory instead of on disk")
-#endif
          ("chain-id", bpo::value< std::string >()->default_value( XGT_CHAIN_ID ), "chain ID to connect to")
          ;
 }
@@ -392,7 +388,6 @@ void chain_plugin::plugin_initialize(const variables_map& options)
 
    my->benchmark_is_enabled = (options.count( "advanced-benchmark" ) != 0);
 
-#ifdef ENABLE_MIRA
    my->database_cfg = options.at( "database-cfg" ).as< bfs::path >();
 
    if( my->database_cfg.is_relative() )
@@ -414,7 +409,6 @@ void chain_plugin::plugin_initialize(const variables_map& options)
          my->replay_memory_indices.insert( my->replay_memory_indices.end(), tmp.begin(), tmp.end() );
       }
    }
-#endif
 
    if( options.count( "chain-id" ) )
    {
@@ -468,7 +462,6 @@ void chain_plugin::plugin_startup()
 
    fc::variant database_config;
 
-#ifdef ENABLE_MIRA
    try
    {
       database_config = fc::json::from_file( my->database_cfg, fc::json::strict_parser );
@@ -483,7 +476,6 @@ void chain_plugin::plugin_startup()
       elog( "Error while parsing database configuration: ${e}", ("e", e.what()) );
       exit( EXIT_FAILURE );
    }
-#endif
 
    database::open_args db_open_args;
    db_open_args.data_dir = app().data_dir() / "blockchain";

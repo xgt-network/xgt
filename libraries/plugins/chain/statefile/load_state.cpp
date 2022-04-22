@@ -113,9 +113,7 @@ void init_genesis_from_state( database& db, const std::string& state_filename, c
          ilog( "Unpacking ${o}. (${n} Objects)", ("o", header.object_type)("n", header.object_count) );
          std::shared_ptr< index_info > idx = index_map[ header.object_type ];
 
-      #ifdef ENABLE_MIRA
          idx->set_index_type( db, mira::index_type::bmic, p, cfg );
-      #endif
 
          for( int64_t i = 0; i < header.object_count; i++ )
          {
@@ -133,9 +131,7 @@ void init_genesis_from_state( database& db, const std::string& state_filename, c
          }
 
          //FC_TODO( "Put index conversion in parallel thread" )
-      #ifdef ENABLE_MIRA
          idx->set_index_type( db, mira::index_type::mira, p, cfg );
-      #endif
 
          idx->set_next_id( db, header.next_id );
 

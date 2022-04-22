@@ -111,7 +111,6 @@ boost::multiprecision::uint256_t hash_to_bigint(fc::sha256 h)
    return boost::multiprecision::uint256_t(prepended_string_hash);
 }
 
-#ifdef ENABLE_MIRA
 void set_index_helper( database& db, mira::index_type type, const boost::filesystem::path& p, const boost::any& cfg, std::vector< std::string > indices )
 {
    index_delegate_map delegates;
@@ -138,8 +137,6 @@ void set_index_helper( database& db, mira::index_type type, const boost::filesys
       db.with_write_lock([&]() { delegate.second.set_index_type( db, type, p, cfg );});
    }
 }
-#endif
-
 
 void database::open( const open_args& args )
 {
@@ -181,10 +178,6 @@ void database::open( const open_args& args )
       // Rewind all undo state. This should return us to the state at the last irreversible block.
       with_write_lock( [&]()
       {
-#ifndef ENABLE_MIRA
-         undo_all();
-#endif
-
          if( args.chainbase_flags & chainbase::skip_env_check )
          {
             set_revision( head_block_num() );
@@ -244,9 +237,7 @@ uint32_t database::reindex( const open_args& args )
    try
    {
       ilog( "Reindexing Blockchain" );
-#ifdef ENABLE_MIRA
       with_write_lock([&]() { initialize_indexes(); });
-#endif
 
       wipe( args.data_dir, args.shared_mem_dir, false );
 
@@ -255,13 +246,11 @@ uint32_t database::reindex( const open_args& args )
 
       XGT_TRY_NOTIFY(_pre_reindex_signal, note);
 
-#ifdef ENABLE_MIRA
       if( args.replay_in_memory )
       {
          ilog( "Configuring replay to use memory..." );
          set_index_helper( *this, mira::index_type::bmic, args.shared_mem_dir, args.database_cfg, args.replay_memory_indices );
       }
-#endif
 
       _fork_db.reset();    // override effect of _fork_db.start_block() call in open()
 
@@ -308,11 +297,7 @@ uint32_t database::reindex( const open_args& args )
                if( cur_block_num % 100000 == 0 )
                {
                   std::cerr << "replay: " << double( cur_block_num * 100 ) / last_block_num << "%   " << cur_block_num << " of " << last_block_num << "   (" <<
-   #ifdef ENABLE_MIRA
                   get_cache_size()  << " objects cached using " << (get_cache_usage() >> 20) << "M"
-   #else
-                  (get_free_memory() >> 20) << "M free"
-   #endif
                   << ")\n";
 
                   //rocksdb::SetPerfLevel(rocksdb::kEnableCount);
@@ -348,13 +333,11 @@ uint32_t database::reindex( const open_args& args )
       if( _block_log.head()->block_num() )
          _fork_db.start_block( *_block_log.head() );
 
-#ifdef ENABLE_MIRA
       if( args.replay_in_memory )
       {
          ilog( "Migrating state to disk..." );
          set_index_helper( *this, mira::index_type::mira, args.shared_mem_dir, args.database_cfg, args.replay_memory_indices );
       }
-#endif
 
       auto end = fc::time_point::now();
       ilog( "Done reindexing, elapsed time: ${t} sec", ("t",double((end-start).count())/1000000.0 ) );
@@ -387,9 +370,7 @@ void database::close(bool rewind)
       // DB state (issue #336).
       clear_pending();
 
-#ifdef ENABLE_MIRA
       undo_all();
-#endif
 
       chainbase::database::flush();
       chainbase::database::close();
@@ -629,18 +610,6 @@ const comment_object* database::find_comment( const wallet_name_type& author, co
 {
    return find< comment_object, by_permlink >( boost::make_tuple( author, permlink ) );
 }
-
-#ifndef ENABLE_MIRA
-const comment_object& database::get_comment( const wallet_name_type& author, const string& permlink )const
-{ try {
-   return get< comment_object, by_permlink >( boost::make_tuple( author, permlink) );
-} FC_CAPTURE_AND_RETHROW( (author)(permlink) ) }
-
-const comment_object* database::find_comment( const wallet_name_type& author, const string& permlink )const
-{
-   return find< comment_object, by_permlink >( boost::make_tuple( author, permlink ) );
-}
-#endif
 
 const escrow_object& database::get_escrow( const wallet_name_type& name, uint32_t escrow_id )const
 { try {
@@ -1537,40 +1506,6 @@ void database::apply_block( const signed_block& next_block, uint32_t skip )
 
 void database::check_free_memory( bool force_print, uint32_t current_block_num )
 {
-#ifndef ENABLE_MIRA
-   uint64_t free_mem = get_free_memory();
-   uint64_t max_mem = get_max_memory();
-
-   if( BOOST_UNLIKELY( _shared_file_full_threshold != 0 && _shared_file_scale_rate != 0 && free_mem < ( ( uint128_t( XGT_100_PERCENT - _shared_file_full_threshold ) * max_mem ) / XGT_100_PERCENT ).to_uint64() ) )
-   {
-      uint64_t new_max = ( uint128_t( max_mem * _shared_file_scale_rate ) / XGT_100_PERCENT ).to_uint64() + max_mem;
-
-      wlog( "Memory is almost full, increasing to ${mem}M", ("mem", new_max / (1024*1024)) );
-
-      resize( new_max );
-
-      uint32_t free_mb = uint32_t( get_free_memory() / (1024*1024) );
-      wlog( "Free memory is now ${free}M", ("free", free_mb) );
-      _last_free_gb_printed = free_mb / 1024;
-   }
-   else
-   {
-      uint32_t free_gb = uint32_t( free_mem / (1024*1024*1024) );
-      if( BOOST_UNLIKELY( force_print || (free_gb < _last_free_gb_printed) || (free_gb > _last_free_gb_printed+1) ) )
-      {
-         ilog( "Free memory is now ${n}G. Current block number: ${block}", ("n", free_gb)("block",current_block_num) );
-         _last_free_gb_printed = free_gb;
-      }
-
-      if( BOOST_UNLIKELY( free_gb == 0 ) )
-      {
-         uint32_t free_mb = uint32_t( free_mem / (1024*1024) );
-
-         if( free_mb <= 100 && head_block_num() % 10 == 0 )
-            elog( "Free memory is now ${n}M. Increase shared file size immediately!" , ("n", free_mb) );
-      }
-   }
-#endif
 }
 
 void database::_apply_block( const signed_block& next_block )
