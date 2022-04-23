@@ -597,7 +597,7 @@ void witness_plugin::plugin_startup()
          appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().set_block_production( true );
 
          ilog( "Block production is enabled" );
-         if( d.head_block_num() == 0 )
+         if( d.with_read_lock([&]() { return d.head_block_num(); }) == 0 )
             new_chain_banner( d );
          my->_production_skip_flags |= chain::database::skip_undo_history_check;
 
