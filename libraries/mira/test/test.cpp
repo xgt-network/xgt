@@ -1,3 +1,4 @@
+#include <boost/test/tools/old/interface.hpp>
 #define BOOST_TEST_MODULE mira test
 
 #include "test_objects.hpp"

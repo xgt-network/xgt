@@ -67,11 +67,6 @@ namespace mira{
 
 namespace multi_index{
 
-#if BOOST_WORKAROUND(BOOST_MSVC,BOOST_TESTED_AT(1500))
-#pragma warning(push)
-#pragma warning(disable:4522) /* spurious warning on multiple operator=()'s */
-#endif
-
 template<typename Value,typename IndexSpecifierList>
 class multi_index_container:
   public detail::multi_index_base_type<

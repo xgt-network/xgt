@@ -229,11 +229,6 @@ namespace chainbase {
          const value_type& emplace( const std::function <void (value_type&)>& f) {
             auto new_id = _next_id;
 
-            // auto constructor = [&]( value_type& v ) {
-            //    v.id = new_id;
-            //    f(v);
-            // };
-
             value_type v{};
             v.id = new_id;
             f(v);
