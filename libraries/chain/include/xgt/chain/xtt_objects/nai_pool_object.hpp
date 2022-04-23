@@ -8,7 +8,8 @@ namespace xgt { namespace chain {
 
    class nai_pool_object : public object< nai_pool_object_type, nai_pool_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( nai_pool_object );
+      public:
+      nai_pool_object() = default;;
 
    public:
       using pool_type = fc::array< asset_symbol_type, XTT_MAX_NAI_POOL_COUNT >;

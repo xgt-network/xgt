@@ -17,7 +17,8 @@ namespace xgt { namespace chain {
     */
    struct shared_authority
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( shared_authority )
+      public:
+      shared_authority() = default;
 
       public:
 

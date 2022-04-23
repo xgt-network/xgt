@@ -11,13 +11,6 @@
 
 #include <xgt/chain/multi_index_types.hpp>
 
-#define XGT_STD_ALLOCATOR_CONSTRUCTOR( object_type )   \
-   public:                                             \
-      object_type () = default;
-
-
-#define XGT_OBJECT_ID_TYPE( object ) typedef oid< object ## _object > object ## _id_type;
-
 namespace xgt {
 
 namespace protocol {

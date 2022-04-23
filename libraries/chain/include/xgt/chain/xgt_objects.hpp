@@ -60,7 +60,8 @@ namespace xgt { namespace chain {
 
    class savings_withdraw_object : public object< savings_withdraw_object_type, savings_withdraw_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( savings_withdraw_object )
+      public:
+      savings_withdraw_object() = default;
 
       public:
          id_type           id;

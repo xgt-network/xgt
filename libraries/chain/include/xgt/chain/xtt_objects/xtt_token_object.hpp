@@ -24,7 +24,8 @@ enum class xtt_phase : uint8_t
  */
 class xtt_token_object : public object< xtt_token_object_type, xtt_token_object >
 {
-   XGT_STD_ALLOCATOR_CONSTRUCTOR( xtt_token_object );
+   public:
+      xtt_token_object() = default;;
 
 public:
    asset_symbol_type get_stripped_symbol() const
@@ -62,7 +63,8 @@ public:
 
 class xtt_ico_object : public object< xtt_ico_object_type, xtt_ico_object >
 {
-   XGT_STD_ALLOCATOR_CONSTRUCTOR( xtt_ico_object );
+   public:
+      xtt_ico_object() = default;;
 
 public:
    id_type id;
@@ -79,7 +81,8 @@ public:
 
 struct shared_xtt_generation_unit
 {
-   XGT_STD_ALLOCATOR_CONSTRUCTOR( shared_xtt_generation_unit );
+   public:
+      shared_xtt_generation_unit() = default;;
    public:
 
    typedef boost::container::flat_map< xgt::protocol::unit_target_type, uint16_t > unit_map_type;
@@ -125,7 +128,8 @@ struct shared_xtt_generation_unit
 
 class xtt_ico_tier_object : public object< xtt_ico_tier_object_type, xtt_ico_tier_object >
 {
-   XGT_STD_ALLOCATOR_CONSTRUCTOR( xtt_ico_tier_object );
+   public:
+      xtt_ico_tier_object() = default;;
 
 public:
    id_type                                id;
@@ -136,7 +140,8 @@ public:
 
 class xtt_contribution_object : public object< xtt_contribution_object_type, xtt_contribution_object >
 {
-   XGT_STD_ALLOCATOR_CONSTRUCTOR( xtt_contribution_object );
+   public:
+      xtt_contribution_object() = default;;
    public:
    id_type                               id;
    asset_symbol_type                     symbol;

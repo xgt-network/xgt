@@ -14,7 +14,8 @@ namespace xgt { namespace chain {
 
    class operation_object : public object< operation_object_type, operation_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( operation_object )
+      public:
+      operation_object() = default;
 
       public:
          id_type              id;

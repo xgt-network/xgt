@@ -20,7 +20,8 @@ namespace xgt { namespace chain {
 
    class wallet_object : public object< wallet_object_type, wallet_object >
    {
-         XGT_STD_ALLOCATOR_CONSTRUCTOR( wallet_object )
+         public:
+      wallet_object() = default;
          public:
 
          id_type           id;
@@ -55,7 +56,8 @@ namespace xgt { namespace chain {
 
    class account_metadata_object : public object< account_metadata_object_type, account_metadata_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( account_metadata_object )
+      public:
+      account_metadata_object() = default;
       public:
 
       id_type           id;
@@ -66,7 +68,8 @@ namespace xgt { namespace chain {
 
    class account_authority_object : public object< account_authority_object_type, account_authority_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( account_authority_object )
+      public:
+      account_authority_object() = default;
 
       public:
          id_type           id;
@@ -82,7 +85,8 @@ namespace xgt { namespace chain {
 
    class recovery_authority_history_object : public object< recovery_authority_history_object_type, recovery_authority_history_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( recovery_authority_history_object )
+      public:
+      recovery_authority_history_object() = default;
 
       public:
          id_type           id;
@@ -94,7 +98,8 @@ namespace xgt { namespace chain {
 
    class account_recovery_request_object : public object< account_recovery_request_object_type, account_recovery_request_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( account_recovery_request_object )
+      public:
+      account_recovery_request_object() = default;
 
       public:
          id_type           id;
@@ -106,7 +111,8 @@ namespace xgt { namespace chain {
 
    class change_recovery_account_request_object : public object< change_recovery_account_request_object_type, change_recovery_account_request_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( change_recovery_account_request_object )
+      public:
+      change_recovery_account_request_object() = default;
 
       public:
          id_type           id;

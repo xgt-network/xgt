@@ -10,7 +10,8 @@ namespace xgt { namespace chain {
 
    class hardfork_property_object : public object< hardfork_property_object_type, hardfork_property_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( hardfork_property_object )
+      public:
+      hardfork_property_object() = default;
 
       public:
          id_type                                                              id;

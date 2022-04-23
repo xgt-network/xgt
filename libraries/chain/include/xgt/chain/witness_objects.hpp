@@ -49,7 +49,8 @@ namespace xgt { namespace chain {
     */
    class witness_object : public object< witness_object_type, witness_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( witness_object )
+      public:
+      witness_object() = default;
 
       public:
          id_type           id;

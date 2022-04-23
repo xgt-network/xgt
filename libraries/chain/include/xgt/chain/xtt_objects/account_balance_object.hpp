@@ -14,7 +14,8 @@ namespace xgt { namespace chain {
  */
 class account_regular_balance_object : public object< account_regular_balance_object_type, account_regular_balance_object >
 {
-   XGT_STD_ALLOCATOR_CONSTRUCTOR( account_regular_balance_object );
+   public:
+      account_regular_balance_object() = default;;
 
 public:
    id_type             id;

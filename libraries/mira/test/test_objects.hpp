@@ -49,7 +49,6 @@ void unpack( Stream& s, chainbase::oid<T>& id )
 
 #include <xgt/protocol/fixed_string.hpp>
 
-#include <mira/index_adapter.hpp>
 #include <mira/ordered_index.hpp>
 #include <mira/tag.hpp>
 #include <mira/member.hpp>

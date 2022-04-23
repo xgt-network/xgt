@@ -20,7 +20,8 @@ namespace xgt { namespace chain {
     */
    class transaction_object : public object< transaction_object_type, transaction_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( transaction_object )
+      public:
+      transaction_object() = default;
 
       public:
          id_type              id;

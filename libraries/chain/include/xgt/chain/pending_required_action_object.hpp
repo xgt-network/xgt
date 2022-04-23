@@ -11,7 +11,8 @@ using xgt::protocol::required_automated_action;
 
 class pending_required_action_object : public object< pending_required_action_object_type, pending_required_action_object >
 {
-   XGT_STD_ALLOCATOR_CONSTRUCTOR( pending_required_action_object )
+   public:
+      pending_required_action_object() = default;
 
    public:
       id_type                    id;
