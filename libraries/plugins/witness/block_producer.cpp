@@ -42,7 +42,7 @@ chain::signed_block block_producer::generate_block(
          });
       _db.set_producing( false );
    }
-   catch( fc::exception& e )
+   catch( const fc::exception& e )
    {
       _db.set_producing( false );
       throw e;
@@ -321,7 +321,7 @@ void block_producer::apply_pending_transactions(
          total_block_size = new_total_size;
          optional_actions.push_back( pending_optional_itr->action );
       }
-      catch( fc::exception& ) {}
+      catch( const fc::exception& ) {}
 
       ++pending_optional_itr;
    }

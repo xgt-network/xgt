@@ -141,11 +141,10 @@ namespace fc {
          unsigned_int size;
          unpack( s, size, depth );
          value.clear();
+         value.resize(size.value);
          for ( size_t i = 0; i < size.value; i++ )
          {
-            T tmp;
-            fc::raw::unpack( s, tmp, depth );
-            value.emplace_back( std::move( tmp ) );
+            fc::raw::unpack(s, value[i], depth);
          }
        }
    }

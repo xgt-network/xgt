@@ -251,7 +251,7 @@ void webserver_plugin_impl::handle_http_message( websocket_server_type* server, 
          con->append_header( "Content-Type", "application/json" );
          con->set_status( websocketpp::http::status_code::ok );
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          edump( (e) );
          con->set_body( "Could not call API" );
@@ -296,7 +296,7 @@ void webserver_plugin_impl::handle_http_request(websocket_local_server_type* ser
          con->append_header( "Content-Type", "application/json" );
          con->set_status( websocketpp::http::status_code::ok );
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          edump( (e) );
          con->set_body( "Could not call API" );

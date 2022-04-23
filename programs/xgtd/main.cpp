@@ -26,10 +26,10 @@
 
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
-#include <fc/stacktrace.hpp>
 
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/program_options.hpp>
+#include <boost/stacktrace.hpp>
 
 #include <iostream>
 #include <csignal>
@@ -66,6 +66,12 @@ void info()
    std::cerr << "xgt_max_voted_witnesses: " << XGT_MAX_VOTED_WITNESSES << "\n";
    std::cerr << "xgt_max_miner_witnesses: " << XGT_MAX_MINER_WITNESSES << "\n";
    std::cerr << "------------------------------------------------------\n";
+}
+
+void segfault(int sig) {
+   std::cerr << "SEGFAULT" << std::endl;
+   std::cerr << boost::stacktrace::stacktrace() << std::endl;
+   std::abort();
 }
 
 int main( int argc, char** argv )
@@ -128,7 +134,7 @@ int main( int argc, char** argv )
 
       if( args.at( "backtrace" ).as< string >() == "yes" )
       {
-         fc::print_stacktrace_on_segfault();
+         signal(SIGSEGV, segfault);
          ilog( "Backtrace on segfault is enabled." );
       }
 

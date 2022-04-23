@@ -138,7 +138,7 @@ BOOST_AUTO_TEST_CASE(sha256_test)
     try {
         fc::sha256 fourth( yet_another.data(), yet_another.data_size() );
         BOOST_FAIL( "Expected exception!" );
-    } catch ( fc::exception& expected ) {}
+    } catch ( const fc::exception& expected ) {}
 
     fc::sha256 fourth( "445C7A8007A93D8733188288BB320A8FE2DEBD2AE1B47F0F50BC10BAE845C094" );
     BOOST_CHECK_EQUAL( "d61967f63c7dd183914a4ae452c9f6ad5d462ce3d277798075b107615c1a8a30", (std::string) fc::sha256::hash(fourth) );

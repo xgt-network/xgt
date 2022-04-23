@@ -106,8 +106,8 @@ namespace detail {
          // Check if memo is a private key
          keys.push_back( fc::ecc::extended_private_key::from_base58( memo ).get_public_key() );
       }
-      catch( fc::parse_error_exception& ) {}
-      catch( fc::assert_exception& ) {}
+      catch( const fc::parse_error_exception& ) {}
+      catch( const fc::assert_exception& ) {}
 
       // Get possible keys if memo was an account password
       string recovery_seed = account.name + "recovery" + memo;
@@ -618,7 +618,7 @@ void witness_plugin::plugin_shutdown()
       chain::util::disconnect_signal( my->_post_apply_operation_conn );
       my->_timer.cancel();
    }
-   catch(fc::exception& e)
+   catch( const fc::exception& e)
    {
       edump( (e.to_detail_string()) );
    }

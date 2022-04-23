@@ -971,7 +971,7 @@ namespace graphene { namespace net {
               _retrigger_connect_loop_promise->wait();
             }
           }
-          catch ( fc::timeout_exception& ) //intentionally not logged
+          catch( const fc::timeout_exception& ) //intentionally not logged
           {
           }  // catch
         }
@@ -2775,13 +2775,13 @@ namespace graphene { namespace net {
       {
         return _message_cache.get_message(item.item_hash);
       }
-      catch (fc::key_not_found_exception&)
+      catch( const fc::key_not_found_exception&)
       {}
       try
       {
         return _delegate->get_item(item);
       }
-      catch (fc::key_not_found_exception&)
+      catch( const fc::key_not_found_exception&)
       {}
       return item_not_available_message(item);
     }
@@ -2810,7 +2810,7 @@ namespace graphene { namespace net {
             last_block_message_sent = requested_message;
           continue;
         }
-        catch (fc::key_not_found_exception&)
+        catch( const fc::key_not_found_exception&)
         {
            // it wasn't in our local cache, that's ok ask the client
         }
@@ -2828,7 +2828,7 @@ namespace graphene { namespace net {
             last_block_message_sent = requested_message;
           continue;
         }
-        catch (fc::key_not_found_exception&)
+        catch( const fc::key_not_found_exception&)
         {
           reply_messages.push_back(item_not_available_message(item_to_fetch));
           dlog("received item request from peer ${endpoint} but we don't have it",
@@ -4033,10 +4033,7 @@ namespace graphene { namespace net {
       // terminate all of our long-running loops (these run continuously instead of rescheduling themselves)
       try
       {
-        _p2p_network_connect_loop_done.cancel("node_impl::close()");
-        // cancel() is currently broken, so we need to wake up the task to allow it to finish
-        trigger_p2p_network_connect_loop();
-        _p2p_network_connect_loop_done.wait();
+        _p2p_network_connect_loop_done.cancel_and_wait("node_impl::close()");
         dlog("P2P connect loop terminated");
       }
       catch ( const fc::canceled_exception& )
@@ -4505,12 +4502,12 @@ namespace graphene { namespace net {
 
           node_configuration_loaded = true;
         }
-        catch ( fc::parse_error_exception& parse_error )
+        catch ( const fc::parse_error_exception& parse_error )
         {
           elog( "malformed node configuration file ${filename}: ${error}",
                ( "filename", configuration_file_name )("error", parse_error.to_detail_string() ) );
         }
-        catch ( fc::exception& except )
+        catch ( const fc::exception& except )
         {
           elog( "unexpected exception while reading configuration file ${filename}: ${error}",
                ( "filename", configuration_file_name )("error", except.to_detail_string() ) );
@@ -4548,7 +4545,7 @@ namespace graphene { namespace net {
 
         trigger_p2p_network_connect_loop();
       }
-      catch (fc::exception& except)
+      catch( const fc::exception& except)
       {
         elog("unable to open peer database ${filename}: ${error}",
              ("filename", potential_peer_database_file_name)("error", except.to_detail_string()));

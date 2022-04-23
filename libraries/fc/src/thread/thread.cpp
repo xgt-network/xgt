@@ -78,7 +78,7 @@ namespace fc {
             current_thread() = this;
             p->set_value();
             exec();
-          } catch ( fc::exception& e ) {
+          } catch ( const fc::exception& e ) {
             wlog( "unhandled exception" );
             p->set_exception( e.dynamic_copy_exception() );
           } catch ( ... ) {

@@ -676,7 +676,7 @@ void p2p_plugin::plugin_startup()
             my->node->add_node(seed);
             my->node->connect_to_endpoint(seed);
          }
-         catch( graphene::net::already_connected_to_requested_peer& )
+         catch( const graphene::net::already_connected_to_requested_peer& )
          {
             wlog( "Already connected to seed node ${s}. Is it specified twice in config?", ("s", seed) );
          }

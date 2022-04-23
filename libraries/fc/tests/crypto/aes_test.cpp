@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(aes_test)
 // //            BOOST_CHECK_EQUAL( dcrypt.size(), len );
 // //            BOOST_CHECK( !memcmp( dcrypt.data(), data.data(), len) );
 //         }
-//         catch ( fc::exception& e )
+//         catch( const fc::exception& e )
 //         {
 //            std::cout<<e.to_detail_string()<<"\n";
 //         }

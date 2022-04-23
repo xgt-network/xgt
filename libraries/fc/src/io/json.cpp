@@ -303,7 +303,7 @@ namespace fc
           }
         }
       }
-      catch (fc::eof_exception&)
+      catch( const fc::eof_exception&)
       {
       }
       catch (const std::ios_base::failure&)
@@ -351,7 +351,7 @@ namespace fc
            }
         }
       }
-      catch (fc::eof_exception&)
+      catch( const fc::eof_exception&)
       {
         received_eof = true;
       }

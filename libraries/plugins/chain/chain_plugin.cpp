@@ -141,7 +141,7 @@ struct write_request_visitor
       {
          result = db->push_block( *block, skip );
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          *except = e;
       }
@@ -164,7 +164,7 @@ struct write_request_visitor
 
          result = true;
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          *except = e;
       }
@@ -196,7 +196,7 @@ struct write_request_visitor
 
          result = true;
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          *except = e;
       }
@@ -468,7 +468,7 @@ void chain_plugin::plugin_initialize(const variables_map& options)
       {
          my->db.set_chain_id( chain_id_type( chain_id_str) );
       }
-      catch( fc::exception& )
+      catch( const fc::exception& )
       {
          FC_ASSERT( false, "Could not parse chain_id as hex string. Chain ID String: ${s}", ("s", chain_id_str) );
       }

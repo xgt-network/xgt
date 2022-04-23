@@ -1,4 +1,5 @@
 #include <chainbase/chainbase.hpp>
+#include <boost/stacktrace.hpp>
 #include <boost/array.hpp>
 #include <boost/any.hpp>
 #include <iostream>
@@ -236,8 +237,9 @@ namespace chainbase {
    {
       std::string err_msg = "database::" + std::string( method ) + " require_" + std::string( lock_type ) + "_lock() failed on type " + std::string( tname );
       std::cerr << err_msg << std::endl;
-      abort();
-      // BOOST_THROW_EXCEPTION( std::runtime_error( err_msg ) );
+      std::cerr <<  boost::stacktrace::stacktrace() << std::endl;
+      std::abort();
+      //BOOST_THROW_EXCEPTION( std::runtime_error( err_msg ) );
    }
 
    void database::undo()

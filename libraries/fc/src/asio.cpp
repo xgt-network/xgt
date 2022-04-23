@@ -32,7 +32,7 @@ namespace fc {
       {
         if( !ec )
           _completion_promise->set_value(bytes_transferred);
-        else if( ec == boost::asio::error::eof  )
+        else if( ec == boost::asio::error::eof || ec == boost::asio::error::connection_reset || ec == boost::asio::error::connection_aborted )
           _completion_promise->set_exception( fc::exception_ptr( new fc::eof_exception( FC_LOG_MESSAGE( error, "${message} ", ("message", boost::system::system_error(ec).what())) ) ) );
         else
           _completion_promise->set_exception( fc::exception_ptr( new fc::exception( FC_LOG_MESSAGE( error, "${message} ", ("message", boost::system::system_error(ec).what())) ) ) );

@@ -83,6 +83,17 @@ SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
 add_compile_definitions("BOOST_BIND_GLOBAL_PLACEHOLDERS")
 add_compile_definitions("BOOST_THREAD_DONT_PROVIDE_PROMISE_LAZY")
 
+find_package(Backtrace QUIET)
+if(Backtrace_LIBRARY)
+  add_compile_definitions(BOOST_STACKTRACE_USE_BACKTRACE)
+else()
+  if(MINGW)
+    add_compile_definitions(BOOST_STACKTRACE_USE_WINDBG)
+  else()
+    add_compile_definitions(BOOST_STACKTRACE_USE_ADDR2LINE)
+  endif()
+endif()
+
 # based on http://www.delorie.com/gnu/docs/gdb/gdb_70.html
 # uncomment this line to tell GDB about macros (slows compile times)
 # set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -gdwarf-2 -g3" )

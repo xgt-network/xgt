@@ -125,7 +125,7 @@ BOOST_AUTO_TEST_CASE( cancel_an_sleeping_task )
     task_result result = task.wait();
     BOOST_CHECK_MESSAGE(result != sleep_completed, "sleep should have been canceled");
   }
-  catch (fc::exception& e)
+  catch( const fc::exception& e)
   {
     BOOST_TEST_MESSAGE("Caught exception from canceled task: " << e.what());
     BOOST_CHECK_MESSAGE(fc::time_point::now() - start_time < fc::seconds(4), "Task was not canceled quickly");
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE( cancel_a_task_waiting_on_promise )
     task_result result = task.wait();
     BOOST_CHECK_MESSAGE(result != task_completed, "task should have been canceled");
   }
-  catch (fc::exception& e)
+  catch( const fc::exception& e)
   {
     BOOST_TEST_MESSAGE("Caught exception from canceled task: " << e.what());
     BOOST_CHECK_MESSAGE(fc::time_point::now() - start_time < fc::seconds(4), "Task was not canceled quickly");
@@ -207,7 +207,7 @@ BOOST_AUTO_TEST_CASE( cleanup_cancelled_task )
   {
     task.wait();
   }
-  catch (fc::exception& e)
+  catch( const fc::exception& e)
   {
     BOOST_TEST_MESSAGE("Caught exception from canceled task: " << e.what());
   }

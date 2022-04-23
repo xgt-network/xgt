@@ -280,14 +280,15 @@ uint32_t database::reindex( const open_args& args )
          skip_validate_invariants |
          skip_block_log;
 
-      idump( (with_read_lock([&]() { return head_block_num(); })) );
+      auto cur_head_block_num = with_read_lock([&]() { return head_block_num(); });
+      idump( (cur_head_block_num) );
 
       auto last_block_num = _block_log.head()->block_num();
 
       if( args.stop_at_block > 0 && args.stop_at_block < last_block_num )
          last_block_num = args.stop_at_block;
 
-      if( with_read_lock([&]() { return head_block_num(); }) < last_block_num )
+      if( cur_head_block_num < last_block_num )
       {
          if( args.benchmark.first > 0 )
          {
@@ -1629,7 +1630,7 @@ void database::_apply_block( const signed_block& next_block )
       {
          FC_ASSERT( next_block.transaction_merkle_root == merkle_root, "Merkle check failed", ("next_block.transaction_merkle_root",next_block.transaction_merkle_root)("calc",merkle_root)("next_block",next_block)("id",next_block.id()) );
       }
-      catch( fc::assert_exception& e )
+      catch( const fc::assert_exception& e )
       {
          const auto& merkle_map = get_shared_db_merkle();
          auto itr = merkle_map.find( next_block_num );
@@ -2032,7 +2033,7 @@ void database::_apply_transaction(const signed_transaction& trx)
                XGT_MAX_SIG_CHECK_WALLETS,
                fc::ecc::bip_0062 );
       }
-      catch( protocol::tx_missing_money_auth& e )
+      catch( const protocol::tx_missing_money_auth& e )
       {
          if( get_shared_db_merkle().find( head_block_num() + 1 ) == get_shared_db_merkle().end() )
             throw e;
