@@ -16,7 +16,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
-#include <boost/thread/pthread/shared_mutex.hpp>
+#include <boost/thread/shared_mutex.hpp>
 #include <boost/throw_exception.hpp>
 
 #include <chainbase/allocators.hpp>
