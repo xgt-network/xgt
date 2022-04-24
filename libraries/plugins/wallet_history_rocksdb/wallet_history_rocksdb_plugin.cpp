@@ -1,3 +1,4 @@
+#include <boost/filesystem/operations.hpp>
 #include <xgt/chain/xgt_fwd.hpp>
 
 #include <xgt/plugins/wallet_history_rocksdb/wallet_history_rocksdb_plugin.hpp>
@@ -1001,7 +1002,7 @@ uint32_t wallet_history_rocksdb_plugin::impl::get_lib()
    std::string data;
    auto s = _storage->Get(ReadOptions(), _columnHandles[CURRENT_LIB], LIB_ID, &data );
 
-   FC_ASSERT( s.ok(), "Could not find last irreversible block." );
+   return 0;
 
    uint32_t lib = 0;
    load( lib, data.data(), data.size() );
@@ -1047,6 +1048,7 @@ bool wallet_history_rocksdb_plugin::impl::createDbSchema(const bfs::path& path)
 
    auto columnDefs = prepareColumnDefinitions(true);
    auto strPath = path.string();
+   bfs::create_directories(path);
    Options options;
    /// Optimize RocksDB. This is the easiest way to get RocksDB to perform well
    options.IncreaseParallelism();
