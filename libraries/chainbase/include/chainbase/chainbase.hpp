@@ -194,7 +194,9 @@ namespace chainbase {
    class counted_shared_lock {
       public:
       counted_shared_lock ( std::atomic<int32_t>& counter, boost::shared_mutex& mutex) : count(counter), mutex(mutex) {
-         mutex.lock_shared();
+         if (!mutex.try_lock_shared_for(boost::chrono::seconds(60))) {
+            throw std::runtime_error("failed to acquire lock for 60s");
+         }
          ++count;
       }
       ~counted_shared_lock() {
@@ -209,7 +211,9 @@ namespace chainbase {
    class counted_lock {
       public:
       counted_lock ( std::atomic<int32_t>& counter, boost::shared_mutex& mutex) : count(counter), mutex(mutex) {
-         mutex.lock();
+         if (!mutex.try_lock_for(boost::chrono::seconds(60))) {
+            throw std::runtime_error("failed to acquire write lock for 60s");
+         }
          ++count;
       }
       ~counted_lock() {
