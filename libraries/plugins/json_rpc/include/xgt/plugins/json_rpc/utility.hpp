@@ -9,7 +9,7 @@
 #include <boost/preprocessor/cat.hpp>
 
 #define DECLARE_API_METHOD_HELPER( r, data, method ) \
-BOOST_PP_CAT( method, _return ) method( const BOOST_PP_CAT( method, _args )& args, bool lock = true );
+BOOST_PP_CAT( method, _return ) method( const BOOST_PP_CAT( method, _args )& args, bool lock = false );
 
 #define FOR_EACH_API_HELPER( r, callback, method ) \
 { \

@@ -452,7 +452,9 @@ block_id_type database::find_block_id_for_num( uint32_t block_num )const
 block_id_type database::get_block_id_for_num( uint32_t block_num )const
 {
    block_id_type bid = find_block_id_for_num( block_num );
-   FC_ASSERT( bid != block_id_type() );
+   if (bid == block_id_type()) {
+      FC_THROW_EXCEPTION(fc::key_not_found_exception, "block ${num} not found", ("num", block_num));
+   }
    return bid;
 }
 

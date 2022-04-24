@@ -212,6 +212,8 @@ bool p2p_plugin_impl::handle_block( const graphene::net::block_message& blk_msg,
                ("b", blk_msg.block.block_num())
                ("w", blk_msg.block.witness)
                ("l", offset.count() / 1000) );
+ 
+            ready_to_mine = true;
          }
 
          return result;
@@ -472,9 +474,8 @@ std::vector< graphene::net::item_hash_t > p2p_plugin_impl::get_blockchain_synops
 
 void p2p_plugin_impl::sync_status( uint32_t item_type, uint32_t item_count )
 {
-   if (item_count == 0) {
+   if (item_count == 0)
       this->ready_to_mine = true;
-   }
    // any status reports to GUI go here
 }
 
@@ -533,6 +534,8 @@ bool p2p_plugin_impl::is_included_block(const block_id_type& block_id)
       block_id_type block_id_in_preferred_chain = chain.db().get_block_id_for_num(block_num);
       return block_id == block_id_in_preferred_chain;
    });
+} catch (const fc::key_not_found_exception&) {
+   return false;
 } FC_CAPTURE_AND_RETHROW() }
 
 ////////////////////////////// End node_delegate Implementation //////////////////////////////

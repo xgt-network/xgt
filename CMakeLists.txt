@@ -91,6 +91,10 @@ else()
     add_compile_definitions(BOOST_STACKTRACE_USE_WINDBG)
   else()
     add_compile_definitions(BOOST_STACKTRACE_USE_ADDR2LINE)
+    # Boosts stacktrace lib leaves a fair bit to be desired, but let's at least
+    # use llvm-addr2line that can resolve symbols in less than 5 minutes per
+    # symbol in these whacky objects. Good job llvm team.
+    add_compile_definitions(BOOST_STACKTRACE_ADDR2LINE_LOCATION=/usr/bin/llvm-addr2line)
   endif()
 endif()
 

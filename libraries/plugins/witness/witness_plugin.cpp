@@ -256,24 +256,26 @@ namespace detail {
 
    void witness_plugin_impl::start_mining( const fc::ecc::public_key& pub, const fc::ecc::private_key& pk, const string& miner )
    {
-      auto block_id = _db.head_block_id();
-      auto block_num = _db.head_block_num();
-      auto head_block_time = _db.head_block_time();
-      uint32_t target = _db.get_pow_summary_target();
-      wlog( "Miner has started work ${o} at block ${b} target ${t}", ("o", miner)("b", block_num)("t", target));
+     auto block_id = _db.with_read_lock([&]() { return _db.head_block_id(); });
+     auto block_num = _db.with_read_lock([&]() { return _db.head_block_num(); });
+     auto head_block_time = _db.with_read_lock([&]() { return _db.head_block_time(); });
+     uint32_t target = _db.with_read_lock([&]() { return _db.get_pow_summary_target(); });
+     wlog("Miner has started work ${o} at block ${b} target ${t}", ("o", miner)("b", block_num)("t", target));
 
-      uint64_t total_hashes = 0;
-      fc::time_point hash_start_time = fc::time_point::now();
-      fc::time_point_sec last_report_time = hash_start_time;
+     uint64_t total_hashes = 0;
+     fc::time_point hash_start_time = fc::time_point::now();
+     fc::time_point_sec last_report_time = hash_start_time;
 
-      const auto& acct_idx  = _db.get_index< chain::wallet_index >().indices().get< chain::by_name >();
-      auto acct_it = acct_idx.find( miner );
-      bool has_account = (acct_it != acct_idx.end());
+     bool has_account = _db.with_read_lock([&]() {
+         const auto& acct_idx = _db.get_index<chain::wallet_index>().indices().get<chain::by_name>();
+         auto acct_it = acct_idx.find(miner);
+         return (acct_it != acct_idx.end());
+     });
 
-      std::vector<std::shared_ptr<protocol::sha2_pow>> works(_num_threads);
-      for (auto& work : works) {
-         work = std::make_shared<protocol::sha2_pow>();
-         work->init(block_id, miner);
+     std::vector<std::shared_ptr<protocol::sha2_pow>> works(_num_threads);
+     for (auto& work : works) {
+       work = std::make_shared<protocol::sha2_pow>();
+       work->init(block_id, miner);
       }
 
       std::vector<fc::future<uint64_t>> tasks(_num_threads);
@@ -315,8 +317,7 @@ namespace detail {
                {
                   wlog("Mined block proceeding #${n} with timestamp ${t} at time ${c}", ("n", block_num)("t", head_block_time)("c", fc::time_point::now()));
                   fc::time_point now = fc::time_point::now();
-                  uint32_t head_num = _db.head_block_num();
-                  if (head_num < 2116800)
+                  if (block_num < 2116800)
                   {
                      auto block_reward = fc::optional< protocol::signed_transaction >();
                      auto block = _chain_plugin.generate_block(
@@ -326,10 +327,10 @@ namespace detail {
                         block_reward,
                         _production_skip_flags
                      );
-                     _db.push_block(block, (uint32_t)0);
+                     _chain_plugin.accept_block(block, false, _production_skip_flags);
+                     _chain_plugin.accept_transaction(trx);
                      appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
                      wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
-                     _db.push_transaction( trx );
                      appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
                   }
                   else
@@ -342,7 +343,7 @@ namespace detail {
                         block_reward,
                         _production_skip_flags
                      );
-                     _db.push_block(block, (uint32_t)0);
+                     _chain_plugin.accept_block(block, false, _production_skip_flags);
                      appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
                      wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
                   }
@@ -366,7 +367,7 @@ namespace detail {
             wlog("Miner working at block ${b} rate: ${r}H/s", ("b", block_num)("r",hashrate));
          }
 
-         auto head_block_num = _db.head_block_num();
+         auto head_block_num = _db.with_read_lock([&]() { return _db.head_block_num(); });
          if( block_num != head_block_num )
          {
             wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("o",block_num)("p",head_block_num) );
@@ -407,7 +408,7 @@ namespace detail {
 
       auto name_ptr = _witnesses.begin();
 
-      if ( _db.head_block_num() == 0 )
+      if ( _db.with_read_lock([&]() { return _db.head_block_num(); }) == 0 )
       {
          if (*name_ptr == XGT_INIT_MINER_NAME)
          {
@@ -421,13 +422,13 @@ namespace detail {
                block_reward,
                _production_skip_flags
             );
-            _db.push_block(block, (uint32_t)0);
+            _chain_plugin.accept_block(block, false, _production_skip_flags);
          }
          schedule_production_loop();
          return;
       }
 
-      const hardfork_property_object& hfp = _db.get_hardfork_property_object();
+      const hardfork_property_object& hfp = _db.with_read_lock([&]() { return _db.get_hardfork_property_object(); });
       uint64_t processed_hardforks = hfp.processed_hardforks.size();
       uint64_t num_hardforks = (XGT_NUM_HARDFORKS > 0) ? (XGT_NUM_HARDFORKS - 1) : 0;
       if ( processed_hardforks < num_hardforks )
@@ -438,7 +439,7 @@ namespace detail {
 
       try
       {
-         _db.get< chain::witness_object, chain::by_name >(*name_ptr);
+         _db.with_read_lock([&] () { return _db.get< chain::witness_object, chain::by_name >(*name_ptr); });
       }
       catch (const std::exception& e)
       {
@@ -520,8 +521,8 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
 
    my->_chain_plugin.register_block_generator( get_name(), my->_block_producer );
 
-   ilog ("my->_witnesses ${h}", ("h", my->_witnesses));
    XGT_LOAD_VALUE_SET( options, "witness", my->_witnesses, xgt::protocol::wallet_name_type )
+   ilog ("my->_witnesses ${h}", ("h", my->_witnesses));
 
    // Set witnesses in the DB so they can be used elsewhere.
    my->_db.set_witnesses(my->_witnesses);
@@ -576,9 +577,6 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
       [&]( const chain::operation_notification& note ){ my->on_pre_apply_operation( note ); }, *this, 0);
    my->_post_apply_operation_conn = my->_db.add_pre_apply_operation_handler(
       [&]( const chain::operation_notification& note ){ my->on_post_apply_operation( note ); }, *this, 0);
-
-   if( my->_witnesses.size() && my->_private_keys.size() )
-      my->_chain_plugin.set_write_lock_hold_time( -1 );
 
    XGT_ADD_PLUGIN_INDEX(my->_db, witness_custom_op_index);
 

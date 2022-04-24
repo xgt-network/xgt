@@ -58,8 +58,6 @@ chain::signed_block block_producer::_generate_block(
    fc::optional< xgt::chain::signed_transaction > block_reward
 )
 { try {
-   auto lock = _db.lock_write();
-
    uint32_t skip = _db.get_node_properties().skip_flags;
    // const auto& witness_obj = _db.get_witness( witness );
 

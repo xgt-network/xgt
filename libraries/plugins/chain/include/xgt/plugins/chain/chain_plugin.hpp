@@ -41,12 +41,7 @@ public:
 
    bool accept_block( const xgt::chain::signed_block& block, bool currently_syncing, uint32_t skip );
    void accept_transaction( const xgt::chain::signed_transaction& trx );
-   xgt::chain::signed_block only_generate_block(
-      const fc::time_point_sec when,
-      const wallet_name_type& witness_recovery,
-      const fc::ecc::private_key& block_signing_private_key,
-      uint32_t skip = database::skip_nothing
-      );
+
    xgt::chain::signed_block generate_block(
       const fc::time_point_sec when,
       const wallet_name_type& witness_recovery,
@@ -63,19 +58,6 @@ public:
     * and will not take effect.
     */
    void register_block_generator( const std::string& plugin_name, std::shared_ptr< abstract_block_producer > block_producer );
-
-   /**
-    * Sets the time (in ms) that the write thread will hold the lock for.
-    * A time of -1 is no limit and pre-empts all readers. A time of 0 will
-    * only ever hold to lock for a single write before returning to readers.
-    * By default, this value is 500 ms.
-    *
-    * This value cannot be changed once the plugin is started.
-    *
-    * The old value is returned so that plugins can respect overrides from
-    * other plugins.
-    */
-   int16_t set_write_lock_hold_time( int16_t new_time );
 
    bool block_is_on_preferred_chain( const xgt::chain::block_id_type& block_id );
 
