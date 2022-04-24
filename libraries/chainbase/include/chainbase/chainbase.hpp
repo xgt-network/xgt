@@ -191,6 +191,37 @@ namespace chainbase {
          std::atomic<int32_t>& _target;
    };
 
+   class counted_shared_lock {
+      public:
+      counted_shared_lock ( std::atomic<int32_t>& counter, boost::shared_mutex& mutex) : count(counter), mutex(mutex) {
+         mutex.lock_shared();
+         ++count;
+      }
+      ~counted_shared_lock() {
+         --count;
+         mutex.unlock_shared();
+      }
+
+      std::atomic<int32_t>& count;
+      boost::shared_mutex& mutex;
+   };
+
+   class counted_lock {
+      public:
+      counted_lock ( std::atomic<int32_t>& counter, boost::shared_mutex& mutex) : count(counter), mutex(mutex) {
+         mutex.lock();
+         ++count;
+      }
+      ~counted_lock() {
+         --count;
+         mutex.unlock();
+      }
+
+      std::atomic<int32_t>& count;
+      boost::shared_mutex& mutex;
+   };
+
+
    /**
     *  The value_type stored in the multiindex container must have a integer field with the name 'id'.  This will
     *  be the primary key and it will be assigned and managed by generic_index.
@@ -891,13 +922,13 @@ namespace chainbase {
 
          void require_read_lock( const char* method, const char* tname )const
          {
-            if( BOOST_UNLIKELY( (_read_lock_count <= 0) && (_write_lock_count <= 0) ) )
+            if( _read_lock_count <= 0 && _write_lock_count <= 0)
                require_lock_fail(method, "read", tname);
          }
 
          void require_write_lock( const char* method, const char* tname )
          {
-            if( BOOST_UNLIKELY( (_write_lock_count <= 0) ) )
+            if( _write_lock_count <= 0 )
                require_lock_fail(method, "write", tname);
          }
 
@@ -1157,20 +1188,15 @@ namespace chainbase {
          }
 
          auto lock_read() {
-            int_incrementer ii( _read_lock_count );
-            boost::shared_lock<boost::shared_mutex> lock(_mutex);
-            return lock;
+            return counted_shared_lock(_write_lock_count, _mutex);
          }
 
          auto lock_write() {
-            int_incrementer ii( _write_lock_count );
-            boost::unique_lock<boost::shared_mutex> lock(_mutex);
-            return lock;
+            return counted_lock(_write_lock_count, _mutex);
          }
 
          template <class Function, class... Args>
          auto with_read_lock(Function&& func, Args&&... args) -> decltype(func(args...)) {
-            int_incrementer ii( _read_lock_count );
             auto _lock = lock_read();
 
             return func(args...);
@@ -1178,7 +1204,6 @@ namespace chainbase {
 
          template <class Function, class... Args>
          auto with_write_lock(Function&& func, Args&&... args) -> decltype(func(args...)) {
-            int_incrementer ii( _write_lock_count );
             auto _lock = lock_write();
 
             return func(args...);

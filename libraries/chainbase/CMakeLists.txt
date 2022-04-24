@@ -7,4 +7,4 @@ add_library( chainbase src/chainbase.cpp ${HEADERS} )
 target_link_libraries( chainbase  Boost::filesystem )
 target_include_directories( chainbase PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
 
-add_subdirectory( test )
+add_subdirectory(test)

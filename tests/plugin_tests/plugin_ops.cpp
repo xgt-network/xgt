@@ -1,6 +1,6 @@
 #ifdef IS_TEST_NET
 #include <xgt/chain/generic_custom_operation_interpreter.hpp>
-#include <xgt/chain/account_object.hpp>
+#include <xgt/chain/wallet_object.hpp>
 
 #include <boost/test/unit_test.hpp>
 

@@ -21,27 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+
 #define BOOST_TEST_MODULE chain_test
 
-#include <cstdlib>
-#include <iostream>
-#include <BoostTestTargetConfig.h>
+#include <boost/test/included/unit_test.hpp>
 
-// extern uint32_t XGT_TESTING_GENESIS_TIMESTAMP;
-
-/*
-boost::unit_test::test_suite* init_unit_test_suite(int argc, char* argv[])
-{
-   std::srand(time(NULL));
-   std::cout << "Random number generator seeded to " << time(NULL) << std::endl;
-
-   const char* genesis_timestamp_str = getenv("XGT_TESTING_GENESIS_TIMESTAMP");
-   if( genesis_timestamp_str != nullptr )
-   {
-      XGT_TESTING_GENESIS_TIMESTAMP = std::stoul( genesis_timestamp_str );
-   }
-   std::cout << "XGT_TESTING_GENESIS_TIMESTAMP is " << XGT_TESTING_GENESIS_TIMESTAMP << std::endl;
-
-   return nullptr;
-}
-*/
+BOOST_AUTO_TEST_SUITE( chain_test );
+BOOST_AUTO_TEST_SUITE_END();

@@ -1,3 +1,4 @@
+#include <boost/stacktrace/stacktrace.hpp>
 #include <xgt/plugins/p2p/p2p_plugin.hpp>
 #include <xgt/plugins/p2p/p2p_default_seeds.hpp>
 
@@ -47,9 +48,11 @@ std::vector<fc::ip::endpoint> resolve_string_to_ip_endpoints( const std::string&
    try
    {
       string::size_type colon_pos = endpoint_string.find( ':' );
-      if( colon_pos == std::string::npos )
-         FC_THROW( "Missing required port number in endpoint string \"${endpoint_string}\"",
+      if( colon_pos == std::string::npos ) {
+         wlog( "Missing required port number in endpoint string \"${endpoint_string}\"",
                   ("endpoint_string", endpoint_string) );
+         return {};
+      }
 
       std::string port_string = endpoint_string.substr( colon_pos + 1 );
 

@@ -1,8 +1,10 @@
 #define BOOST_TEST_MODULE chainbase test
-
+#include <boost/test/unit_test_suite.hpp>
 #include <boost/test/unit_test.hpp>
+
 #include <chainbase/chainbase.hpp>
 
+#ifndef ENABLE_MIRA
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/member.hpp>
@@ -11,10 +13,6 @@
 
 using namespace chainbase;
 using namespace boost::multi_index;
-
-//BOOST_TEST_SUITE( serialization_tests, clean_database_fixture )
-
-#ifndef ENABLE_MIRA
 
 struct book : public chainbase::object<0, book> {
 
@@ -138,5 +136,13 @@ BOOST_AUTO_TEST_CASE( open_and_create ) {
    }
 }
 
-// BOOST_AUTO_TEST_SUITE_END()
+#else
+
+BOOST_AUTO_TEST_CASE( null_test ) {
+    std::cerr << "mira builds don't support independent chainbase usage" << std::endl;
+}
+
 #endif
+
+BOOST_AUTO_TEST_SUITE(chainbase_test)
+BOOST_AUTO_TEST_SUITE_END()

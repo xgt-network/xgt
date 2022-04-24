@@ -39,6 +39,8 @@ BOOST_AUTO_TEST_CASE( sanity_tests )
 {
    try
    {
+      auto lock = db.lock_write();
+
       db.add_index< book_index >();
 
       BOOST_TEST_MESSAGE( "Creating book" );
@@ -546,6 +548,8 @@ BOOST_AUTO_TEST_CASE( single_index_test )
 {
    try
    {
+      auto lock = db.lock_write();
+
       db.add_index< single_index_index >();
 
       db.create< single_index_object >( [&]( single_index_object& ){} );
@@ -561,6 +565,8 @@ BOOST_AUTO_TEST_CASE( variable_length_key_test )
 {
    try
    {
+      auto lock = db.lock_write();
+
       db.add_index< wallet_index >();
 
       const auto& acc_by_name_idx = db.get_index< wallet_index, by_name >();
@@ -610,6 +616,8 @@ BOOST_AUTO_TEST_CASE( sanity_modify_test )
 {
    try
    {
+      auto lock = db.lock_write();
+
       db.add_index< book_index >();
 
       const auto& b1 = db.create<book>( []( book& b )
@@ -678,6 +686,8 @@ BOOST_AUTO_TEST_CASE( range_test )
 {
    try
    {
+      auto lock = db.lock_write();
+
       db.add_index< test_object3_index >();
 
       for ( uint32_t i = 0; i < 10; i++ )
@@ -717,6 +727,8 @@ BOOST_AUTO_TEST_CASE( bounds_test )
 {
    try
    {
+      auto lock = db.lock_write();
+
       db.add_index< test_object3_index >();
 
       for ( uint32_t i = 0; i < 10; i++ )
@@ -765,6 +777,8 @@ BOOST_AUTO_TEST_CASE( bounds_test )
 
 BOOST_AUTO_TEST_CASE( basic_tests )
 {
+   auto lock = db.lock_write();
+
    db.add_index< test_object_index >();
    db.add_index< test_object2_index >();
    db.add_index< test_object3_index >();
@@ -780,6 +794,8 @@ BOOST_AUTO_TEST_CASE( basic_tests )
 
 BOOST_AUTO_TEST_CASE( insert_remove_tests )
 {
+   auto lock = db.lock_write();
+
    db.add_index< test_object_index >();
    db.add_index< test_object2_index >();
    db.add_index< test_object3_index >();
@@ -795,6 +811,8 @@ BOOST_AUTO_TEST_CASE( insert_remove_tests )
 
 BOOST_AUTO_TEST_CASE( insert_remove_collision_tests )
 {
+   auto lock = db.lock_write();
+
    db.add_index< test_object_index >();
    db.add_index< test_object2_index >();
    db.add_index< test_object3_index >();
@@ -821,6 +839,8 @@ BOOST_AUTO_TEST_CASE( insert_remove_collision_tests )
 
 BOOST_AUTO_TEST_CASE( modify_tests )
 {
+   auto lock = db.lock_write();
+
    db.add_index< test_object_index >();
    db.add_index< test_object2_index >();
    db.add_index< test_object3_index >();
@@ -843,6 +863,8 @@ BOOST_AUTO_TEST_CASE( modify_tests )
 
 BOOST_AUTO_TEST_CASE( misc_tests )
 {
+   auto lock = db.lock_write();
+
    db.add_index< test_object_index >();
 
    misc_test< test_object_index, test_object, ordered_idx, composited_ordered_idx >( { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, db );
@@ -850,6 +872,8 @@ BOOST_AUTO_TEST_CASE( misc_tests )
 
 BOOST_AUTO_TEST_CASE( misc_tests3 )
 {
+   auto lock = db.lock_write();
+
    db.add_index< test_object3_index >();
 
    misc_test3< test_object3_index, test_object3, ordered_idx3, composite_ordered_idx3a, composite_ordered_idx3b >( { 0, 1, 2 }, db );

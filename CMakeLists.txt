@@ -1,6 +1,6 @@
 cmake_minimum_required( VERSION 3.12 )
-
 project( Xgt )
+enable_testing()
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -27,7 +27,7 @@ get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
 
 OPTION( BUILD_XGT_TESTNET "Build source for test network (ON OR OFF)" OFF )
 MESSAGE( STATUS "BUILD_XGT_TESTNET: ${BUILD_XGT_TESTNET}" )
-if( BUILD_XGT_TESTNET  )
+if( BUILD_XGT_TESTNET )
   add_compile_definitions("IS_TEST_NET")
 endif()
 

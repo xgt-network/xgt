@@ -244,9 +244,9 @@ uint32_t database::reindex( const open_args& args )
    try
    {
       ilog( "Reindexing Blockchain" );
-// #ifdef ENABLE_MIRA
-//       with_write_lock([&]() { initialize_indexes(); });
-// #endif
+#ifdef ENABLE_MIRA
+      with_write_lock([&]() { initialize_indexes(); });
+#endif
 
       wipe( args.data_dir, args.shared_mem_dir, false );
 
