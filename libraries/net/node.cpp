@@ -807,7 +807,7 @@ namespace graphene { namespace net {
       _items_to_fetch_sequence_counter(0),
       _recent_block_interval_in_seconds(XGT_BLOCK_INTERVAL),
       _user_agent_string(user_agent),
-      _most_recent_blocks_accepted(GRAPHENE_NET_DEFAULT_MAX_CONNECTIONS),
+      _most_recent_blocks_accepted(GRAPHENE_NET_DEFAULT_MAX_CONNECTIONS * GRAPHENE_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING),
       _total_number_of_unfetched_items(0),
       _rate_limiter(0, 0),
       _last_reported_number_of_connections(0),

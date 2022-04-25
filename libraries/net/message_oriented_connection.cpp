@@ -192,12 +192,12 @@ namespace graphene { namespace net {
       }
       catch ( const fc::canceled_exception& e )
       {
-        wlog( "caught a canceled_exception in read_loop.  this should mean we're in the process of deleting this object already, so there's no need to notify the delegate: ${e}", ("e", e.to_detail_string() ) );
+        dlog( "caught a canceled_exception in read_loop.  this should mean we're in the process of deleting this object already, so there's no need to notify the delegate: ${e}", ("e", e.to_detail_string() ) );
         throw;
       }
       catch ( const fc::eof_exception& e )
       {
-        wlog( "disconnected ${e}", ("e", e.to_detail_string() ) );
+        dlog( "disconnected ${e}", ("e", e.to_detail_string() ) );
         call_on_connection_closed = true;
       }
       catch ( const fc::exception& e )
