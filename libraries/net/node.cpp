@@ -807,7 +807,7 @@ namespace graphene { namespace net {
       _items_to_fetch_sequence_counter(0),
       _recent_block_interval_in_seconds(XGT_BLOCK_INTERVAL),
       _user_agent_string(user_agent),
-      _most_recent_blocks_accepted(GRAPHENE_NET_DEFAULT_MAX_CONNECTIONS * GRAPHENE_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING),
+      _most_recent_blocks_accepted(GRAPHENE_NET_MIN_BLOCK_IDS_TO_PREFETCH),
       _total_number_of_unfetched_items(0),
       _rate_limiter(0, 0),
       _last_reported_number_of_connections(0),
@@ -1058,9 +1058,10 @@ namespace graphene { namespace net {
                   {
                     item_hash_t item_to_potentially_request = peer->ids_of_items_to_get[i];
                     // if we don't already have this item in our temporary storage and we haven't requested from another syncing peer
-                    if( !have_already_received_sync_item(item_to_potentially_request) && // already got it, but for some reson it's still in our list of items to fetch
-                        sync_items_to_request.find(item_to_potentially_request) == sync_items_to_request.end() &&  // we have already decided to request it from another peer during this iteration
-                        _active_sync_requests.find(item_to_potentially_request) == _active_sync_requests.end() ) // we've requested it in a previous iteration and we're still waiting for it to arrive
+                    if( sync_items_to_request.find(item_to_potentially_request) == sync_items_to_request.end() &&  // we have already decided to request it from another peer during this iteration
+                        _active_sync_requests.find(item_to_potentially_request) == _active_sync_requests.end() &&  // we've requested it in a previous iteration and we're still waiting for it to arrive
+                        !have_already_received_sync_item(item_to_potentially_request) // already got it, but for some reson it's still in our list of items to fetch
+                      )
                     {
                       // then schedule a request from this peer
                       sync_item_requests_to_send[peer].push_back(item_to_potentially_request);
@@ -3202,16 +3203,14 @@ namespace graphene { namespace net {
               dlog("Removed item from ${endpoint}'s list of items being processed, still processing ${len} blocks",
                    ("endpoint", peer->get_remote_endpoint())("len", peer->ids_of_items_being_processed.size()));
 
-              // if we just received the last item in our list from this peer, we will want to
-              // send another request to find out if we are in sync, but we can't do this yet
-              // (we don't want to allow a fiber swap in the middle of popping items off the list)
-              if (peer->ids_of_items_to_get.empty() &&
-                  peer->number_of_unfetched_item_ids == 0 &&
-                  peer->ids_of_items_being_processed.empty())
-                peers_with_newly_empty_item_lists.insert(peer);
-
-              // in this case, we know the peer was offering us this exact item, no need to
-              // try to inform them of its existence
+              if (peer->idle()) {
+                  // if we know the peer has more block ids and we haven't filled our id buffer, get more ids
+                  if (peer->number_of_unfetched_item_ids != 0 && peer->ids_of_items_to_get.size() < GRAPHENE_NET_MIN_BLOCK_IDS_TO_PREFETCH)
+                    peers_with_newly_empty_item_lists.insert(peer);
+                  // if we've processed all blocks from peer that we know about, ask again to find out if more and to tell them we may be in sync now
+                  else if (peer->ids_of_items_to_get.empty() && peer->ids_of_items_being_processed.empty() && peer->number_of_unfetched_item_ids == 0)
+                    peers_with_newly_empty_item_lists.insert(peer);
+              }
             }
           }
         }
