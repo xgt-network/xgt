@@ -204,7 +204,7 @@ bool p2p_plugin_impl::handle_block( const graphene::net::block_message& blk_msg,
          // leave that peer connected so that they can get sync blocks from us
          bool result = chain.accept_block( blk_msg.block, sync_mode, ( block_producer | force_validate ) ? chain::database::skip_nothing : chain::database::skip_transaction_signatures );
 
-         if( !sync_mode )
+         if( !sync_mode && result)
          {
             fc::microseconds offset = fc::time_point::now() - blk_msg.block.timestamp;
             ilog( "Got ${t} transactions on block ${b} by ${w} -- Block Time Offset: ${l} ms",

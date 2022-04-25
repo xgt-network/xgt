@@ -406,7 +406,6 @@ namespace graphene { namespace net {
       /// used by the task that fetches sync items during synchronization
       // @{
       fc::promise<void>::ptr    _retrigger_fetch_sync_items_loop_promise;
-      bool                      _sync_items_to_fetch_updated;
       fc::future<void>          _fetch_sync_items_loop_done;
 
       typedef std::unordered_map<graphene::net::block_id_type, fc::time_point> active_sync_requests_map;
@@ -417,7 +416,6 @@ namespace graphene { namespace net {
       // @}
 
       fc::future<void> _process_backlog_of_sync_blocks_done;
-      bool _suspend_fetching_sync_blocks;
 
       /// used by the task that fetches items during normal operation
       // @{
@@ -801,9 +799,6 @@ namespace graphene { namespace net {
       _delegate(nullptr),
       _is_firewalled(firewalled_state::unknown),
       _potential_peer_database_updated(false),
-      _sync_items_to_fetch_updated(false),
-      _suspend_fetching_sync_blocks(false),
-      _items_to_fetch_updated(false),
       _items_to_fetch_sequence_counter(0),
       _recent_block_interval_in_seconds(XGT_BLOCK_INTERVAL),
       _user_agent_string(user_agent),
@@ -825,6 +820,7 @@ namespace graphene { namespace net {
       _rate_limiter.set_actual_rate_time_constant(fc::seconds(2));
       fc::rand_bytes(&_node_id.data[0], (int)_node_id.size());
 
+      _retrigger_fetch_sync_items_loop_promise.reset(new fc::promise<void>("graphene::net::retrigger_fetch_sync_items_loop"));
       _shutdownNotifier.reset(new fc::promise<void>("Node shutdown notifier"));
     }
 
@@ -1033,63 +1029,59 @@ namespace graphene { namespace net {
     {
       while( !_fetch_sync_items_loop_done.canceled() )
       {
-        _sync_items_to_fetch_updated = false;
         dlog( "beginning another iteration of the sync items loop" );
 
-        if (!_suspend_fetching_sync_blocks)
+        std::map<peer_connection_ptr, std::vector<item_hash_t> > sync_item_requests_to_send;
+        std::set<item_hash_t> sync_items_to_request;
+
         {
-          std::map<peer_connection_ptr, std::vector<item_hash_t> > sync_item_requests_to_send;
+          ASSERT_TASK_NOT_PREEMPTED();
 
+          for( const peer_connection_ptr& peer : _active_connections )
           {
-            ASSERT_TASK_NOT_PREEMPTED();
-            std::set<item_hash_t> sync_items_to_request;
+            if (peer->inhibit_fetching_sync_blocks || !peer->we_need_sync_items_from_peer)
+              continue;
+            if (peer->sync_items_requested_from_peer.size() >= _node_configuration.maximum_blocks_per_peer_during_syncing)
+              continue;
 
-            // for each idle peer that we're syncing with
-            for( const peer_connection_ptr& peer : _active_connections )
+            // loop through the items it has that we don't yet have on our blockchain
+            for( unsigned i = 0; i < peer->ids_of_items_to_get.size(); ++i )
             {
-              if( peer->we_need_sync_items_from_peer &&
-                  sync_item_requests_to_send.find(peer) == sync_item_requests_to_send.end() && // if we've already scheduled a request for this peer, don't consider scheduling another
-                  peer->idle() )
+              if (sync_item_requests_to_send[peer].size() >= _node_configuration.maximum_blocks_per_peer_during_syncing)
+                break;
+
+              item_hash_t item_to_potentially_request = peer->ids_of_items_to_get[i];
+              // if we don't already have this item in our temporary storage and we haven't requested from another syncing peer
+              if( sync_items_to_request.find(item_to_potentially_request) == sync_items_to_request.end() &&  // we have already decided to request it from another peer during this iteration
+                  _active_sync_requests.find(item_to_potentially_request) == _active_sync_requests.end() &&  // we've requested it in a previous iteration and we're still waiting for it to arrive
+                  !have_already_received_sync_item(item_to_potentially_request) // already got it, but for some reson it's still in our list of items to fetch
+                )
               {
-                if (!peer->inhibit_fetching_sync_blocks)
-                {
-                  // loop through the items it has that we don't yet have on our blockchain
-                  for( unsigned i = 0; i < peer->ids_of_items_to_get.size(); ++i )
-                  {
-                    item_hash_t item_to_potentially_request = peer->ids_of_items_to_get[i];
-                    // if we don't already have this item in our temporary storage and we haven't requested from another syncing peer
-                    if( sync_items_to_request.find(item_to_potentially_request) == sync_items_to_request.end() &&  // we have already decided to request it from another peer during this iteration
-                        _active_sync_requests.find(item_to_potentially_request) == _active_sync_requests.end() &&  // we've requested it in a previous iteration and we're still waiting for it to arrive
-                        !have_already_received_sync_item(item_to_potentially_request) // already got it, but for some reson it's still in our list of items to fetch
-                      )
-                    {
-                      // then schedule a request from this peer
-                      sync_item_requests_to_send[peer].push_back(item_to_potentially_request);
-                      sync_items_to_request.insert( item_to_potentially_request );
-                      if (sync_item_requests_to_send[peer].size() >= _node_configuration.maximum_blocks_per_peer_during_syncing)
-                        break;
-                    }
-                  }
-                }
+                // then schedule a request from this peer
+                sync_item_requests_to_send[peer].push_back(item_to_potentially_request);
+                sync_items_to_request.insert( item_to_potentially_request );
               }
             }
-          } // end non-preemptable section
+          }
+        } // end non-preemptable section
 
-          // make all the requests we scheduled in the loop above
-          for( const auto& sync_item_request : sync_item_requests_to_send )
+        // make all the requests we scheduled in the loop above
+        for( const auto& sync_item_request : sync_item_requests_to_send )
+          if (!sync_item_request.second.empty())
             request_sync_items_from_peer( sync_item_request.first, sync_item_request.second );
-          sync_item_requests_to_send.clear();
-        }
-        else
-          dlog("fetch_sync_items_loop is suspended pending backlog processing");
 
-        if( !_sync_items_to_fetch_updated )
-        {
+        bool was_empty = sync_items_to_request.empty();
+
+        sync_item_requests_to_send.clear();
+        sync_items_to_request.clear();
+
+        if (was_empty) {
           dlog( "no sync items to fetch right now, going to sleep" );
-          _retrigger_fetch_sync_items_loop_promise = fc::promise<void>::ptr( new fc::promise<void>("graphene::net::retrigger_fetch_sync_items_loop") );
+          
           _retrigger_fetch_sync_items_loop_promise->wait();
-          _retrigger_fetch_sync_items_loop_promise.reset();
+          _retrigger_fetch_sync_items_loop_promise.reset(new fc::promise<void>("graphene::net::retrigger_fetch_sync_items_loop"));
         }
+
       } // while( !canceled )
     }
 
@@ -1097,9 +1089,7 @@ namespace graphene { namespace net {
     {
       VERIFY_CORRECT_THREAD();
       dlog( "Triggering fetch sync items loop now" );
-      _sync_items_to_fetch_updated = true;
-      if( _retrigger_fetch_sync_items_loop_promise )
-        _retrigger_fetch_sync_items_loop_promise->set_value();
+      _retrigger_fetch_sync_items_loop_promise->set_value();
     }
 
     bool node_impl::is_item_in_any_peers_inventory(const item_id& item) const
@@ -3224,8 +3214,7 @@ namespace graphene { namespace net {
 
       dlog("Leaving send_sync_block_to_node_delegate");
 
-      if (// _suspend_fetching_sync_blocks && <-- you can use this if "maximum_number_of_blocks_to_handle_at_one_time" == "maximum_number_of_sync_blocks_to_prefetch"
-          !_node_is_shutting_down &&
+      if ( !_node_is_shutting_down &&
           (!_process_backlog_of_sync_blocks_done.valid() || _process_backlog_of_sync_blocks_done.ready()))
         _process_backlog_of_sync_blocks_done = async_task([=](){ process_backlog_of_sync_blocks(); },
                                                           "process_backlog_of_sync_blocks");
@@ -3251,14 +3240,7 @@ namespace graphene { namespace net {
       }
       dlog("currently ${count} blocks in the process of being handled", ("count", _handle_message_calls_in_progress.size()));
 
-
-      if (_suspend_fetching_sync_blocks)
-      {
-        dlog("resuming processing sync block backlog because we only ${count} blocks in progress",
-             ("count", _handle_message_calls_in_progress.size()));
-        _suspend_fetching_sync_blocks = false;
-      }
-
+      trigger_fetch_items_loop();
 
       // when syncing with multiple peers, it's possible that we'll have hundreds of blocks ready to push
       // to the client at once.  This can be slow, and we need to limit the number we push at any given
@@ -3360,16 +3342,15 @@ namespace graphene { namespace net {
                ("count", _handle_message_calls_in_progress.size()));
           //ulog("stopping processing sync block backlog because we have ${count} blocks in progress, total on hand: ${received}",
           //     ("count", _handle_message_calls_in_progress.size())("received", _received_sync_items.size()));
-          if (_received_sync_items.size() >= _node_configuration.maximum_number_of_sync_blocks_to_prefetch)
-            _suspend_fetching_sync_blocks = true;
+          // if (_received_sync_items.size() >= _node_configuration.maximum_number_of_sync_blocks_to_prefetch)
+          //   _suspend_fetching_sync_blocks = true;
           break;
         }
       } while (block_processed_this_iteration);
 
       dlog("leaving process_backlog_of_sync_blocks, ${count} processed", ("count", blocks_processed));
 
-      if (!_suspend_fetching_sync_blocks)
-        trigger_fetch_sync_items_loop();
+      trigger_fetch_sync_items_loop();
     }
 
     void node_impl::trigger_process_backlog_of_sync_blocks()
