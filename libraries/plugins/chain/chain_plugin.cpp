@@ -92,7 +92,6 @@ class chain_plugin_impl
       bool                             replay = false;
       bool                             resync   = false;
       bool                             readonly = false;
-      bool                             check_locks = false;
       bool                             validate_invariants = false;
       bool                             dump_memory_details = false;
       bool                             benchmark_is_enabled = false;
@@ -111,7 +110,6 @@ class chain_plugin_impl
       bool                             running = true;
       std::shared_ptr< std::thread >   write_processor_thread;
       boost::lockfree::queue< write_context* > write_queue;
-      int16_t                          write_lock_hold_time = 500;
 
       flat_map< string, fc::variant_object > plugin_state_opts;
       bfs::path                        database_cfg;
@@ -142,7 +140,7 @@ struct write_request_visitor
       {
          result = db->push_block( *block, skip );
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          *except = e;
       }
@@ -165,7 +163,7 @@ struct write_request_visitor
 
          result = true;
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          *except = e;
       }
@@ -197,7 +195,7 @@ struct write_request_visitor
 
          result = true;
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          *except = e;
       }
@@ -228,71 +226,28 @@ void chain_plugin_impl::start_write_processing()
 {
    write_processor_thread = std::make_shared< std::thread >( [&]()
    {
-      bool is_syncing = true;
       write_context* cxt;
-      fc::time_point_sec start = fc::time_point::now();
       write_request_visitor req_visitor;
       req_visitor.db = &db;
       req_visitor.block_generator = block_generator;
 
       request_promise_visitor prom_visitor;
 
-      /* This loop monitors the write request queue and performs writes to the database. These
-       * can be blocks or pending transactions. Because the caller needs to know the success of
-       * the write and any exceptions that are thrown, a write context is passed in the queue
-       * to the processing thread which it will use to store the results of the write. It is the
-       * caller's responsibility to ensure the pointer to the write context remains valid until
-       * the contained promise is complete.
-       *
-       * The loop has two modes, sync mode and live mode. In sync mode we want to process writes
-       * as quickly as possible with minimal overhead. The outer loop busy waits on the queue
-       * and the inner loop drains the queue as quickly as possible. We exit sync mode when the
-       * head block is within 1 minute of system time.
-       *
-       * Live mode needs to balance between processing pending writes and allowing readers access
-       * to the database. It will batch writes together as much as possible to minimize lock
-       * overhead but will willingly give up the write lock after 500ms. The thread then sleeps for
-       * 10ms. This allows time for readers to access the database as well as more writes to come
-       * in. When the node is live the rate at which writes come in is slower and busy waiting is
-       * not an optimal use of system resources when we could give CPU time to read threads.
-       */
       while( running )
       {
-         if( !is_syncing )
-            start = fc::time_point::now();
-
          if( write_queue.pop( cxt ) )
          {
+            req_visitor.skip = cxt->skip;
+            req_visitor.except = &(cxt->except);
+
             db.with_write_lock( [&]()
             {
-               while( running )
-               {
-                  req_visitor.skip = cxt->skip;
-                  req_visitor.except = &(cxt->except);
-                  cxt->success = cxt->req_ptr.visit( req_visitor );
-                  cxt->prom_ptr.visit( prom_visitor );
-
-                  if( is_syncing && start - db.head_block_time() < fc::minutes(1) )
-                  {
-                     start = fc::time_point::now();
-                     is_syncing = false;
-                  }
-
-                  if( !is_syncing && write_lock_hold_time >= 0 && fc::time_point::now() - start > fc::milliseconds( write_lock_hold_time ) )
-                  {
-                     break;
-                  }
-
-                  if( !write_queue.pop( cxt ) )
-                  {
-                     break;
-                  }
-               }
+               cxt->success = cxt->req_ptr.visit( req_visitor );
+               cxt->prom_ptr.visit( prom_visitor );
             });
-         }
-
-         if( !is_syncing )
+         } else {
             boost::this_thread::sleep_for( boost::chrono::milliseconds( 10 ) );
+         }
       }
    });
 }
@@ -364,7 +319,6 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
          ("advanced-benchmark", "Make profiling for every plugin.")
          ("set-benchmark-interval", bpo::value<uint32_t>(), "Print time and memory usage every given number of blocks")
          ("dump-memory-details", bpo::bool_switch()->default_value(false), "Dump database objects memory usage info. Use set-benchmark-interval to set dump interval.")
-         ("check-locks", bpo::bool_switch()->default_value(false), "Check correctness of chainbase locking")
          ("validate-database-invariants", bpo::bool_switch()->default_value(false), "Validate all supply invariants check out")
 #ifdef ENABLE_MIRA
          ("database-cfg", bpo::value<bfs::path>()->default_value("database.cfg"), "The database configuration file location")
@@ -405,7 +359,6 @@ void chain_plugin::plugin_initialize(const variables_map& options)
       options.count( "stop-at-block" ) ? options.at( "stop-at-block" ).as<uint32_t>() : 0;
    my->benchmark_interval  =
       options.count( "set-benchmark-interval" ) ? options.at( "set-benchmark-interval" ).as<uint32_t>() : 0;
-   my->check_locks         = options.at( "check-locks" ).as< bool >();
    my->validate_invariants = options.at( "validate-database-invariants" ).as<bool>();
    my->dump_memory_details = options.at( "dump-memory-details" ).as<bool>();
    if( options.count( "flush-state-interval" ) )
@@ -471,7 +424,7 @@ void chain_plugin::plugin_initialize(const variables_map& options)
       {
          my->db.set_chain_id( chain_id_type( chain_id_str) );
       }
-      catch( fc::exception& )
+      catch( const fc::exception& )
       {
          FC_ASSERT( false, "Could not parse chain_id as hex string. Chain ID String: ${s}", ("s", chain_id_str) );
       }
@@ -492,7 +445,6 @@ void chain_plugin::plugin_startup()
 
    my->db.set_flush_interval( my->flush_interval );
    my->db.add_checkpoints( my->loaded_checkpoints );
-   my->db.set_require_locking( my->check_locks );
 
    bool dump_memory_details = my->dump_memory_details;
    xgt::utilities::benchmark_dumper dumper;
@@ -640,7 +592,9 @@ void chain_plugin::plugin_startup()
       }
    }
 
-   ilog( "Started on blockchain with ${n} blocks", ("n", my->db.head_block_num()) );
+   my->db.with_read_lock([&]() {
+      ilog( "Started on blockchain with ${n} blocks", ("n", my->db.head_block_num()) );
+   });
    on_sync();
 
    if( my->stop_at_block )
@@ -663,7 +617,7 @@ void chain_plugin::plugin_shutdown()
       {
          db().undo_all();
 
-         FC_TODO( "Serializing and deserializing transaction objects does not seem to be working... :/" );
+         //FC_TODO( "Serializing and deserializing transaction objects does not seem to be working... :/" );
          //const auto& trx_idx = db().get_index< xgt::chain::transaction_index, by_id >();
          //while( trx_idx.begin() != trx_idx.end() )
          //{
@@ -760,16 +714,6 @@ xgt::chain::signed_block chain_plugin::generate_block(
    FC_ASSERT( cxt.success, "Block could not be generated" );
 
    return req.block;
-}
-
-int16_t chain_plugin::set_write_lock_hold_time( int16_t new_time )
-{
-   FC_ASSERT( get_state() == appbase::abstract_plugin::state::initialized,
-      "Can only change write_lock_hold_time while chain_plugin is initialized." );
-
-   int16_t old_time = my->write_lock_hold_time;
-   my->write_lock_hold_time = new_time;
-   return old_time;
 }
 
 bool chain_plugin::block_is_on_preferred_chain(const xgt::chain::block_id_type& block_id )

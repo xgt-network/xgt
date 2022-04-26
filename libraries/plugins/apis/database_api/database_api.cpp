@@ -839,7 +839,7 @@ DEFINE_API_IMPL( database_api_impl, verify_signatures )
          [this]( const string& name ) { return authority( _db.get< chain::account_authority_object, chain::by_account >( name ).social ); },
          XGT_MAX_SIG_CHECK_DEPTH );
    }
-   catch( fc::exception& ) { result.valid = false; }
+   catch( const fc::exception& ) { result.valid = false; }
 
    return result;
 }

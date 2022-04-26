@@ -8,7 +8,6 @@
 
 #include <fc/optional.hpp>
 #include <fc/variant.hpp>
-#include <fc/vector.hpp>
 
 namespace xgt { namespace plugins { namespace wallet_history {
 

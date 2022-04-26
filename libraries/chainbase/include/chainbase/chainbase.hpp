@@ -8,7 +8,6 @@
 #include <boost/interprocess/containers/string.hpp>
 #include <boost/interprocess/allocators/allocator.hpp>
 #include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
-#include <boost/interprocess/sync/sharable_lock.hpp>
 #include <boost/interprocess/sync/file_lock.hpp>
 
 #include <boost/any.hpp>
@@ -17,6 +16,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
+#include <boost/thread/shared_mutex.hpp>
 #include <boost/throw_exception.hpp>
 
 #include <chainbase/allocators.hpp>
@@ -34,13 +34,9 @@
    #define CHAINBASE_NUM_RW_LOCKS 10
 #endif
 
-#ifdef CHAINBASE_CHECK_LOCKING
-   #define CHAINBASE_REQUIRE_READ_LOCK(m, t) require_read_lock(m, typeid(t).name())
-   #define CHAINBASE_REQUIRE_WRITE_LOCK(m, t) require_write_lock(m, typeid(t).name())
-#else
-   #define CHAINBASE_REQUIRE_READ_LOCK(m, t)
-   #define CHAINBASE_REQUIRE_WRITE_LOCK(m, t)
-#endif
+#define CHAINBASE_REQUIRE_READ_LOCK(m, t) require_read_lock(m, typeid(t).name())
+#define CHAINBASE_REQUIRE_WRITE_LOCK(m, t) require_write_lock(m, typeid(t).name())
+
 
 namespace helpers
 {
@@ -179,7 +175,7 @@ namespace chainbase {
    class int_incrementer
    {
       public:
-         int_incrementer( int32_t& target ) : _target(target)
+         int_incrementer( std::atomic<int32_t>& target ) : _target(target)
          { ++_target; }
 
          int_incrementer( int_incrementer& ii ) : _target( ii._target )
@@ -192,8 +188,43 @@ namespace chainbase {
          { return _target; }
 
       private:
-         int32_t& _target;
+         std::atomic<int32_t>& _target;
    };
+
+   class counted_shared_lock {
+      public:
+      counted_shared_lock ( std::atomic<int32_t>& counter, boost::shared_mutex& mutex) : count(counter), mutex(mutex) {
+         if (!mutex.try_lock_shared_for(boost::chrono::seconds(60))) {
+            throw std::runtime_error("failed to acquire lock for 60s");
+         }
+         ++count;
+      }
+      ~counted_shared_lock() {
+         --count;
+         mutex.unlock_shared();
+      }
+
+      std::atomic<int32_t>& count;
+      boost::shared_mutex& mutex;
+   };
+
+   class counted_lock {
+      public:
+      counted_lock ( std::atomic<int32_t>& counter, boost::shared_mutex& mutex) : count(counter), mutex(mutex) {
+         if (!mutex.try_lock_for(boost::chrono::seconds(60))) {
+            throw std::runtime_error("failed to acquire write lock for 60s");
+         }
+         ++count;
+      }
+      ~counted_lock() {
+         --count;
+         mutex.unlock();
+      }
+
+      std::atomic<int32_t>& count;
+      boost::shared_mutex& mutex;
+   };
+
 
    /**
     *  The value_type stored in the multiindex container must have a integer field with the name 'id'.  This will
@@ -856,46 +887,6 @@ namespace chainbase {
          index( IndexType& i ):index_impl<IndexType>( i ){}
    };
 
-
-   class read_write_mutex_manager
-   {
-      public:
-         read_write_mutex_manager()
-         {
-            _current_lock = 0;
-         }
-
-         ~read_write_mutex_manager(){}
-
-         void next_lock()
-         {
-            _current_lock++;
-            new( &_locks[ _current_lock % CHAINBASE_NUM_RW_LOCKS ] ) read_write_mutex();
-         }
-
-         read_write_mutex& current_lock()
-         {
-            return _locks[ _current_lock % CHAINBASE_NUM_RW_LOCKS ];
-         }
-
-         uint32_t current_lock_num()
-         {
-            return _current_lock;
-         }
-
-      private:
-         std::array< read_write_mutex, CHAINBASE_NUM_RW_LOCKS >     _locks;
-         std::atomic< uint32_t >                                    _current_lock;
-   };
-
-   struct lock_exception : public std::exception
-   {
-      explicit lock_exception() {}
-      virtual ~lock_exception() {}
-
-      virtual const char* what() const noexcept { return "Unable to acquire database lock"; }
-   };
-
    /**
     *  This class
     */
@@ -930,23 +921,20 @@ namespace chainbase {
          void trim_cache();
          void wipe( const bfs::path& dir );
          void resize( size_t new_shared_file_size );
-         void set_require_locking( bool enable_require_locking );
 
-#ifdef CHAINBASE_CHECK_LOCKING
          void require_lock_fail( const char* method, const char* lock_type, const char* tname )const;
 
          void require_read_lock( const char* method, const char* tname )const
          {
-            if( BOOST_UNLIKELY( _enable_require_locking & (_read_lock_count <= 0) ) )
+            if( _read_lock_count <= 0 && _write_lock_count <= 0)
                require_lock_fail(method, "read", tname);
          }
 
          void require_write_lock( const char* method, const char* tname )
          {
-            if( BOOST_UNLIKELY( _enable_require_locking & (_write_lock_count <= 0) ) )
+            if( _write_lock_count <= 0 )
                require_lock_fail(method, "write", tname);
          }
-#endif
 
          struct session {
             public:
@@ -956,7 +944,7 @@ namespace chainbase {
                     _session_incrementer( s._session_incrementer )
                {}
 
-               session( vector<std::unique_ptr<abstract_session>>&& s, int32_t& session_count )
+               session( vector<std::unique_ptr<abstract_session>>&& s, std::atomic<int32_t>& session_count )
                   : _index_sessions( std::move(s) ), _session_incrementer( session_count )
                {
                   if( _index_sessions.size() )
@@ -1036,7 +1024,7 @@ namespace chainbase {
 #endif
          unsigned long long get_total_system_memory() const
          {
-#if !defined( __APPLE__ ) // OS X does not support _SC_AVPHYS_PAGES
+#if !defined( __APPLE__ ) && !defined(_WIN32) // OS X does not support _SC_AVPHYS_PAGES
             long pages = sysconf(_SC_AVPHYS_PAGES);
             long page_size = sysconf(_SC_PAGE_SIZE);
             return pages * page_size;
@@ -1203,59 +1191,26 @@ namespace chainbase {
             return get_index< index_type >().indices().size();
          }
 
-         template< typename Lambda >
-         auto with_read_lock( Lambda&& callback, uint64_t wait_micro = 1000000 ) -> decltype( (*(Lambda*)nullptr)() )
-         {
-#ifndef ENABLE_MIRA
-            read_lock lock( _rw_manager.current_lock(), bip::defer_lock_type() );
-#else
-            read_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
-#endif
-
-#ifdef CHAINBASE_CHECK_LOCKING
-            BOOST_ATTRIBUTE_UNUSED
-            int_incrementer ii( _read_lock_count );
-#endif
-
-            if( !wait_micro )
-            {
-               lock.lock();
-            }
-            else
-            {
-               if( !lock.timed_lock( boost::posix_time::microsec_clock::universal_time() + boost::posix_time::microseconds( wait_micro ) ) )
-                  BOOST_THROW_EXCEPTION( lock_exception() );
-            }
-
-            return callback();
+         auto lock_read() {
+            return counted_shared_lock(_write_lock_count, _mutex);
          }
 
-         template< typename Lambda >
-         auto with_write_lock( Lambda&& callback, uint64_t wait_micro = 1000000 ) -> decltype( (*(Lambda*)nullptr)() )
-         {
-            write_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
-#ifdef CHAINBASE_CHECK_LOCKING
-            BOOST_ATTRIBUTE_UNUSED
-            int_incrementer ii( _write_lock_count );
-#endif
+         auto lock_write() {
+            return counted_lock(_write_lock_count, _mutex);
+         }
 
-#if !defined ENABLE_MIRA || defined IS_TEST_NET
-            if( wait_micro )
-            {
-               while( !lock.timed_lock( boost::posix_time::microsec_clock::universal_time() + boost::posix_time::microseconds( wait_micro ) ) )
-               {
-                  _rw_manager.next_lock();
-                  std::cerr << "Lock timeout, moving to lock " << _rw_manager.current_lock_num() << std::endl;
-                  lock = write_lock( _rw_manager.current_lock(), boost::defer_lock_t() );
-               }
-            }
-            else
-#endif
-            {
-               lock.lock();
-            }
+         template <class Function, class... Args>
+         auto with_read_lock(Function&& func, Args&&... args) -> decltype(func(args...)) {
+            auto _lock = lock_read();
 
-            return callback();
+            return func(args...);
+         };
+
+         template <class Function, class... Args>
+         auto with_write_lock(Function&& func, Args&&... args) -> decltype(func(args...)) {
+            auto _lock = lock_write();
+
+            return func(args...);
          }
 
 #ifdef ENABLE_MIRA
@@ -1338,7 +1293,6 @@ namespace chainbase {
 #endif
          }
 
-         read_write_mutex_manager                                    _rw_manager;
 #ifndef ENABLE_MIRA
          unique_ptr<bip::managed_mapped_file>                        _segment;
          unique_ptr<bip::managed_mapped_file>                        _meta;
@@ -1359,13 +1313,13 @@ namespace chainbase {
 
          bfs::path                                                   _data_dir;
 
-         int32_t                                                     _read_lock_count = 0;
-         int32_t                                                     _write_lock_count = 0;
-         bool                                                        _enable_require_locking = false;
+         boost::shared_mutex                                         _mutex;
+         std::atomic<int32_t>                                        _read_lock_count = {0};
+         std::atomic<int32_t>                                        _write_lock_count = {0};
 
          bool                                                        _is_open = false;
 
-         int32_t                                                     _undo_session_count = 0;
+         std::atomic<int32_t>                                        _undo_session_count = {0};
          size_t                                                      _file_size = 0;
          boost::any                                                  _database_cfg = nullptr;
    };

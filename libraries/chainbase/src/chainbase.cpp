@@ -1,4 +1,5 @@
 #include <chainbase/chainbase.hpp>
+#include <boost/stacktrace.hpp>
 #include <boost/array.hpp>
 #include <boost/any.hpp>
 #include <iostream>
@@ -232,21 +233,13 @@ namespace chainbase {
 #endif
    }
 
-   void database::set_require_locking( bool enable_require_locking )
-   {
-#ifdef CHAINBASE_CHECK_LOCKING
-      _enable_require_locking = enable_require_locking;
-#endif
-   }
-
-#ifdef CHAINBASE_CHECK_LOCKING
    void database::require_lock_fail( const char* method, const char* lock_type, const char* tname )const
    {
       std::string err_msg = "database::" + std::string( method ) + " require_" + std::string( lock_type ) + "_lock() failed on type " + std::string( tname );
       std::cerr << err_msg << std::endl;
+      std::cerr <<  boost::stacktrace::stacktrace() << std::endl;
       BOOST_THROW_EXCEPTION( std::runtime_error( err_msg ) );
    }
-#endif
 
    void database::undo()
    {

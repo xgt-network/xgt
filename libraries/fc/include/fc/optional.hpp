@@ -238,8 +238,8 @@ namespace fc {
       const T* ptr()const { const void* v = &_value[0]; return static_cast<const T*>(v); }
 
       // force alignment... to 8 byte boundaries 
-      double _value[((sizeof(T)+7)/8)];
-      bool   _valid;
+      double _value[((sizeof(T)+7)/8)] = {0};
+      bool   _valid = false;
   };
 
   template<typename T>

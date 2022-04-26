@@ -1,5 +1,4 @@
 #include <fc/thread/thread.hpp>
-#include <fc/vector.hpp>
 #include <fc/io/sstream.hpp>
 #include <fc/log/logger.hpp>
 #include "thread_d.hpp"
@@ -79,7 +78,7 @@ namespace fc {
             current_thread() = this;
             p->set_value();
             exec();
-          } catch ( fc::exception& e ) {
+          } catch ( const fc::exception& e ) {
             wlog( "unhandled exception" );
             p->set_exception( e.dynamic_copy_exception() );
           } catch ( ... ) {
@@ -283,8 +282,6 @@ namespace fc {
 
    void thread::sleep_until( const time_point& tp )
    {
-     if( tp <= (time_point::now()+fc::microseconds(10000)) )
-       yield(true);
      my->yield_until( tp, false );
    }
 

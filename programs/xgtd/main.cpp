@@ -22,15 +22,14 @@
 #include <xgt/plugins/webserver/webserver_plugin.hpp>
 #include <xgt/plugins/witness/witness_plugin.hpp>
 #include <xgt/plugins/wallet_by_key/wallet_by_key_plugin.hpp>
-#include <xgt/plugins/wallet_history/wallet_history_plugin.hpp>
+#include <xgt/plugins/wallet_history_rocksdb/wallet_history_rocksdb_plugin.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
-#include <fc/interprocess/signals.hpp>
-#include <fc/stacktrace.hpp>
 
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/program_options.hpp>
+#include <boost/stacktrace.hpp>
 
 #include <iostream>
 #include <csignal>
@@ -69,6 +68,12 @@ void info()
    std::cerr << "------------------------------------------------------\n";
 }
 
+void segfault(int sig) {
+   std::cerr << "SEGFAULT" << std::endl;
+   std::cerr << boost::stacktrace::stacktrace() << std::endl;
+   std::abort();
+}
+
 int main( int argc, char** argv )
 {
    try
@@ -91,7 +96,7 @@ int main( int argc, char** argv )
       appbase::app().set_default_plugins<
          xgt::plugins::witness::witness_plugin,
          xgt::plugins::wallet_by_key::wallet_by_key_plugin,
-         xgt::plugins::wallet_history::wallet_history_plugin,
+         xgt::plugins::wallet_history_rocksdb::wallet_history_rocksdb_plugin,
 
          // APIs:
          xgt::plugins::block_api::block_api_plugin,
@@ -129,7 +134,7 @@ int main( int argc, char** argv )
 
       if( args.at( "backtrace" ).as< string >() == "yes" )
       {
-         fc::print_stacktrace_on_segfault();
+         signal(SIGSEGV, segfault);
          ilog( "Backtrace on segfault is enabled." );
       }
 

@@ -48,7 +48,7 @@ void init_genesis_from_state( database& db, const std::string& state_filename, c
          std::string expected_schema;
          idx.second->get_schema()->get_str_schema( expected_schema );
 
-         FC_TODO( "Version object data to allow for upgrading during load" );
+         //FC_TODO( "Version object data to allow for upgrading during load" );
          FC_ASSERT( expected_schema == itr->second.get< object_section >().schema,
             "Unexpected incoming schema for object ${o}.\nExpected: ${e}\nActual: ${a}",
             ("o", idx.first)("e", expected_schema)("a", itr->second.get< object_section >().schema) );
@@ -132,7 +132,7 @@ void init_genesis_from_state( database& db, const std::string& state_filename, c
             }
          }
 
-         FC_TODO( "Put index conversion in parallel thread" )
+         //FC_TODO( "Put index conversion in parallel thread" )
       #ifdef ENABLE_MIRA
          idx->set_index_type( db, mira::index_type::mira, p, cfg );
       #endif

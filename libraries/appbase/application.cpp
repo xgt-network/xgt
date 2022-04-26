@@ -145,16 +145,6 @@ bool application::initialize_impl(int argc, char** argv, vector<abstract_plugin*
          app_dir << '.' << app_name;
 
          data_dir = data_dir / app_dir.str();
-
-         #pragma message( "TODO: Remove this check for Xgt release 0.20.1+" )
-         bfs::path old_dir = bfs::current_path() / "witness_node_data_dir";
-         if( bfs::exists( old_dir ) )
-         {
-            std::cerr << "The default data directory is now '" << data_dir.string() << "' instead of '" << old_dir.string() << "'.\n";
-            std::cerr << "Please move your data directory to '" << data_dir.string() << "' or specify '--data-dir=" << old_dir.string() <<
-               "' to continue using the current data directory.\n";
-            exit(1);
-         }
       }
       my->_data_dir = data_dir;
 
@@ -220,7 +210,9 @@ void application::exec() {
    /** To avoid killing process by broken pipe and continue regular app shutdown.
     *  Useful for usecase: `xgtd | tee xgtd.log` and pressing Ctrl+C
     **/
+   #ifdef SIGPIPE
    signal(SIGPIPE, SIG_IGN);
+   #endif
 
    std::shared_ptr<boost::asio::signal_set> sigint_set(new boost::asio::signal_set(*io_serv, SIGINT));
    sigint_set->async_wait([sigint_set,this](const boost::system::error_code& err, int num) {

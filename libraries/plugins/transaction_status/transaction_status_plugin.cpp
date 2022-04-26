@@ -167,6 +167,8 @@ fc::optional< transaction_id_type > transaction_status_impl::get_latest_transact
  */
 bool transaction_status_impl::state_is_valid()
 {
+   auto lock = _db.lock_read();
+
    const auto head_block_num = _db.head_block_num();
    uint32_t earliest_tracked_block_num = get_earliest_tracked_block_num();
 
@@ -195,7 +197,7 @@ bool transaction_status_impl::state_is_valid()
 void transaction_status_impl::rebuild_state()
 {
    ilog( "Rebuilding transaction status state" );
-
+   auto lock = _db.lock_write();
    // Clear out the transaction status index
    const auto& tx_status_idx = _db.get_index< transaction_status_index >().indices().get< by_trx_id >();
    auto itr = tx_status_idx.begin();
@@ -305,6 +307,15 @@ void transaction_status_plugin::plugin_initialize( const boost::program_options:
       my->post_apply_transaction_connection = my->_db.add_post_apply_transaction_handler( [&]( const transaction_notification& note ) { try { my->on_post_apply_transaction( note ); } FC_LOG_AND_RETHROW() }, *this, 0 );
       my->post_apply_block_connection = my->_db.add_post_apply_block_handler( [&]( const block_notification& note ) { try { my->on_post_apply_block( note ); } FC_LOG_AND_RETHROW() }, *this, 0 );
 
+      my->_db.add_pre_reindex_handler([&](const xgt::chain::reindex_notification& note) -> void {
+         my->tracking = false;
+      }, *this, 0);
+
+      my->_db.add_post_reindex_handler([&](const xgt::chain::reindex_notification& note) -> void {
+         my->tracking = true;
+         my->rebuild_state();
+      }, *this, 0);
+
       ilog( "transaction_status: plugin_initialize() end" );
    } FC_CAPTURE_AND_RETHROW()
 }
@@ -316,10 +327,7 @@ void transaction_status_plugin::plugin_startup()
       ilog( "transaction_status: plugin_startup() begin" );
       if ( my->rebuild_state_flag )
       {
-         my->_db.with_write_lock( [&]()
-         {
             my->rebuild_state();
-         });
       }
       else if ( !my->state_is_valid() )
       {

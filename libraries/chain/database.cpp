@@ -135,7 +135,7 @@ void set_index_helper( database& db, mira::index_type type, const boost::filesys
    for ( auto const& delegate : delegates )
    {
       ilog( "Converting index '${name}' to ${type} type.", ("name", delegate.first)("type", type_str) );
-      delegate.second.set_index_type( db, type, p, cfg );
+      db.with_write_lock([&]() { delegate.second.set_index_type( db, type, p, cfg );});
    }
 }
 #endif
@@ -149,25 +149,25 @@ void database::open( const open_args& args )
    {
       chainbase::database::open( args.shared_mem_dir, args.chainbase_flags, args.shared_file_size, args.database_cfg );
 
-      initialize_indexes();
-      initialize_evaluators();
-
-      ilog("database::open setting up global property object...");
-
-      if( !find< dynamic_global_property_object >() )
+      with_write_lock( [&]()
       {
-         with_write_lock( [&]()
-         {
-            if( args.genesis_func )
-            {
-               FC_TODO( "Load directly in to mira instead of bmic first" );
-               (*args.genesis_func)( *this, args );
-            }
-            else
-               init_genesis( args.initial_supply );
-         });
-      }
+         initialize_indexes();
+         initialize_evaluators();
 
+         ilog("database::open setting up global property object...");
+
+         if( !find< dynamic_global_property_object >() )
+         {
+               if( args.genesis_func )
+               {
+                  ////FC_TODO( "Load directly in to mira instead of bmic first" );
+                  (*args.genesis_func)( *this, args );
+               }
+               else
+                  init_genesis( args.initial_supply );
+         }
+
+      });
       ilog("database::open setting up block log...");
 
       _benchmark_dumper.set_enabled( args.benchmark_is_enabled );
@@ -200,19 +200,19 @@ void database::open( const open_args& args )
 
       ilog("database::open check for reindex...");
 
-      if( head_block_num() )
-      {
-         auto head_block = _block_log.read_block_by_num( head_block_num() );
-         // This assertion should be caught and a reindex should occur
-         FC_ASSERT( head_block.valid() && head_block->id() == head_block_id(), "Chain state does not match block log. Please reindex blockchain." );
-
-         _fork_db.start_block( *head_block );
-      }
-
-      ilog("database::open initialize versioning...");
-
       with_read_lock( [&]()
       {
+         if( head_block_num() )
+         {
+            auto head_block = _block_log.read_block_by_num( head_block_num() );
+            // This assertion should be caught and a reindex should occur
+            FC_ASSERT( head_block.valid() && head_block->id() == head_block_id(), "Chain state does not match block log. Please reindex blockchain." );
+
+            _fork_db.start_block( *head_block );
+         }
+
+         ilog("database::open initialize versioning...");
+
          init_hardforks(); // Writes to local state, but reads from db
       });
 
@@ -243,10 +243,9 @@ uint32_t database::reindex( const open_args& args )
 
    try
    {
-
       ilog( "Reindexing Blockchain" );
 #ifdef ENABLE_MIRA
-      initialize_indexes();
+      with_write_lock([&]() { initialize_indexes(); });
 #endif
 
       wipe( args.data_dir, args.shared_mem_dir, false );
@@ -281,22 +280,22 @@ uint32_t database::reindex( const open_args& args )
          skip_validate_invariants |
          skip_block_log;
 
-      idump( (head_block_num()) );
+      auto cur_head_block_num = with_read_lock([&]() { return head_block_num(); });
+      idump( (cur_head_block_num) );
 
       auto last_block_num = _block_log.head()->block_num();
 
       if( args.stop_at_block > 0 && args.stop_at_block < last_block_num )
          last_block_num = args.stop_at_block;
 
-      if( head_block_num() < last_block_num )
+      if( cur_head_block_num < last_block_num )
       {
-         _block_log.set_locking( false );
          if( args.benchmark.first > 0 )
          {
             args.benchmark.second( 0, get_abstract_index_cntr() );
          }
 
-         auto itr = _block_log.read_block( _block_log.get_block_pos( head_block_num() + 1 ) );
+         auto itr = _block_log.read_block( _block_log.get_block_pos( with_read_lock([&]() { return head_block_num(); }) + 1 ) );
 
          with_write_lock( [&]()
          {
@@ -308,7 +307,7 @@ uint32_t database::reindex( const open_args& args )
 
                if( cur_block_num % 100000 == 0 )
                {
-                  std::cerr << "   " << double( cur_block_num * 100 ) / last_block_num << "%   " << cur_block_num << " of " << last_block_num << "   (" <<
+                  std::cerr << "replay: " << double( cur_block_num * 100 ) / last_block_num << "%   " << cur_block_num << " of " << last_block_num << "   (" <<
    #ifdef ENABLE_MIRA
                   get_cache_size()  << " objects cached using " << (get_cache_usage() >> 20) << "M"
    #else
@@ -344,7 +343,6 @@ uint32_t database::reindex( const open_args& args )
          if( (args.benchmark.first > 0) && (note.last_block_number % args.benchmark.first == 0) )
             args.benchmark.second( note.last_block_number, get_abstract_index_cntr() );
 
-         _block_log.set_locking( true );
       }
 
       if( _block_log.head()->block_num() )
@@ -363,7 +361,7 @@ uint32_t database::reindex( const open_args& args )
 
       note.reindex_success = true;
 
-      return head_block_num();
+      return with_read_lock([&]() { return head_block_num(); });
    }
    FC_CAPTURE_AND_RETHROW( (args.data_dir)(args.shared_mem_dir) )
 
@@ -454,7 +452,9 @@ block_id_type database::find_block_id_for_num( uint32_t block_num )const
 block_id_type database::get_block_id_for_num( uint32_t block_num )const
 {
    block_id_type bid = find_block_id_for_num( block_num );
-   FC_ASSERT( bid != block_id_type() );
+   if (bid == block_id_type()) {
+      FC_THROW_EXCEPTION(fc::key_not_found_exception, "block ${num} not found", ("num", block_num));
+   }
    return bid;
 }
 
@@ -1315,10 +1315,14 @@ std::shared_ptr< custom_operation_interpreter > database::get_custom_json_evalua
 }
 
 void initialize_core_indexes( database& db );
+void initialize_core_indexes2( database& db );
+void initialize_core_indexes3( database& db );
 
 void database::initialize_indexes()
 {
    initialize_core_indexes( *this );
+   initialize_core_indexes2( *this );
+   initialize_core_indexes3( *this );
    _plugin_index_signal();
 }
 
@@ -1433,7 +1437,7 @@ void database::init_genesis( uint64_t init_supply )
       // // Create witness scheduler
       // create< witness_schedule_object >( [&]( witness_schedule_object& wso )
       // {
-      //    FC_TODO( "Copied from witness_schedule.cpp, do we want to abstract this to a separate function?" );
+      //    //FC_TODO( "Copied from witness_schedule.cpp, do we want to abstract this to a separate function?" );
       //    wso.current_shuffled_witnesses[0] = XGT_INIT_MINER_NAME;
       //    util::rd_system_params account_subsidy_system_params;
       //    account_subsidy_system_params.resource_unit = XGT_WALLET_SUBSIDY_PRECISION;
@@ -1628,7 +1632,7 @@ void database::_apply_block( const signed_block& next_block )
       {
          FC_ASSERT( next_block.transaction_merkle_root == merkle_root, "Merkle check failed", ("next_block.transaction_merkle_root",next_block.transaction_merkle_root)("calc",merkle_root)("next_block",next_block)("id",next_block.id()) );
       }
-      catch( fc::assert_exception& e )
+      catch( const fc::assert_exception& e )
       {
          const auto& merkle_map = get_shared_db_merkle();
          auto itr = merkle_map.find( next_block_num );
@@ -1767,7 +1771,7 @@ void database::_apply_block( const signed_block& next_block )
             double value = base_reward.amount.value * (1.0 / static_cast<double>(divisor));
             long price = static_cast<long>(floor(value));
             asset reward = asset(price, base_reward.symbol);
-            ilog("Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
+            // ilog("Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
 
             const wallet_object* w = find_account( worker_account );
             const witness_object* cur_witness = find_witness( worker_account );
@@ -1802,11 +1806,7 @@ void database::_apply_block( const signed_block& next_block )
    }
    else if( (XGT_STARTING_OFFSET + next_block_num) % frequency == 1 )
    {
-      wlog("MINING DIFFICULTY - Updating mining difficulty...");
-
-
       const uint32_t prior_block_num = next_block_num - XGT_MINING_RECALC_EVERY_N_BLOCKS;
-      wlog("MINING DIFFICULTY - prior_block_num ${a}", ("a",prior_block_num));
       optional<signed_block> prior_block = optional<signed_block>();
       prior_block = _block_log.read_block_by_num(prior_block_num);
       if (!prior_block)
@@ -1997,13 +1997,13 @@ void database::_apply_transaction(const signed_transaction& trx)
                }
                if (public_key == fc::optional<public_key_type>())
                {
-                  wlog("!!!!!! Wallet no public key");
+                  dlog("!!!!!! Wallet no public key");
                   throw operation_validate_exception();
                }
             }
             else if ( is_wallet_create_operation(op) )
             {
-               wlog("!!!!!! Wallet create");
+               dlog("!!!!!! Wallet create");
                break;
             }
             else if ( is_wallet_update_operation(op) )
@@ -2019,13 +2019,13 @@ void database::_apply_transaction(const signed_transaction& trx)
                   keys.push_back(key);
                }
                string wallet_name = wallet_create_operation::get_wallet_name(keys);
-               wlog("!!!!!! Wallet update wallet name ${w}", ("w",wallet_name));
+               dlog("!!!!!! Wallet update wallet name ${w}", ("w",wallet_name));
                if (o.wallet == wallet_name) {
                   // Valid, don't throw error
-                  wlog("!!!!!! Wallet update valid");
+                  dlog("!!!!!! Wallet update valid");
                } else {
                   // TODO: Invalid, throw error
-                  wlog("!!!!!! Wallet update invalid");
+                  dlog("!!!!!! Wallet update invalid");
                   throw operation_validate_exception();
                }
             }
@@ -2035,7 +2035,7 @@ void database::_apply_transaction(const signed_transaction& trx)
                XGT_MAX_SIG_CHECK_WALLETS,
                fc::ecc::bip_0062 );
       }
-      catch( protocol::tx_missing_money_auth& e )
+      catch( const protocol::tx_missing_money_auth& e )
       {
          if( get_shared_db_merkle().find( head_block_num() + 1 ) == get_shared_db_merkle().end() )
             throw e;
@@ -2084,7 +2084,7 @@ void database::_apply_transaction(const signed_transaction& trx)
       try {
         apply_operation(op);
       } catch ( const fc::exception& e ) {
-        wlog("!!!!!! Error applying operation ${w}", ("w",e));
+        dlog("!!!!!! Error applying operation ${w}", ("w",e));
         throw e;
       }
       ++_current_op_in_trx;
@@ -2208,7 +2208,7 @@ void database::process_optional_actions( const optional_automated_actions& actio
    // blocks, generation of optional actions should be disabled and the expiration can be skipped.
    // For reindexing of the first 2 million blocks, this unnecessary read consumes almost 30%
    // of runtime.
-   FC_TODO( "Optimize expiration for reindex." );
+   //FC_TODO( "Optimize expiration for reindex." );
 
    // Clear out "expired" optional_actions. If the block when an optional action was generated
    // has become irreversible then a super majority of witnesses have chosen to not include it
@@ -2571,6 +2571,7 @@ void database::migrate_irreversible_state()
 
       // This deletes blocks from the fork db
       _fork_db.set_max_size( dpo.head_block_number - dpo.last_irreversible_block_num + 1 );
+      _fork_db.set_max_size( XGT_FORK_DB_MAX_SIZE );
 
       // This deletes undo state
       commit( dpo.last_irreversible_block_num );

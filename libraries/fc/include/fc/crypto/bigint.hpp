@@ -1,7 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <fc/string.hpp>
-#include <fc/vector.hpp>
+#include <vector>
 
 struct bignum_st;
 typedef bignum_st BIGNUM;

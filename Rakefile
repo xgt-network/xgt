@@ -14,7 +14,8 @@ when /darwin/
     `brew` rescue raise "This build requires homebrew presently. Set $NO_HOMEBREW and $CMAKE_PREFIX_PATH to manually bypass."
   end
   cmake_prefix_paths = (ENV["CMAKE_PREFIX_PATH"] || "").split(":")
-  ENV['CMAKE_PREFIX_PATH'] = (cmake_prefix_paths + ["/usr/local/opt/openssl", "/usr/local/opt/icu4c"]).join(":")
+  cmake_prefix_paths += `brew --prefix openssl@1.1`
+  ENV['CMAKE_PREFIX_PATH'] = cmake_prefix_paths.uniq.join(":")
 end
 
 directory "../xgt-build"
