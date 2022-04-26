@@ -12,7 +12,13 @@
 #define XGT_BLOCKCHAIN_VERSION              ( version(0, 0, 0) )
 
 #define XGT_ADDRESS_PREFIX                  "XGT"
+
+#ifdef IS_TEST_NET
+#define XGT_CHAIN_ID                        fc::sha256::hash("testnet") /// All zeroes
+#else
 #define XGT_CHAIN_ID                        fc::sha256::hash("xgt") /// All zeroes
+#endif
+
 #define XGT_WALLET_NAME_LENGTH             40 /// NOTE: If you change this, change XGT_INIT_MINER_NAME also.
 
 #ifdef IS_TEST_NET

@@ -80,6 +80,10 @@ def instance_index
   ENV['XGT_INSTANCE_INDEX'].to_i
 end
 
+def port_offset
+  ENV['XGT_PORT_OFFSET'].to_i
+end
+
 def config
   rpc.call('database_api.get_config', {})
 end
@@ -121,6 +125,11 @@ end
 desc 'Runs CMake to prepare the project'
 task :configure => "../xgt-build" do
   sh %( cmake -G Ninja -B ../xgt-build -S . -D CMAKE_BUILD_TYPE=debug )
+end
+
+desc 'Runs CMake to prepare the project for testnet'
+task :configure_testnet => "../xgt-build" do
+  sh %( cmake -G Ninja -B ../xgt-build -S . -D CMAKE_BUILD_TYPE=debug -D BUILD_XGT_TESTNET=ON )
 end
 
 task :test do
@@ -286,8 +295,8 @@ task :run do
 
       shared-file-size = 12G
 
-      p2p-endpoint = #{my_host}:#{2001 + instance_index}
-      webserver-http-endpoint = #{my_host}:#{8751 + instance_index * 2}
+      p2p-endpoint = #{my_host}:#{2001 + port_offset + instance_index}
+      webserver-http-endpoint = #{my_host}:#{8751 + port_offset + instance_index * 2}
 
       miner = ["#{wallet}","#{wif}"]
       mining-threads = #{mining_threads}
