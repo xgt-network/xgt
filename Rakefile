@@ -264,12 +264,6 @@ task :build_release => [:clean, :configure, :make, :strip]
 
 desc 'Runs a basic example instance locally'
 task :run do
-  puts wallet
-  puts wif
-  puts recovery_private_key
-  puts witness_private_key
-  exit
-
   data_dir = "../xgt-chainstate-#{instance_index}"
 
   if flush_chainstate?
