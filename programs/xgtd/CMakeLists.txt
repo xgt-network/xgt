@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.9.4)
 
 add_executable( xgtd main.cpp )
 
-if (!MINGW)
 include(CheckIPOSupported)
 check_ipo_supported(RESULT ipo_supported OUTPUT error)
 if( ipo_supported )
@@ -10,7 +9,6 @@ if( ipo_supported )
        set_property(TARGET xgtd PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
 else()
        message(STATUS "IPO / LTO not supported: <${error}>")
-endif()
 endif()
 
 if (NOT APPLE)
