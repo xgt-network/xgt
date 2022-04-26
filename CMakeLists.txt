@@ -83,18 +83,20 @@ SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
 add_compile_definitions("BOOST_BIND_GLOBAL_PLACEHOLDERS")
 add_compile_definitions("BOOST_THREAD_DONT_PROVIDE_PROMISE_LAZY")
 
-find_package(Backtrace QUIET)
-if(Backtrace_LIBRARY)
+find_library(Backtrace_STATIC NAMES libbacktrace.a)
+if(Backtrace_STATIC)
   add_compile_definitions(BOOST_STACKTRACE_USE_BACKTRACE)
 else()
+  add_compile_definitions(BOOST_STACKTRACE_USE_ADDR2LINE)
+  # GNU addr2line is incredibly slow because of the bloated templates and resultant binary.
+  add_compile_definitions(BOOST_STACKTRACE_ADDR2LINE_LOCATION=/usr/bin/llvm-addr2line)
+
+
   if(MINGW)
     add_compile_definitions(BOOST_STACKTRACE_USE_WINDBG)
-  else()
-    add_compile_definitions(BOOST_STACKTRACE_USE_ADDR2LINE)
-    # Boosts stacktrace lib leaves a fair bit to be desired, but let's at least
-    # use llvm-addr2line that can resolve symbols in less than 5 minutes per
-    # symbol in these whacky objects. Good job llvm team.
-    add_compile_definitions(BOOST_STACKTRACE_ADDR2LINE_LOCATION=/usr/bin/llvm-addr2line)
+  endif()
+  if(APPLE)
+    add_compile_definitions(BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED)
   endif()
 endif()
 

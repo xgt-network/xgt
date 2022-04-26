@@ -1,4 +1,3 @@
-#include <boost/stacktrace/stacktrace.hpp>
 #include <xgt/plugins/p2p/p2p_plugin.hpp>
 #include <xgt/plugins/p2p/p2p_default_seeds.hpp>
 
