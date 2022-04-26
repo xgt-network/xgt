@@ -63,8 +63,6 @@ void info()
    std::cerr << "genesis_time: " << fc::string( XGT_GENESIS_TIME ) << "\n";
    std::cerr << "now: " << fc::string( (fc::time_point_sec(fc::time_point::now())) ) << "\n";
    std::cerr << "xgt_max_witnesses: " << XGT_MAX_WITNESSES << "\n";
-   std::cerr << "xgt_max_voted_witnesses: " << XGT_MAX_VOTED_WITNESSES << "\n";
-   std::cerr << "xgt_max_miner_witnesses: " << XGT_MAX_MINER_WITNESSES << "\n";
    std::cerr << "------------------------------------------------------\n";
 }
 

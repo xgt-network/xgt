@@ -16,14 +16,7 @@ elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
     endif()
 endif()
 
-list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
-
-list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/CMakeModules" )
-list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVersionGen" )
-include( GetGitRevisionDescription )
-get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
 
 OPTION( BUILD_XGT_TESTNET "Build source for test network (ON OR OFF)" OFF )
 MESSAGE( STATUS "BUILD_XGT_TESTNET: ${BUILD_XGT_TESTNET}" )
@@ -31,32 +24,11 @@ if( BUILD_XGT_TESTNET )
   add_compile_definitions("IS_TEST_NET")
 endif()
 
-OPTION( XGT_MAX_VOTED_WITNESSES "Number of max voted witnesses" OFF )
-MESSAGE( STATUS "XGT_MAX_VOTED_WITNESSES: ${XGT_MAX_VOTED_WITNESSES}" )
-if( XGT_MAX_VOTED_WITNESSES )
-  add_compile_definitions("XGT_MAX_VOTED_WITNESSES=${XGT_MAX_VOTED_WITNESSES}")
-endif()
-
-OPTION( XGT_MAX_MINER_WITNESSES "Number of max miner witnesses" OFF )
-MESSAGE( STATUS "XGT_MAX_MINER_WITNESSES: ${XGT_MAX_MINER_WITNESSES}" )
-if( XGT_MAX_MINER_WITNESSES )
-  add_compile_definitions("XGT_MAX_MINER_WITNESSES=${XGT_MAX_MINER_WITNESSES}")
-endif()
-
-OPTION( LOW_MEMORY_NODE "Build source for low memory node (ON OR OFF)" OFF )
-MESSAGE( STATUS "LOW_MEMORY_NODE: ${LOW_MEMORY_NODE}" )
-if( LOW_MEMORY_NODE )
-  add_compile_definitions("IS_LOW_MEM")
-endif()
-
 OPTION( SKIP_BY_TX_ID "Skip ordering operation history by transaction id (ON or OFF)" OFF )
 MESSAGE( STATUS "SKIP_BY_TX_ID: ${SKIP_BY_TX_ID}" )
 if( SKIP_BY_TX_ID )
   add_compile_definitions("SKIP_BY_TX_ID")
 endif()
-
-OPTION( XGT_STATIC_BUILD "Build xgtd as a static library (ON or OFF)" OFF )
-MESSAGE( STATUS "XGT_STATIC_BUILD: ${XGT_STATIC_BUILD}" )
 
 OPTION( XGT_OPT_NATIVE "Optimize for native architecture" OFF )
 if ( XGT_OPT_NATIVE )
