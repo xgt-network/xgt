@@ -53,23 +53,23 @@ def mining_error(message)
 end
 
 def wallet
-  'XGT0000000000000000000000000000000000000000'
+  ENV['XGT_WALLET'] || mining_error("Wallet not specificed, please specify a wallet with 'XGT_WALLET'")
 end
 
 def wif
-  '5JQMNhd5L9ML99ZoH2FaZ1PUHrYb4Jw7U3CgA73V8rgBfoipkxt'
+  ENV['XGT_WIF'] || mining_error("XGT_WIF not specified")
 end
 
 def recovery_private_key
-  '5JQMNhd5L9ML99ZoH2FaZ1PUHrYb4Jw7U3CgA73V8rgBfoipkxt'
+  ENV['XGT_RECOVERY_PRIVATE_KEY'] || mining_error("XGT_RECOVERY_PRIVATE_KEY not specified")
 end
 
 def witness_private_key
-  '5JQMNhd5L9ML99ZoH2FaZ1PUHrYb4Jw7U3CgA73V8rgBfoipkxt'
+  ENV['XGT_WITNESS_PRIVATE_KEY'] || mining_error("XGT_WITNESS_PRIVATE_KEY not specified")
 end
 
 def host
-  ENV['XGT_HOST'] || 'http://localhost:8755'
+  ENV['XGT_HOST'] || 'http://localhost:8751'
 end
 
 def seed_hosts
@@ -264,6 +264,12 @@ task :build_release => [:clean, :configure, :make, :strip]
 
 desc 'Runs a basic example instance locally'
 task :run do
+  puts wallet
+  puts wif
+  puts recovery_private_key
+  puts witness_private_key
+  exit
+
   data_dir = "../xgt-chainstate-#{instance_index}"
 
   if flush_chainstate?
