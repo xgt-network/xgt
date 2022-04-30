@@ -667,6 +667,10 @@ void p2p_plugin::plugin_startup()
 
       my->node->set_advanced_node_parameters( my->config );
 
+      block_id_type block_id;
+      my->chain.db().with_read_lock( [&]() { block_id = my->chain.db().head_block_id(); });
+      my->node->sync_from(graphene::net::item_id(graphene::net::block_message_type, block_id), std::vector<uint32_t>());
+
       ilog("Listening on P2P network...");
       my->node->listen_to_p2p_network();
 
@@ -687,12 +691,6 @@ void p2p_plugin::plugin_startup()
          }
       }
 
-      block_id_type block_id;
-      my->chain.db().with_read_lock( [&]()
-      {
-         block_id = my->chain.db().head_block_id();
-      });
-      my->node->sync_from(graphene::net::item_id(graphene::net::block_message_type, block_id), std::vector<uint32_t>());
       ilog("P2P node listening at ${ep}", ("ep", my->node->get_actual_listening_endpoint()));
    }).wait();
    ilog( "P2P Plugin started" );

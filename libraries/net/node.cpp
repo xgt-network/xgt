@@ -1078,9 +1078,10 @@ namespace graphene { namespace net {
         if (was_empty) {
           dlog( "no sync items to fetch right now, going to sleep" );
           
-          _retrigger_fetch_sync_items_loop_promise->wait();
+          fc::wait_any_until({_retrigger_fetch_sync_items_loop_promise}, fc::time_point::now() + fc::seconds(1));
           _retrigger_fetch_sync_items_loop_promise.reset(new fc::promise<void>("graphene::net::retrigger_fetch_sync_items_loop"));
         }
+
 
       } // while( !canceled )
     }
@@ -4641,8 +4642,10 @@ namespace graphene { namespace net {
              !_fetch_updated_peer_lists_loop_done.valid() &&
              !_bandwidth_monitor_loop_done.valid() &&
              !_dump_node_status_task_done.valid());
+
       if (_node_configuration.accept_incoming_connections)
         _accept_loop_complete = async_task( [=](){ accept_loop(); }, "accept_loop");
+
       _p2p_network_connect_loop_done = async_task( [=]() { p2p_network_connect_loop(); }, "p2p_network_connect_loop" );
       _fetch_sync_items_loop_done = async_task( [=]() { fetch_sync_items_loop(); }, "fetch_sync_items_loop" );
       _fetch_item_loop_done = async_task( [=]() { fetch_items_loop(); }, "fetch_items_loop" );
