@@ -204,7 +204,7 @@ struct database_fixture {
 
    static fc::ecc::private_key generate_private_key( string seed = "init_key" );
    static asset_symbol_type get_new_xtt_symbol( uint8_t token_decimal_places, chain::database* db );
-   void open_database( uint16_t shared_file_size_in_mb = 8 );
+   void open_database();
    void generate_block(uint32_t skip = 0,
                                const fc::ecc::private_key& key = generate_private_key("init_key"),
                                int miss_blocks = 0);
@@ -290,10 +290,10 @@ struct database_fixture {
 
 struct clean_database_fixture : public database_fixture
 {
-   clean_database_fixture( uint16_t shared_file_size_in_mb = 8 );
+   clean_database_fixture();
    virtual ~clean_database_fixture();
 
-   void resize_shared_mem( uint64_t size );
+   void reinit_blockchain();
    void validate_database();
 };
 

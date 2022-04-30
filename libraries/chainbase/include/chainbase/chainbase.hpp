@@ -839,7 +839,7 @@ namespace chainbase {
          };
 
       public:
-         void open( const bfs::path& dir, uint32_t flags = 0, size_t shared_file_size = 0, const boost::any& database_cfg = nullptr );
+         void open( const bfs::path& dir, uint32_t flags = 0, const boost::any& database_cfg = nullptr );
          void close();
          void flush();
          size_t get_cache_usage() const;
@@ -847,7 +847,6 @@ namespace chainbase {
          void dump_lb_call_counts();
          void trim_cache();
          void wipe( const bfs::path& dir );
-         void resize( size_t new_shared_file_size );
 
          void require_lock_fail( const char* method, const char* lock_type, const char* tname )const;
 

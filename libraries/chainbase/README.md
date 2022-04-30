@@ -1,26 +1,13 @@
-# ChainBase - a fast version controlled, transactional database 
+# ChainBase - a fast version controlled, transactional database
 
-  ChainBase is designed to meet the demanding requirements of blockchain applications, but is suitable for use
-  in any application that requires a robust transactional database with the ability to have near-infinite
-  levels of undo history.
+This verison of ChainBase is no longer a standalone storage solution, and now only sits below Mira.
 
-  While chainbase was designed for blockchain applications, it is suitable for any program that needs to
-  persist complex application state with the ability to undo.
+## Features
 
-## Features 
+- Supports multiple objects (tables) with multiple indices (based upon boost::multi_index_container)
+- Nested Transactional Writes with ability to undo changes
 
-  - Supports multiple objects (tables) with multiple indices (based upon boost::multi_index_container)
-  - State is persistent and sharable among multiple processes 
-  - Nested Transactional Writes with ability to undo changes
-
-## Dependencies 
-  
-  - c++11 
-  - [Boost](http://www.boost.org/) 
-  - CMake Build Process
-  - Supports Linux, Mac OS X  (no Windows Support)
-
-## Example Usage 
+## Example Usage
 
 ``` c++
 enum tables {
@@ -110,49 +97,3 @@ int main( int argc, char** argv ) {
 }
 
 ```
-
-## Concurrent Access 
-
-By default ChainBase provides no synchronization and has the same concurrency restrictions as any 
-boost::multi_index_container.  This means that two or more threads may read the database at the
-same time, but all writes must be protected by a mutex.  
-
-Multiple processes may open the same database if care is taken to use interprocess locking on
-the database.  
-
-## Persistence 
-
-By default data is only flushed to disk upon request or when the program exits. So long as the program
-does not crash in the middle of a call to db.modify(), or db.create() the contents of the
-database should remain in a consistent state. This means that you should minimize the complexity of the
-lambdas used to create and/or modify state.
-
-If the operating system crashes or the computer loses power, then the database will be left in an undefined
-state depending upon which memory pages the operating system was able to sync to disk.
-
-ChainBase was designed to be used with blockchain applications where an append-only log of blocks is used
-to secure state in the event of power loss. This block log can be replayed to regenerate the full database
-state. Dealing with OS crashes, loss of power, and logs, is beyond the scope of ChainBase.
-
-## Portability 
-
-The contents of the database file is dependent upon the memory layout of the computer and process that created
-the database. Moving the database to a machine that uses a different compiler, operating system, libraries, or
-build type (release vs debug) will result in undefined behavior.  
-
-If portability is desired, the developer will have to export the database to a suitable format. 
-
-## Background 
-
-Blockchain applications depend upon a high performance database capable of millions of read/write 
-operations per second.  Additionally blockchains operate on the basis of "eventually consistent" which
-means that any changes made to the database are potentially reversible for an unknown amount of time depending
-upon the consensus protocol used. 
-
-Existing databases such as [libbitcoin Database](https://github.com/libbitcoin/libbitcoin-database) achieve high
-performance using similar techniques (memory mapped files), but they are heavily specialised and do not implement
-the logic necessary for multiple indices or undo history. 
-
-Databases such as LevelDB provide a simple Key/Value database, but suffer from poor performance relative to
-memory mapped file implementations.
-

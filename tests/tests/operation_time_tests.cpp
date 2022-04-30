@@ -1403,7 +1403,7 @@ BOOST_AUTO_TEST_CASE( feed_publish_mean )
 {
    try
    {
-      resize_shared_mem( 1024 * 1024 * 32 );
+      reinit_blockchain();
 
       ACTORS( (alice0)(alice1)(alice2)(alice3)(alice4)(alice5)(alice6) )
 
@@ -2041,7 +2041,7 @@ BOOST_AUTO_TEST_CASE( sbd_stability )
          });
       }, database::skip_witness_signature );
 
-      resize_shared_mem( 1024 * 1024 * 512 ); // Due to number of blocks in the test, it requires a large file. (64 MB)
+      reinit_blockchain();
 
       auto debug_key = "5JdouSvkK75TKWrJixYufQgePT21V7BAVWbNUWt3ktqhPmy8Z78"; //get_dev_key debug node
 

@@ -117,7 +117,7 @@ void database::open( const open_args& args )
 
    try
    {
-      chainbase::database::open( args.shared_mem_dir, args.chainbase_flags, args.shared_file_size, args.database_cfg );
+      chainbase::database::open( args.blockchain_dir, args.chainbase_flags, args.database_cfg );
 
       with_write_lock( [&]()
       {
@@ -192,11 +192,8 @@ void database::open( const open_args& args )
       }
 
       ilog("database::open finish opening...");
-
-      _shared_file_full_threshold = args.shared_file_full_threshold;
-      _shared_file_scale_rate = args.shared_file_scale_rate;
    }
-   FC_CAPTURE_LOG_AND_RETHROW( (args.data_dir)(args.shared_mem_dir)(args.shared_file_size) )
+   FC_CAPTURE_LOG_AND_RETHROW( (args.data_dir)(args.blockchain_dir) )
 }
 
 uint32_t database::reindex( const open_args& args )
@@ -212,7 +209,7 @@ uint32_t database::reindex( const open_args& args )
       ilog( "Reindexing Blockchain" );
       with_write_lock([&]() { initialize_indexes(); });
 
-      wipe( args.data_dir, args.shared_mem_dir, false );
+      wipe( args.data_dir, args.blockchain_dir, false );
 
       auto start = fc::time_point::now();
       open( args );
@@ -307,14 +304,14 @@ uint32_t database::reindex( const open_args& args )
 
       return with_read_lock([&]() { return head_block_num(); });
    }
-   FC_CAPTURE_AND_RETHROW( (args.data_dir)(args.shared_mem_dir) )
+   FC_CAPTURE_AND_RETHROW( (args.data_dir)(args.blockchain_dir) )
 
 }
 
-void database::wipe( const fc::path& data_dir, const fc::path& shared_mem_dir, bool include_blocks)
+void database::wipe( const fc::path& data_dir, const fc::path& blockchain_dir, bool include_blocks)
 {
    close();
-   chainbase::database::wipe( shared_mem_dir );
+   chainbase::database::wipe( blockchain_dir );
    if( include_blocks )
    {
       fc::remove_all( data_dir / "block_log" );

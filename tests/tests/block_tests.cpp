@@ -46,17 +46,14 @@ using namespace xgt::chain;
 using namespace xgt::protocol;
 using namespace xgt::plugins;
 
-#define TEST_SHARED_MEM_SIZE (1024 * 1024 * 8)
-
 BOOST_AUTO_TEST_SUITE(block_tests)
 /*
 void open_test_database( database& db, const fc::path& dir )
 {
    database::open_args args;
    args.data_dir = dir;
-   args.shared_mem_dir = dir;
+   args.blockchain_dir = dir;
    args.initial_supply = INITIAL_TEST_SUPPLY;
-   args.shared_file_size = TEST_SHARED_MEM_SIZE;
    args.database_cfg = xgt::utilities::default_database_configuration();
    db.open( args );
 }

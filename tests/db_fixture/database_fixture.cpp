@@ -35,7 +35,7 @@ namespace xgt { namespace chain {
 using std::cout;
 using std::cerr;
 
-clean_database_fixture::clean_database_fixture( uint16_t shared_file_size_in_mb )
+clean_database_fixture::clean_database_fixture()
 {
    try {
    int argc = boost::unit_test::framework::master_test_suite().argc;
@@ -66,7 +66,7 @@ clean_database_fixture::clean_database_fixture( uint16_t shared_file_size_in_mb 
 
    init_account_pub_key = init_account_priv_key.get_public_key();
 
-   open_database( shared_file_size_in_mb );
+   open_database();
 
    generate_block();
 
@@ -114,7 +114,7 @@ void clean_database_fixture::validate_database()
    database_fixture::validate_database();
 }
 
-void clean_database_fixture::resize_shared_mem( uint64_t size )
+void clean_database_fixture::reinit_blockchain()
 {
    db->wipe( data_dir->path(), data_dir->path(), true );
    int argc = boost::unit_test::framework::master_test_suite().argc;
@@ -132,9 +132,8 @@ void clean_database_fixture::resize_shared_mem( uint64_t size )
    {
       database::open_args args;
       args.data_dir = data_dir->path();
-      args.shared_mem_dir = args.data_dir;
+      args.blockchain_dir = args.data_dir;
       args.initial_supply = INITIAL_TEST_SUPPLY;
-      args.shared_file_size = size;
       args.database_cfg = xgt::utilities::default_database_configuration();
       db->open( args );
    }
@@ -181,7 +180,7 @@ live_database_fixture::live_database_fixture()
       {
          database::open_args args;
          args.data_dir = _chain_dir;
-         args.shared_mem_dir = args.data_dir;
+         args.blockchain_dir = args.data_dir;
          args.database_cfg = xgt::utilities::default_database_configuration();
          db->open( args );
       }
@@ -232,7 +231,7 @@ asset_symbol_type database_fixture::get_new_xtt_symbol( uint8_t token_decimal_pl
    return asset_symbol_type::from_nai( new_nai.to_nai(), token_decimal_places );
 }
 
-void database_fixture::open_database( uint16_t shared_file_size_in_mb )
+void database_fixture::open_database()
 {
    if( !data_dir )
    {
@@ -243,9 +242,8 @@ void database_fixture::open_database( uint16_t shared_file_size_in_mb )
 
       database::open_args args;
       args.data_dir = data_dir->path();
-      args.shared_mem_dir = args.data_dir;
+      args.blockchain_dir = args.data_dir;
       args.initial_supply = INITIAL_TEST_SUPPLY;
-      args.shared_file_size = 1024 * 1024 * shared_file_size_in_mb; // 8MB(default) or more:  file for testing
       args.database_cfg = xgt::utilities::default_database_configuration();
       //args.benchmark_is_enabled = true;
       db->open(args);
