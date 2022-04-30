@@ -1,7 +1,7 @@
 #include <xgt/plugins/wallet_history_api/wallet_history_api_plugin.hpp>
 #include <xgt/plugins/wallet_history_api/wallet_history_api.hpp>
 
-#include <xgt/plugins/wallet_history_rocksdb/wallet_history_rocksdb_plugin.hpp>
+#include <xgt/plugins/wallet_history/wallet_history_plugin.hpp>
 
 namespace xgt { namespace plugins { namespace wallet_history {
 
@@ -123,7 +123,7 @@ class wallet_history_api_rocksdb_impl : public abstract_wallet_history_api_impl
 {
    public:
       wallet_history_api_rocksdb_impl() :
-         abstract_wallet_history_api_impl(), _dataSource( appbase::app().get_plugin< xgt::plugins::wallet_history_rocksdb::wallet_history_rocksdb_plugin >() ) {}
+         abstract_wallet_history_api_impl(), _dataSource( appbase::app().get_plugin< xgt::plugins::wallet_history::wallet_history_plugin >() ) {}
       ~wallet_history_api_rocksdb_impl() {}
 
       get_ops_in_block_return get_ops_in_block( const get_ops_in_block_args& ) override;
@@ -131,14 +131,14 @@ class wallet_history_api_rocksdb_impl : public abstract_wallet_history_api_impl
       get_wallet_history_return get_wallet_history( const get_wallet_history_args& ) override;
       enum_virtual_ops_return enum_virtual_ops( const enum_virtual_ops_args& ) override;
 
-      const wallet_history_rocksdb::wallet_history_rocksdb_plugin& _dataSource;
+      const wallet_history::wallet_history_plugin& _dataSource;
 };
 
 DEFINE_API_IMPL( wallet_history_api_rocksdb_impl, get_ops_in_block )
 {
    get_ops_in_block_return result;
    _dataSource.find_operations_by_block(args.block_num,
-      [&result, &args](const wallet_history_rocksdb::rocksdb_operation_object& op)
+      [&result, &args](const wallet_history::rocksdb_operation_object& op)
       {
          api_operation_object temp(op);
          if( !args.only_virtual || is_virtual_operation( temp.op ) )
@@ -156,7 +156,7 @@ DEFINE_API_IMPL( wallet_history_api_rocksdb_impl, get_wallet_history )
    get_wallet_history_return result;
 
    _dataSource.find_wallet_history_data(args.wallet, args.start, args.limit,
-      [&result](unsigned int sequence, const wallet_history_rocksdb::rocksdb_operation_object& op)
+      [&result](unsigned int sequence, const wallet_history::rocksdb_operation_object& op)
       {
          result.history[sequence] = api_operation_object( op );
       });
@@ -175,7 +175,7 @@ DEFINE_API_IMPL( wallet_history_api_rocksdb_impl, enum_virtual_ops)
 
    result.next_block_range_begin = _dataSource.enum_operations_from_block_range(args.block_range_begin,
       args.block_range_end,
-      [&result](const wallet_history_rocksdb::rocksdb_operation_object& op)
+      [&result](const wallet_history::rocksdb_operation_object& op)
       {
          result.ops.emplace_back(api_operation_object(op));
       }
@@ -188,7 +188,7 @@ DEFINE_API_IMPL( wallet_history_api_rocksdb_impl, enum_virtual_ops)
 
 wallet_history_api::wallet_history_api()
 {
-   auto ah_rocks = appbase::app().find_plugin< xgt::plugins::wallet_history_rocksdb::wallet_history_rocksdb_plugin >();
+   auto ah_rocks = appbase::app().find_plugin< xgt::plugins::wallet_history::wallet_history_plugin >();
 
    if( ah_rocks != nullptr )
    {
@@ -196,7 +196,7 @@ wallet_history_api::wallet_history_api()
    }
    else
    {
-      FC_ASSERT( false, "Account History API only works if the wallet_history_rocksdb plugin is enabled" );
+      FC_ASSERT( false, "Account History API only works if the wallet_history plugin is enabled" );
    }
 
    JSON_RPC_REGISTER_API( XGT_WALLET_HISTORY_API_PLUGIN_NAME );

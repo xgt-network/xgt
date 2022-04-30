@@ -4,19 +4,19 @@
 
 #include <boost/multi_index/composite_key.hpp>
 
-#ifndef XGT_WALLET_HISTORY_ROCKSDB_SPACE_ID
-#define XGT_WALLET_HISTORY_ROCKSDB_SPACE_ID 15
+#ifndef XGT_wallet_history_SPACE_ID
+#define XGT_wallet_history_SPACE_ID 15
 #endif
 
-namespace xgt { namespace plugins { namespace wallet_history_rocksdb {
+namespace xgt { namespace plugins { namespace wallet_history {
 
 using namespace xgt::chain;
 
 typedef std::vector<char> serialize_buffer_t;
 
-enum wallet_history_rocksdb_object_types
+enum wallet_history_object_types
 {
-   volatile_operation_object_type = ( XGT_WALLET_HISTORY_ROCKSDB_SPACE_ID << 8 )
+   volatile_operation_object_type = ( XGT_wallet_history_SPACE_ID << 8 )
 };
 
 class volatile_operation_object : public object< volatile_operation_object_type, volatile_operation_object >
@@ -85,9 +85,9 @@ typedef multi_index_container<
       >
    > volatile_operation_index;
 
-} } } // xgt::plugins::wallet_history_rocksdb
+} } } // xgt::plugins::wallet_history
 
-FC_REFLECT( xgt::plugins::wallet_history_rocksdb::volatile_operation_object, (id)(trx_id)(block)(trx_in_block)(op_in_trx)(virtual_op)(timestamp)(serialized_op)(impacted) )
-CHAINBASE_SET_INDEX_TYPE( xgt::plugins::wallet_history_rocksdb::volatile_operation_object, xgt::plugins::wallet_history_rocksdb::volatile_operation_index )
+FC_REFLECT( xgt::plugins::wallet_history::volatile_operation_object, (id)(trx_id)(block)(trx_in_block)(op_in_trx)(virtual_op)(timestamp)(serialized_op)(impacted) )
+CHAINBASE_SET_INDEX_TYPE( xgt::plugins::wallet_history::volatile_operation_object, xgt::plugins::wallet_history::volatile_operation_index )
 
-FC_REFLECT( xgt::plugins::wallet_history_rocksdb::rocksdb_operation_object, (id)(trx_id)(block)(trx_in_block)(op_in_trx)(virtual_op)(timestamp)(serialized_op) )
+FC_REFLECT( xgt::plugins::wallet_history::rocksdb_operation_object, (id)(trx_id)(block)(trx_in_block)(op_in_trx)(virtual_op)(timestamp)(serialized_op) )

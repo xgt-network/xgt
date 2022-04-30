@@ -1,7 +1,7 @@
 #pragma once
 
 #include <xgt/chain/xgt_fwd.hpp>
-#include <xgt/plugins/wallet_history_rocksdb/wallet_history_rocksdb_objects.hpp>
+#include <xgt/plugins/wallet_history/wallet_history_objects.hpp>
 
 #include <xgt/plugins/chain/chain_plugin.hpp>
 
@@ -12,21 +12,21 @@
 
 namespace xgt {
 
-namespace plugins { namespace wallet_history_rocksdb {
+namespace plugins { namespace wallet_history {
 
 namespace bfs = boost::filesystem;
 
 
 
-class wallet_history_rocksdb_plugin final : public appbase::plugin< wallet_history_rocksdb_plugin >
+class wallet_history_plugin final : public appbase::plugin< wallet_history_plugin >
 {
 public:
    APPBASE_PLUGIN_REQUIRES((xgt::plugins::chain::chain_plugin))
 
-   wallet_history_rocksdb_plugin();
-   virtual ~wallet_history_rocksdb_plugin();
+   wallet_history_plugin();
+   virtual ~wallet_history_plugin();
 
-   static const std::string& name() { static std::string name = "wallet_history_rocksdb"; return name; }
+   static const std::string& name() { static std::string name = "wallet_history"; return name; }
 
    virtual void set_program_options(
       boost::program_options::options_description &command_line_options,
@@ -54,4 +54,4 @@ private:
 };
 
 
-} } } // xgt::plugins::wallet_history_rocksdb
+} } } // xgt::plugins::wallet_history
