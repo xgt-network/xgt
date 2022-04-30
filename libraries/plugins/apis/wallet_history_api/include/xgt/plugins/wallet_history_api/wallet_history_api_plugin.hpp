@@ -1,6 +1,5 @@
 #pragma once
 
-#include <xgt/plugins/wallet_history/wallet_history_plugin.hpp>
 #include <xgt/plugins/json_rpc/json_rpc_plugin.hpp>
 
 #include <appbase/application.hpp>

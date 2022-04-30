@@ -32,7 +32,6 @@
 #include <xgt/chain/xgt_objects.hpp>
 #include <xgt/chain/history_object.hpp>
 
-#include <xgt/plugins/wallet_history/wallet_history_plugin.hpp>
 #include <xgt/plugins/witness/block_producer.hpp>
 
 #include <xgt/utilities/tempdir.hpp>

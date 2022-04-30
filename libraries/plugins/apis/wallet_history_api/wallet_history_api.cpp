@@ -188,23 +188,15 @@ DEFINE_API_IMPL( wallet_history_api_rocksdb_impl, enum_virtual_ops)
 
 wallet_history_api::wallet_history_api()
 {
-   auto ah_cb = appbase::app().find_plugin< xgt::plugins::wallet_history::wallet_history_plugin >();
    auto ah_rocks = appbase::app().find_plugin< xgt::plugins::wallet_history_rocksdb::wallet_history_rocksdb_plugin >();
 
    if( ah_rocks != nullptr )
    {
-      if( ah_cb != nullptr )
-         wlog( "wallet_history and wallet_history_rocksdb plugins are both enabled. wallet_history_api will query from wallet_history_rocksdb" );
-
       my = std::make_unique< detail::wallet_history_api_rocksdb_impl >();
-   }
-   else if( ah_cb != nullptr )
-   {
-      my = std::make_unique< detail::wallet_history_api_chainbase_impl >();
    }
    else
    {
-      FC_ASSERT( false, "Account History API only works if wallet_history or wallet_history_rocksdb plugins are enabled" );
+      FC_ASSERT( false, "Account History API only works if the wallet_history_rocksdb plugin is enabled" );
    }
 
    JSON_RPC_REGISTER_API( XGT_WALLET_HISTORY_API_PLUGIN_NAME );

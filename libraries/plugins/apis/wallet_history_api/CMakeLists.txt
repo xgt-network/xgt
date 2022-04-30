@@ -6,5 +6,5 @@ add_library( wallet_history_api_plugin
              ${HEADERS}
            )
 
-target_link_libraries( wallet_history_api_plugin wallet_history_plugin wallet_history_rocksdb_plugin json_rpc_plugin xgt_chain chain_plugin )
+target_link_libraries( wallet_history_api_plugin wallet_history_rocksdb_plugin json_rpc_plugin xgt_chain chain_plugin )
 target_include_directories( wallet_history_api_plugin PUBLIC include )

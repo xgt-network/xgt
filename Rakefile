@@ -179,7 +179,6 @@ task :make_all => :configure do
     webserver_plugin
     witness_plugin
     wallet_by_key_plugin
-    wallet_history_plugin
     wallet_history_rocksdb_plugin
     block_api_plugin
     chain_api_plugin

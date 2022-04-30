@@ -7,7 +7,6 @@
 #include <xgt/chain/history_object.hpp>
 #include <xgt/chain/xgt_objects.hpp>
 
-#include <xgt/plugins/wallet_history/wallet_history_plugin.hpp>
 #include <xgt/plugins/chain/chain_plugin.hpp>
 #include <xgt/plugins/webserver/webserver_plugin.hpp>
 #include <xgt/plugins/witness/witness_plugin.hpp>
@@ -51,7 +50,6 @@ clean_database_fixture::clean_database_fixture( uint16_t shared_file_size_in_mb 
    }
 
    appbase::app().register_plugin< xgt::plugins::chain::chain_plugin >();
-   // appbase::app().register_plugin< xgt::plugins::wallet_history::wallet_history_plugin >();
    db_plugin = &appbase::app().register_plugin< xgt::plugins::debug_node::debug_node_plugin >();
 
    appbase::app().register_plugin< xgt::plugins::witness::witness_plugin >();
@@ -59,7 +57,6 @@ clean_database_fixture::clean_database_fixture( uint16_t shared_file_size_in_mb 
 
    appbase::app().initialize<
         xgt::plugins::chain::chain_plugin,
-        // xgt::plugins::wallet_history::wallet_history_plugin,
         xgt::plugins::debug_node::debug_node_plugin,
         xgt::plugins::witness::witness_plugin
      >( argc, argv );
@@ -175,9 +172,7 @@ live_database_fixture::live_database_fixture()
       _chain_dir = fc::current_path() / "test_blockchain";
       FC_ASSERT( fc::exists( _chain_dir ), "Requires blockchain to test on in ./test_blockchain" );
 
-      appbase::app().register_plugin< xgt::plugins::wallet_history::wallet_history_plugin >();
       appbase::app().initialize<
-         xgt::plugins::wallet_history::wallet_history_plugin
          >( argc, argv );
 
       db = &appbase::app().get_plugin< xgt::plugins::chain::chain_plugin >().db();
@@ -651,7 +646,6 @@ json_rpc_database_fixture::json_rpc_database_fixture()
          std::cout << "running test " << boost::unit_test::framework::current_test_case().p_name << std::endl;
    }
 
-   appbase::app().register_plugin< xgt::plugins::wallet_history::wallet_history_plugin >();
    db_plugin = &appbase::app().register_plugin< xgt::plugins::debug_node::debug_node_plugin >();
    appbase::app().register_plugin< xgt::plugins::witness::witness_plugin >();
    rpc_plugin = &appbase::app().register_plugin< xgt::plugins::json_rpc::json_rpc_plugin >();
@@ -660,7 +654,6 @@ json_rpc_database_fixture::json_rpc_database_fixture()
 
    db_plugin->logging = false;
    appbase::app().initialize<
-      xgt::plugins::wallet_history::wallet_history_plugin,
       xgt::plugins::debug_node::debug_node_plugin,
       xgt::plugins::json_rpc::json_rpc_plugin,
       xgt::plugins::block_api::block_api_plugin,
