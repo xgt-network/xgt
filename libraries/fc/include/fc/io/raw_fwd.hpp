@@ -13,7 +13,7 @@
 #include <boost/tuple/tuple.hpp>
 
 #define MAX_ARRAY_ALLOC_SIZE (1024*1024*10)
-#define MAX_RECURSION_DEPTH  (20)
+#define MAX_RECURSION_DEPTH  (40)
 
 namespace fc {
    class time_point;
