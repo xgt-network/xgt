@@ -405,7 +405,7 @@ public:
 
       if(status.ok())
       {
-         ilog("RocksDB opened successfully storage at location: `${p}'.", ("p", strPath));
+         dlog("wallet history storage at location: `${p}'.", ("p", strPath));
          verifyStoreVersion(storageDb);
          loadSeqIdentifiers(storageDb);
          _storage.reset(storageDb);
@@ -708,32 +708,32 @@ void wallet_history_plugin::impl::collectOptions(const boost::program_options::v
     fc::mutable_variant_object state_opts;
 
    typedef std::pair< wallet_name_type, wallet_name_type > pairstring;
-   XGT_LOAD_VALUE_SET(options, "account-history-rocksdb-track-account-range", _tracked_wallets, pairstring);
+   XGT_LOAD_VALUE_SET(options, "wallet-history-track-account-range", _tracked_wallets, pairstring);
 
-   state_opts[ "account-history-rocksdb-track-account-range" ] = _tracked_wallets;
+   state_opts[ "wallet-history-track-account-range" ] = _tracked_wallets;
 
-   if(options.count("account-history-rocksdb-whitelist-ops"))
+   if(options.count("wallet-history-whitelist-ops"))
    {
-      const auto& args = options.at("account-history-rocksdb-whitelist-ops").as<std::vector<std::string>>();
+      const auto& args = options.at("wallet-history-whitelist-ops").as<std::vector<std::string>>();
       storeOpFilteringParameters(args, &_op_list);
 
       if( _op_list.size() )
       {
-         state_opts["account-history-rocksdb-whitelist-ops"] = _op_list;
+         state_opts["wallet-history-whitelist-ops"] = _op_list;
       }
    }
 
    if(_op_list.empty() == false)
       ilog( "Account History: whitelisting ops ${o}", ("o", _op_list) );
 
-   if(options.count("account-history-rocksdb-blacklist-ops"))
+   if(options.count("wallet-history-blacklist-ops"))
    {
-      const auto& args = options.at("account-history-rocksdb-blacklist-ops").as<std::vector<std::string>>();
+      const auto& args = options.at("wallet-history-blacklist-ops").as<std::vector<std::string>>();
       storeOpFilteringParameters(args, &_blacklisted_op_list);
 
       if( _blacklisted_op_list.size() )
       {
-         state_opts["account-history-rocksdb-blacklist-ops"] = _blacklisted_op_list;
+         state_opts["wallet-history-blacklist-ops"] = _blacklisted_op_list;
       }
    }
 
@@ -1440,32 +1440,32 @@ void wallet_history_plugin::set_program_options(
    boost::program_options::options_description &cfg)
 {
    cfg.add_options()
-      ("account-history-rocksdb-path", bpo::value<bfs::path>()->default_value("blockchain/account-history-rocksdb-storage"),
-         "The location of the rocksdb database for account history. By default it is $DATA_DIR/account-history-rocksdb-storage")
-      ("account-history-rocksdb-track-account-range", boost::program_options::value< std::vector<std::string> >()->composing()->multitoken(), "Defines a range of wallets to track as a json pair [\"from\",\"to\"] [from,to] Can be specified multiple times.")
-      ("account-history-rocksdb-whitelist-ops", boost::program_options::value< std::vector<std::string> >()->composing(), "Defines a list of operations which will be explicitly logged.")
-      ("account-history-rocksdb-blacklist-ops", boost::program_options::value< std::vector<std::string> >()->composing(), "Defines a list of operations which will be explicitly ignored.")
+      ("wallet-history-path", bpo::value<bfs::path>()->default_value("blockchain/wallet-history-storage"),
+         "The location of the rocksdb database for account history. By default it is $DATA_DIR/wallet-history-storage")
+      ("wallet-history-track-account-range", boost::program_options::value< std::vector<std::string> >()->composing()->multitoken(), "Defines a range of wallets to track as a json pair [\"from\",\"to\"] [from,to] Can be specified multiple times.")
+      ("wallet-history-whitelist-ops", boost::program_options::value< std::vector<std::string> >()->composing(), "Defines a list of operations which will be explicitly logged.")
+      ("wallet-history-blacklist-ops", boost::program_options::value< std::vector<std::string> >()->composing(), "Defines a list of operations which will be explicitly ignored.")
 
    ;
    command_line_options.add_options()
-      ("account-history-rocksdb-immediate-import", bpo::bool_switch()->default_value(false),
+      ("wallet-history-immediate-import", bpo::bool_switch()->default_value(false),
          "Allows to force immediate data import at plugin startup. By default storage is supplied during reindex process.")
-      ("account-history-rocksdb-stop-import-at-block", bpo::value<uint32_t>()->default_value(0),
+      ("wallet-history-stop-import-at-block", bpo::value<uint32_t>()->default_value(0),
          "Allows to specify block number, the data import process should stop at.")
    ;
 }
 
 void wallet_history_plugin::plugin_initialize(const boost::program_options::variables_map& options)
 {
-   if(options.count("account-history-rocksdb-stop-import-at-block"))
-      _blockLimit = options.at("account-history-rocksdb-stop-import-at-block").as<uint32_t>();
+   if(options.count("wallet-history-stop-import-at-block"))
+      _blockLimit = options.at("wallet-history-stop-import-at-block").as<uint32_t>();
 
-   _doImmediateImport = options.at("account-history-rocksdb-immediate-import").as<bool>();
+   _doImmediateImport = options.at("wallet-history-immediate-import").as<bool>();
 
    bfs::path dbPath;
 
-   if(options.count("account-history-rocksdb-path"))
-      dbPath = options.at("account-history-rocksdb-path").as<bfs::path>();
+   if(options.count("wallet-history-path"))
+      dbPath = options.at("wallet-history-path").as<bfs::path>();
 
    if(dbPath.is_absolute() == false)
    {
