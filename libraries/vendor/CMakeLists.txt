@@ -15,9 +15,9 @@ SET(WITH_CORE_TOOLS OFF CACHE BOOL "build with core tools")
 SET(ROCKSDB_BUILD_SHARED OFF CACHE BOOL "build only static lib")
 
 if(XGT_OPT_NATIVE)
-   SET(PORTABLE ON CACHE BOOL "build a portable binary")
-else()
    SET(PORTABLE OFF CACHE BOOL "build a portable binary")
+else()
+   SET(PORTABLE ON CACHE BOOL "build a portable binary")
 endif()
 
 SET(FORCE_SSE42 ON CACHE BOOL "force building with SSE4.2, even when PORTABLE=ON")
