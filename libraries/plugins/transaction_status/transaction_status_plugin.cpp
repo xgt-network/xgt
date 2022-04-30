@@ -262,7 +262,6 @@ void transaction_status_plugin::plugin_initialize( const boost::program_options:
 {
    try
    {
-      ilog( "transaction_status: plugin_initialize() begin" );
       my = std::make_unique< detail::transaction_status_impl >();
 
       fc::mutable_variant_object state_opts;
@@ -289,11 +288,10 @@ void transaction_status_plugin::plugin_initialize( const boost::program_options:
       // We need to track 1 hour of blocks in addition to the depth the user would like us to track
       my->actual_block_depth = my->nominal_block_depth + ( XGT_MAX_TIME_UNTIL_EXPIRATION / XGT_BLOCK_INTERVAL );
 
-      dlog( "transaction status initializing" );
-      dlog( "  -> nominal block depth: ${block_depth}", ("block_depth", my->nominal_block_depth) );
-      dlog( "  -> actual block depth: ${actual_block_depth}", ("actual_block_depth", my->actual_block_depth) );
-      dlog( "  -> nominal track after block: ${track_after_block}", ("track_after_block", my->nominal_track_after_block) );
-      dlog( "  -> actual track after block: ${actual_track_after_block}", ("actual_track_after_block", my->actual_track_after_block) );
+      ilog( "Nominal block depth: ${block_depth}", ("block_depth", my->nominal_block_depth) );
+      ilog( "Actual block depth: ${actual_block_depth}", ("actual_block_depth", my->actual_block_depth) );
+      ilog( "Nominal track after block: ${track_after_block}", ("track_after_block", my->nominal_track_after_block) );
+      ilog( "Actual track after block: ${actual_track_after_block}", ("actual_track_after_block", my->actual_track_after_block) );
 
       if ( !my->actual_track_after_block )
       {
@@ -319,7 +317,6 @@ void transaction_status_plugin::plugin_initialize( const boost::program_options:
          my->rebuild_state();
       }, *this, 0);
 
-      ilog( "transaction_status: plugin_initialize() end" );
    } FC_CAPTURE_AND_RETHROW()
 }
 

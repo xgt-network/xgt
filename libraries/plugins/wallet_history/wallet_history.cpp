@@ -405,7 +405,6 @@ public:
 
       if(status.ok())
       {
-         dlog("wallet history storage at location: `${p}'.", ("p", strPath));
          verifyStoreVersion(storageDb);
          loadSeqIdentifiers(storageDb);
          _storage.reset(storageDb);
