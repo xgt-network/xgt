@@ -538,7 +538,6 @@ namespace graphene { namespace net {
       void trigger_p2p_network_connect_loop();
 
       bool have_already_received_sync_item( const item_hash_t& item_hash );
-      void request_sync_item_from_peer( const peer_connection_ptr& peer, const item_hash_t& item_to_request );
       void request_sync_items_from_peer( const peer_connection_ptr& peer, const std::vector<item_hash_t>& items_to_request );
       void fetch_sync_items_loop();
       void trigger_fetch_sync_items_loop();
@@ -998,17 +997,6 @@ namespace graphene { namespace net {
                           [&item_hash]( const graphene::net::block_message& message ) { return message.block_id == item_hash; } ) != _received_sync_items.end() ||
              std::find_if(_new_received_sync_items.begin(), _new_received_sync_items.end(),
                           [&item_hash]( const graphene::net::block_message& message ) { return message.block_id == item_hash; } ) != _new_received_sync_items.end();                          ;
-    }
-
-    void node_impl::request_sync_item_from_peer( const peer_connection_ptr& peer, const item_hash_t& item_to_request )
-    {
-      VERIFY_CORRECT_THREAD();
-      dlog( "requesting item ${item_hash} from peer ${endpoint}", ("item_hash", item_to_request )("endpoint", peer->get_remote_endpoint() ) );
-      item_id item_id_to_request( graphene::net::block_message_type, item_to_request );
-      _active_sync_requests.insert( active_sync_requests_map::value_type(item_to_request, fc::time_point::now() ) );
-      peer->last_sync_item_received_time = fc::time_point::now();
-      peer->sync_items_requested_from_peer.insert(item_to_request);
-      peer->send_message( fetch_items_message(item_id_to_request.item_type, std::vector<item_hash_t>{item_id_to_request.item_hash} ) );
     }
 
     void node_impl::request_sync_items_from_peer( const peer_connection_ptr& peer, const std::vector<item_hash_t>& items_to_request )
