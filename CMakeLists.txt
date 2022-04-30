@@ -75,6 +75,10 @@ MESSAGE( STATUS "FAIL_ON_WARNINGS: ${FAIL_ON_WARNINGS}" )
 
 SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
 
+if (MINGW)
+  add_compile_definitions(_FILE_OFFSET_BITS=64)
+endif()
+
 # The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated. Please use
 # <boost/bind/bind.hpp> + using namespace boost::placeholders, or define BOOST_BIND_GLOBAL_PLACEHOLDERS to retain the
 # current behavior.
