@@ -237,8 +237,6 @@ uint32_t database::reindex( const open_args& args )
          skip_block_log;
 
       auto cur_head_block_num = with_read_lock([&]() { return head_block_num(); });
-      idump( (cur_head_block_num) );
-
       auto last_block_num = _block_log.head()->block_num();
 
       if( args.stop_at_block > 0 && args.stop_at_block < last_block_num )
@@ -1689,7 +1687,7 @@ void database::_apply_block( const signed_block& next_block )
    if( next_block_num == 1)
    {
       fc::sha256 initial_target = fc::sha256(XGT_MINING_TARGET_START);
-      wlog("MINING DIFFICULTY - Initializing mining difficulty at ${w}", ("w",initial_target));
+      dlog("MINING DIFFICULTY - Initializing mining difficulty at ${w}", ("w",initial_target));
       const auto& gprops = get_dynamic_global_properties();
       modify( gprops, [&]( dynamic_global_property_object& dgp ) {
          dgp.mining_target = initial_target;
@@ -1706,14 +1704,14 @@ void database::_apply_block( const signed_block& next_block )
          auto block = itr[0]->data;
          prior_block = optional<signed_block>(block);
       }
-      wlog("MINING DIFFICULTY - prior_block_num ${a} next_block_num ${b} next_block_timestamp ${d}", ("a",prior_block_num)("b",next_block_num)("c",prior_block->timestamp)("d",next_block.timestamp));
+      dlog("MINING DIFFICULTY - prior_block_num ${a} next_block_num ${b} next_block_timestamp ${d}", ("a",prior_block_num)("b",next_block_num)("c",prior_block->timestamp)("d",next_block.timestamp));
 
       const auto& gprops = get_dynamic_global_properties();
       fc::time_point_sec now = next_block.timestamp;
       fc::microseconds interval = now - prior_block->timestamp;
       float actual = (float)interval.to_seconds();
       float expected = XGT_MINING_RECALC_EVERY_N_BLOCKS / XGT_MINING_BLOCKS_PER_SECOND;
-      wlog("MINING DIFFICULTY - Interval actual ${a} expected ${b}", ("a",actual)("b",expected));
+      dlog("MINING DIFFICULTY - Interval actual ${a} expected ${b}", ("a",actual)("b",expected));
       float ratio = expected / actual;
 
       // Limit the adjustment by a factor of 4 (to prevent massive changes from one target to the next)
@@ -1724,7 +1722,7 @@ void database::_apply_block( const signed_block& next_block )
       else if (adjusted_ratio > XGT_MINING_ADJUSTMENT_MAX_FACTOR)
          adjusted_ratio = XGT_MINING_ADJUSTMENT_MAX_FACTOR;
 
-      wlog("MINING DIFFICULTY - Updating mining difficulty ratio ${w} adjusted_ratio ${x}", ("w",ratio)("x",adjusted_ratio));
+      dlog("MINING DIFFICULTY - Updating mining difficulty ratio ${w} adjusted_ratio ${x}", ("w",ratio)("x",adjusted_ratio));
 
       const fc::sha256 max_target_h = fc::sha256(XGT_MINING_TARGET_MAX);
       boost::multiprecision::uint256_t max_target = hash_to_bigint(max_target_h);
@@ -1736,12 +1734,12 @@ void database::_apply_block( const signed_block& next_block )
       fc::sha256 next_target_h = bigint_to_hash(next_target);
       if (next_target >= max_target)
       {
-         wlog( "MINING DIFFICULTY - Capping next target ${a} to be lower than ${b}",
+         dlog( "MINING DIFFICULTY - Capping next target ${a} to be lower than ${b}",
                ("a",next_target_h)("b",max_target_h) );
          next_target = max_target;
          next_target_h = bigint_to_hash(next_target);
       }
-      wlog("MINING DIFFICULTY - Updating mining difficulty previous_target ${a} next target ${b}", ("a",previous_target_h.approx_log_32())("b",next_target_h.approx_log_32()));
+      ilog("Updating mining difficulty from ${a} to ${b}", ("a",previous_target_h.approx_log_32())("b",next_target_h.approx_log_32()));
 
       modify( gprops, [&]( dynamic_global_property_object& dgp ) {
          dgp.mining_target = next_target_h;
