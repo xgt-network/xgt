@@ -263,23 +263,25 @@ uint32_t database::reindex( const open_args& args )
 
                if( cur_block_num % 100000 == 0 )
                {
-                  std::cerr << "replay: " << double( cur_block_num * 100 ) / last_block_num << "%   " << cur_block_num << " of " << last_block_num << "   (" <<
-                  get_cache_size()  << " objects cached using " << (get_cache_usage() >> 20) << "M"
-                  << ")\n";
+                  ilog("replay: ${pct}%  ${cur} of ${last} (${cachesz} objects using ${cacheusg}M)",
+                        ("pct", double( cur_block_num * 100 ) / last_block_num)
+                        ("cur", cur_block_num)
+                        ("last", last_block_num)
+                        ("cachesz", get_cache_size())
+                        ("cacheusg", get_cache_usage() >> 20)
+                  );
 
                   //rocksdb::SetPerfLevel(rocksdb::kEnableCount);
                   //rocksdb::get_perf_context()->Reset();
                }
                apply_block( itr.first, skip_flags );
 
-               if( cur_block_num % 100000 == 0 )
-               {
-                  //std::cout << rocksdb::get_perf_context()->ToString() << std::endl;
-                  if( cur_block_num % 1000000 == 0 )
-                  {
-                     dump_lb_call_counts();
-                  }
-               }
+               // DEBUG: enable for some performance data
+               // if( cur_block_num % 100000 == 0 )
+               // {
+               //    std::cout << rocksdb::get_perf_context()->ToString() << std::endl;
+               //    dump_lb_call_counts();
+               // }
 
                if( (args.benchmark.first > 0) && (cur_block_num % args.benchmark.first == 0) )
                   args.benchmark.second( cur_block_num, get_abstract_index_cntr() );
