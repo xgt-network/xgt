@@ -32,7 +32,6 @@ namespace xgt { namespace chain {
          uint32_t          head_block_number = 0;
          block_id_type     head_block_id;
          time_point_sec    time;
-         wallet_name_type  current_witness;
 
          fc::sha256 mining_target;
          time_point_sec last_mining_recalc_time; // @since 1.1.2 - Deprecated
@@ -127,7 +126,6 @@ FC_REFLECT( xgt::chain::dynamic_global_property_object,
              (head_block_number)
              (head_block_id)
              (time)
-             (current_witness)
              (mining_target)
              (total_pow)
              (num_pow_witnesses)

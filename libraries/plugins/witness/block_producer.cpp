@@ -158,18 +158,7 @@ void block_producer::apply_pending_transactions(
    _db.pending_transaction_session().reset();
    _db.pending_transaction_session() = _db.start_undo_session();
 
-   //FC_TODO( "Safe to remove after HF20 occurs because no more pre HF20 blocks will be generated" );
-   /// modify current witness so transaction evaluators can know who included the transaction
-   _db.modify(
-          _db.get_dynamic_global_properties(),
-          [&]( chain::dynamic_global_property_object& dgp )
-          {
-             dgp.current_witness = witness_recovery;
-          });
-
-
    uint64_t postponed_tx_count = 0;
-
 
    // postpone transaction if it would make block too big
 

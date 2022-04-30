@@ -1344,7 +1344,6 @@ void database::init_genesis( uint64_t init_supply )
       {
          p.mining_target = fc::sha256(XGT_MINING_TARGET_START);
          //p.mining_target = fc::sha256("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
-         p.current_witness = XGT_INIT_MINER_NAME;
          p.time = XGT_GENESIS_TIME;
          p.recent_slots_filled = fc::uint128::max_value();
          p.participation_count = 128;
@@ -1550,12 +1549,6 @@ void database::_apply_block( const signed_block& next_block )
          ("next_block_num",next_block_num)("block_size", block_size)("min",XGT_MIN_BLOCK_SIZE)
       );
    }
-
-   /// modify current witness so transaction evaluators can know who included the transaction,
-   /// this is mostly for POW operations which must pay the current_witness
-   modify( gprops, [&]( dynamic_global_property_object& dgp ){
-      dgp.current_witness = next_block.witness;
-   });
 
    required_automated_actions req_actions;
    optional_automated_actions opt_actions;
