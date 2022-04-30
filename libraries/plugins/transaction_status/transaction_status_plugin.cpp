@@ -54,6 +54,7 @@ public:
    uint32_t                      nominal_track_after_block = 0; //!< User provided track-after-block
    uint32_t                      actual_block_depth = 0;        //!< Calculated block-depth
    uint32_t                      actual_track_after_block = 0;  //!< Calculated track-after-block
+   bool                          reindexing = false;
    bool                          tracking = false;
    bool                          rebuild_state_flag = false;
    boost::signals2::connection   post_apply_transaction_connection;
@@ -105,7 +106,7 @@ void transaction_status_impl::on_post_apply_block( const block_notification& not
          }
       }
    }
-   else if ( actual_track_after_block <= note.block_num )
+   else if ( !reindexing && actual_track_after_block <= note.block_num )
    {
       ilog( "Transaction status tracking activated at block ${block_num}, statuses will be available after block ${nominal_track_after_block}",
          ("block_num", note.block_num)("nominal_track_after_block", nominal_track_after_block) );
@@ -308,10 +309,12 @@ void transaction_status_plugin::plugin_initialize( const boost::program_options:
       my->post_apply_block_connection = my->_db.add_post_apply_block_handler( [&]( const block_notification& note ) { try { my->on_post_apply_block( note ); } FC_LOG_AND_RETHROW() }, *this, 0 );
 
       my->_db.add_pre_reindex_handler([&](const xgt::chain::reindex_notification& note) -> void {
+         my->reindexing = true;
          my->tracking = false;
       }, *this, 0);
 
       my->_db.add_post_reindex_handler([&](const xgt::chain::reindex_notification& note) -> void {
+         my->reindexing = false;
          my->tracking = true;
          my->rebuild_state();
       }, *this, 0);
