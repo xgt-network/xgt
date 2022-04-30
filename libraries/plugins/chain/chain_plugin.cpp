@@ -14,12 +14,11 @@
 #include <fc/io/json.hpp>
 #include <fc/io/fstream.hpp>
 
-#include <boost/asio.hpp>
 #include <boost/optional.hpp>
 #include <boost/bind.hpp>
 #include <boost/preprocessor/stringize.hpp>
 #include <boost/thread/future.hpp>
-#include <boost/lockfree/queue.hpp>
+#include <boost/thread/sync_queue.hpp>
 
 #include <thread>
 #include <memory>
@@ -31,7 +30,6 @@ namespace xgt { namespace plugins { namespace chain {
 using namespace xgt;
 using fc::flat_map;
 using xgt::chain::block_id_type;
-namespace asio = boost::asio;
 
 #define NUM_THREADS 1
 
@@ -65,6 +63,7 @@ struct write_context
 {
    write_request_ptr             req_ptr;
    uint32_t                      skip = 0;
+   bool                          shutdown = false;
    bool                          success = true;
    fc::optional< fc::exception > except;
    promise_ptr                   prom_ptr;
@@ -75,7 +74,7 @@ namespace detail {
 class chain_plugin_impl
 {
    public:
-      chain_plugin_impl() : write_queue( 64 ) {}
+      chain_plugin_impl() : write_queue() {}
       ~chain_plugin_impl() { stop_write_processing(); }
 
       void start_write_processing();
@@ -105,9 +104,8 @@ class chain_plugin_impl
 
       uint32_t allow_future_time = 5;
 
-      bool                             running = true;
       std::shared_ptr< std::thread >   write_processor_thread;
-      boost::lockfree::queue< write_context* > write_queue;
+      boost::concurrent::sync_queue< write_context* > write_queue;
 
       flat_map< string, fc::variant_object > plugin_state_opts;
       bfs::path                        database_cfg;
@@ -231,28 +229,29 @@ void chain_plugin_impl::start_write_processing()
 
       request_promise_visitor prom_visitor;
 
-      while( running )
+      while( true )
       {
-         if( write_queue.pop( cxt ) )
-         {
-            req_visitor.skip = cxt->skip;
-            req_visitor.except = &(cxt->except);
+         write_queue >> cxt;
 
-            db.with_write_lock( [&]()
-            {
-               cxt->success = cxt->req_ptr.visit( req_visitor );
-               cxt->prom_ptr.visit( prom_visitor );
-            });
-         } else {
-            boost::this_thread::sleep_for( boost::chrono::milliseconds( 10 ) );
-         }
+         if (cxt->shutdown)
+            break;
+
+         req_visitor.skip = cxt->skip;
+         req_visitor.except = &(cxt->except);
+
+         db.with_write_lock( [&]()
+         {
+            cxt->success = cxt->req_ptr.visit( req_visitor );
+            cxt->prom_ptr.visit( prom_visitor );
+         });
       }
    });
 }
 
 void chain_plugin_impl::stop_write_processing()
 {
-   running = false;
+   auto shutdown_msg = write_context{.shutdown = true};
+   write_queue << &shutdown_msg;
 
    if( write_processor_thread )
       write_processor_thread->join();
@@ -270,7 +269,7 @@ void chain_plugin_impl::post_block( const block_notification& note )
 {
    if( db.get_dynamic_global_properties().last_irreversible_block_num >= stop_at_block )
    {
-      running = false;
+      stop_write_processing();
       std::async( std::launch::async, [&]{ app().quit(); } );
    }
 }
@@ -643,7 +642,7 @@ bool chain_plugin::accept_block( const xgt::chain::signed_block& block, bool cur
    cxt.skip = skip;
    cxt.prom_ptr = &prom;
 
-   my->write_queue.push( &cxt );
+   my->write_queue << &cxt;
 
    prom.get_future().get();
 
@@ -659,7 +658,7 @@ void chain_plugin::accept_transaction( const xgt::chain::signed_transaction& trx
    cxt.req_ptr = &trx;
    cxt.prom_ptr = &prom;
 
-   my->write_queue.push( &cxt );
+   my->write_queue << &cxt;
 
    prom.get_future().get();
 
@@ -681,7 +680,7 @@ xgt::chain::signed_block chain_plugin::generate_block(
    cxt.req_ptr = &req;
    cxt.prom_ptr = &prom;
 
-   my->write_queue.push( &cxt );
+   my->write_queue << &cxt;
 
    prom.get_future().get();
 
