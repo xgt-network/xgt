@@ -2430,6 +2430,11 @@ namespace graphene { namespace net {
     void node_impl::fetch_next_batch_of_item_ids_from_peer( peer_connection* peer, bool reset_fork_tracking_data_for_peer /* = false */ )
     {
       VERIFY_CORRECT_THREAD();
+
+      if (peer->item_ids_requested_from_peer)
+        return;
+
+
       if( reset_fork_tracking_data_for_peer )
       {
         peer->last_block_delegate_has_seen = item_hash_t();
