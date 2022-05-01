@@ -77,7 +77,7 @@
 
 #define GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES           2
 
-#define GRAPHENE_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING      200
+#define GRAPHENE_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING      500
 
 /**
  * During normal operation, how many items will be fetched from each
@@ -98,10 +98,10 @@
  * then switch into block-fetching mode until the number of blocks we know about
  * but haven't yet fetched drops below this
  */
-#define GRAPHENE_NET_MIN_BLOCK_IDS_TO_PREFETCH               10000
+#define GRAPHENE_NET_MIN_BLOCK_IDS_TO_PREFETCH               100000
 
-#define GRAPHENE_NET_MAX_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME 200
-#define GRAPHENE_NET_MAX_NUMBER_OF_BLOCKS_TO_PREFETCH           (10 * GRAPHENE_NET_MAX_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME)
+#define GRAPHENE_NET_MAX_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME 100
+#define GRAPHENE_NET_MAX_NUMBER_OF_BLOCKS_TO_PREFETCH           (20 * GRAPHENE_NET_MAX_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME)
 
 #define GRAPHENE_NET_MAX_TRX_PER_SECOND                      1000
 

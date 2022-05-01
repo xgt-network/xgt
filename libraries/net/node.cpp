@@ -1000,7 +1000,7 @@ namespace graphene { namespace net {
               continue;
 
             auto prefetching_count = _active_sync_requests.size() + _new_received_sync_items.size();
-            if (prefetching_count > _node_configuration.maximum_number_of_sync_blocks_to_prefetch) {
+            if (prefetching_count + sync_items_to_request.size() > _node_configuration.maximum_number_of_sync_blocks_to_prefetch) {
               break;
             }
 
@@ -1355,7 +1355,6 @@ namespace graphene { namespace net {
                   // wlog("Disconnecting peer ${peer} because they haven't made any progress on my remaining ${count} sync item requests",
                   //     ("peer", active_peer->get_remote_endpoint())("count", active_peer->sync_items_requested_from_peer.size()));
                   disconnect_due_to_request_timeout = true;
-
                   break;
                 }
               }
@@ -1624,9 +1623,6 @@ namespace graphene { namespace net {
         dlog("asyncing delayed_peer_deletion_task to delete ${size} peers", ("size", _peers_to_delete.size()));
         _delayed_peer_deletion_task_done = async_task([this](){ delayed_peer_deletion_task(); }, "delayed_peer_deletion_task" );
       }
-      else
-        ilog("delayed_peer_deletion_task is already scheduled (current size of _peers_to_delete is ${size})", ("size", _peers_to_delete.size()));
-
 #endif
     }
 
