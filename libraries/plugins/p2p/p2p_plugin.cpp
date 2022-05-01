@@ -211,8 +211,10 @@ bool p2p_plugin_impl::handle_block( const graphene::net::block_message& blk_msg,
                ("b", blk_msg.block.block_num())
                ("w", blk_msg.block.witness)
                ("l", offset.count() / 1000) );
- 
-            ready_to_mine = true;
+
+            // TODO: add a flag to disable this waiting behavior.
+            if (!ready_to_mine)
+               ready_to_mine = true;
          }
 
          return result;
@@ -473,8 +475,8 @@ std::vector< graphene::net::item_hash_t > p2p_plugin_impl::get_blockchain_synops
 
 void p2p_plugin_impl::sync_status( uint32_t item_type, uint32_t item_count )
 {
-   if (item_count == 0)
-      this->ready_to_mine = true;
+   if (!ready_to_mine && item_count == 0 && node->is_connected())
+      ready_to_mine = true;
    // any status reports to GUI go here
 }
 
