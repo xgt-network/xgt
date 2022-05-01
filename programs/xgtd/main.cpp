@@ -31,6 +31,10 @@
 #include <boost/program_options.hpp>
 #include <boost/stacktrace.hpp>
 
+#ifndef _WIN32
+#include <sys/resource.h>
+#endif
+
 #include <iostream>
 #include <csignal>
 #include <vector>
@@ -72,10 +76,23 @@ void segfault(int sig) {
    std::abort();
 }
 
+void rlimit_nofile() {
+   #ifndef _WIN32
+   struct rlimit l;
+
+   if (getrlimit(RLIMIT_NOFILE, &l) == 0) {
+      l.rlim_cur = l.rlim_max;
+      setrlimit(RLIMIT_NOFILE, &l);
+   }
+   #endif
+}
+
 int main( int argc, char** argv )
 {
    try
    {
+      rlimit_nofile();
+
       // Setup logging config
       bpo::options_description options;
 
