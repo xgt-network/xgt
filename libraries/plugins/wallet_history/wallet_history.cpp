@@ -32,7 +32,6 @@
 namespace bpo = boost::program_options;
 
 #define XGT_NAMESPACE_PREFIX "xgt::protocol::"
-#define OPEN_FILE_LIMIT 750
 
 #define DIAGNOSTIC(s)
 //#define DIAGNOSTIC(s) s
@@ -394,12 +393,10 @@ public:
       DB* storageDb = nullptr;
       auto strPath = _storagePath.string();
       Options options;
-      /// Optimize RocksDB. This is the easiest way to get RocksDB to perform well
       options.IncreaseParallelism();
       options.OptimizeLevelStyleCompaction();
 
       DBOptions dbOptions(options);
-      options.max_open_files = OPEN_FILE_LIMIT;
 
       auto status = DB::Open(dbOptions, strPath, columnDefs, &_columnHandles, &storageDb);
 

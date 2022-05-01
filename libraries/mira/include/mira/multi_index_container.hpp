@@ -58,7 +58,6 @@
 #define BOOST_MULTI_INDEX_CHECK_INVARIANT
 
 #define DEFAULT_COLUMN 0
-#define MIRA_MAX_OPEN_FILES_PER_DB 64
 
 #define ENTRY_COUNT_KEY "ENTRY_COUNT"
 #define REVISION_KEY "REV"
@@ -818,9 +817,8 @@ private:
       std::vector< ::rocksdb::ColumnFamilyHandle* > handles;
 
       ::rocksdb::Options opts;
-      //opts.IncreaseParallelism();
-      //opts.OptimizeLevelStyleCompaction();
-      opts.max_open_files = MIRA_MAX_OPEN_FILES_PER_DB;
+      opts.IncreaseParallelism();
+      opts.OptimizeLevelStyleCompaction();
 
       ::rocksdb::Status s = ::rocksdb::DB::OpenForReadOnly( opts, str_path, column_defs, &handles, &db );
 
