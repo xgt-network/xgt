@@ -3206,7 +3206,7 @@ namespace graphene { namespace net {
         }
       } while (blocks_processed > 0 && blocks_processed < _node_configuration.maximum_number_of_blocks_to_handle_at_one_time);
 
-      ilog("leaving process_backlog_of_sync_blocks, ${count} processed, ${left}", ("count", blocks_processed)("left", _received_sync_items.size()));
+      dlog("sync backlog has ${left} blocked, after ${count} processed", ("count", blocks_processed)("left", _received_sync_items.size()));
     }
 
     void node_impl::trigger_process_backlog_of_sync_blocks()
