@@ -37,13 +37,13 @@
  * 2MiB
  */
 #define MAX_MESSAGE_SIZE                                     1024*1024*2
-#define GRAPHENE_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME      30 // seconds
+#define GRAPHENE_NET_DEFAULT_PEER_CONNECTION_RETRY_TIME      10 // seconds
 
 /**
  * AFter trying all peers, how long to wait before we check to
  * see if there are peers we can try again.
  */
-#define GRAPHENE_PEER_DATABASE_RETRY_DELAY                   15 // seconds
+#define GRAPHENE_PEER_DATABASE_RETRY_DELAY                   5 // seconds
 
 #define GRAPHENE_NET_PEER_HANDSHAKE_INACTIVITY_TIMEOUT       15
 
@@ -77,7 +77,7 @@
 
 #define GRAPHENE_NET_MAX_INVENTORY_SIZE_IN_MINUTES           2
 
-#define GRAPHENE_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING      500
+#define GRAPHENE_NET_MAX_BLOCKS_PER_PEER_DURING_SYNCING      100
 
 /**
  * During normal operation, how many items will be fetched from each
@@ -98,7 +98,7 @@
  * then switch into block-fetching mode until the number of blocks we know about
  * but haven't yet fetched drops below this
  */
-#define GRAPHENE_NET_MIN_BLOCK_IDS_TO_PREFETCH               100000
+#define GRAPHENE_NET_MIN_BLOCK_IDS_TO_PREFETCH                10000
 
 #define GRAPHENE_NET_MAX_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME 100
 #define GRAPHENE_NET_MAX_NUMBER_OF_BLOCKS_TO_PREFETCH           (20 * GRAPHENE_NET_MAX_NUMBER_OF_BLOCKS_TO_HANDLE_AT_ONE_TIME)
@@ -109,7 +109,7 @@
 
 #define GRAPHENE_NET_PRUNE_FAILED_IDS_MINUTES                  15
 
-#define GRAPHENE_NET_FETCH_UPDATED_PEER_LISTS_INTERVAL_MINUTES 15
+#define GRAPHENE_NET_FETCH_UPDATED_PEER_LISTS_INTERVAL_MINUTES 1
 
 #define GRAPHENE_NET_BANDWIDTH_MONITOR_INTERVAL_SECONDS        1
 
