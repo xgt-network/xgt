@@ -2,15 +2,6 @@ cmake_minimum_required(VERSION 3.9.4)
 
 add_executable( xgtd main.cpp )
 
-include(CheckIPOSupported)
-check_ipo_supported(RESULT ipo_supported OUTPUT error)
-if( ipo_supported )
-       message(STATUS "IPO / LTO enabled")
-       set_property(TARGET xgtd PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
-else()
-       message(STATUS "IPO / LTO not supported: <${error}>")
-endif()
-
 if (NOT APPLE)
 target_link_libraries( xgtd
 	-static-libgcc
