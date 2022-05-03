@@ -5,7 +5,6 @@
 #include <fc/utility.hpp>
 #include <fc/io/fstream.hpp>
 
-#include <fc/utf8.hpp>
 #include <fc/variant.hpp>
 
 #include <boost/config.hpp>
@@ -19,31 +18,18 @@
   #include <sys/types.h>
   #include <sys/stat.h>
   #include <pwd.h>
-# ifdef FC_HAS_SIMPLE_FILE_LOCK  
-  #include <sys/file.h>
-  #include <fcntl.h>
-# endif
 #endif
 
 namespace fc {
   // when converting to and from a variant, store utf-8 in the variant
   void to_variant( const fc::path& path_to_convert, variant& variant_output ) 
   {
-    std::wstring wide_string = path_to_convert.generic_wstring();
-    std::string utf8_string;
-    fc::encodeUtf8(wide_string, &utf8_string);
-    variant_output = utf8_string;
-
-    //std::string path = t.to_native_ansi_path();
-    //std::replace(path.begin(), path.end(), '\\', '/');
-    //v = path;
+    variant_output = path_to_convert.generic_string();
   }
 
   void from_variant( const fc::variant& variant_to_convert, fc::path& path_output ) 
   {
-    std::wstring wide_string;
-    fc::decodeUtf8(variant_to_convert.as_string(), &wide_string);
-    path_output = path(wide_string);
+    path_output = path(variant_to_convert.as_string());
   }
 
    // Note: we can do this cast because the separator should be an ASCII character
@@ -57,10 +43,7 @@ namespace fc {
    path::path( const char* p )
    :_p(p){}
    path::path( const fc::string& p )
-   :_p(p.c_str()){}
-
-   path::path(const std::wstring& p)
-   :_p(p) {}
+   :_p(p){}
 
    path::path( const path& p )
    :_p(p){}
@@ -106,53 +89,11 @@ namespace fc {
      return boost::filesystem::path(*_p).make_preferred().string();
    }
 
-  std::wstring path::wstring() const
-    {
-    return _p->wstring();
-    }
-
-  std::wstring path::generic_wstring() const
-    {
-    return _p->generic_wstring();
-    }
-
-  std::wstring path::preferred_wstring() const
-  {
-    return boost::filesystem::path(*_p).make_preferred().wstring();
-  }
-
-  std::string path::to_native_ansi_path() const
-    {
-    std::wstring path = generic_wstring();
-
-#ifdef WIN32
-    const size_t maxPath = 32*1024;
-    std::vector<wchar_t> short_path;
-    short_path.resize(maxPath + 1);
-          
-    wchar_t* buffer = short_path.data();
-    DWORD res = GetShortPathNameW(path.c_str(), buffer, maxPath);
-    if(res != 0)
-      path = buffer;
-#endif
-    std::string filePath;
-    fc::encodeUtf8(path, &filePath);
-    return filePath;
-    }
-
-   /**
-    *  @todo use iterators instead of indexes for 
-    *  faster performance
-    */
-   fc::string path::windows_string()const {
-     std::string result = _p->generic_string();
-     std::replace(result.begin(), result.end(), '/', '\\');
-     return result;
-   }
-
-   fc::string path::string()const {
+   std::string path::string() const
+   {
     return _p->string();
    }
+
    fc::path path::filename()const {
     return _p->filename();
    }
@@ -448,16 +389,9 @@ namespace fc {
       static fc::path p = []()
       {
 #ifdef WIN32
-          HANDLE access_token;
-          if (!OpenProcessToken(GetCurrentProcess(), TOKEN_READ, &access_token))
-            FC_ASSERT(false, "Unable to open an access token for the current process");
-          wchar_t user_profile_dir[MAX_PATH];
-          DWORD user_profile_dir_len = sizeof(user_profile_dir);
-          BOOL success = GetUserProfileDirectoryW(access_token, user_profile_dir, &user_profile_dir_len);
-          CloseHandle(access_token);
-          if (!success)
-            FC_ASSERT(false, "Unable to get the user profile directory");
-          return fc::path(std::wstring(user_profile_dir));
+          char* appdata = getenv( "APPDATA" );
+          FC_ASSERT(appdata != nullptr, "Unable to get the user profile directory");
+          return fc::path(appdata);
 #else
           char* home = getenv( "HOME" );
           if( nullptr == home )
@@ -475,125 +409,10 @@ namespace fc {
       return p;
    }
 
-   const fc::path& app_path()
-   {
-#ifdef __APPLE__
-         static fc::path appdir = [](){  return home_path() / "Library" / "Application Support"; }();  
-#elif defined( WIN32 )
-         static fc::path appdir = [](){
-           wchar_t app_data_dir[MAX_PATH];
-
-           if (!SUCCEEDED(SHGetFolderPathW(NULL, CSIDL_APPDATA | CSIDL_FLAG_CREATE, NULL, 0, app_data_dir)))
-             FC_ASSERT(false, "Unable to get the current AppData directory");
-           return fc::path(std::wstring(app_data_dir));
-         }();
-#else
-        static fc::path appdir = home_path();
-#endif
-      return appdir;
-   }
-
    const fc::path& current_path()
    {
      static fc::path appCurrentPath = boost::filesystem::current_path();
      return appCurrentPath;
    }
-
-
-#ifdef FC_HAS_SIMPLE_FILE_LOCK  
-  class simple_lock_file::impl
-  {
-  public:
-#ifdef _WIN32
-    HANDLE file_handle;
-#else
-    int file_handle;
-#endif
-    bool is_locked;
-    path lock_file_path;
-
-    impl(const path& lock_file_path);
-    ~impl();
-
-    bool try_lock();
-    void unlock();
-  };
-  
-  simple_lock_file::impl::impl(const path& lock_file_path) :
-#ifdef _WIN32
-    file_handle(INVALID_HANDLE_VALUE),
-#else
-    file_handle(-1),
-#endif
-    is_locked(false),
-    lock_file_path(lock_file_path)
-  {}
-   
-  simple_lock_file::impl::~impl()
-  {
-    unlock();
-  }
-
-  bool simple_lock_file::impl::try_lock()
-  {
-#ifdef _WIN32
-    HANDLE fh = CreateFileA(lock_file_path.to_native_ansi_path().c_str(),
-                            GENERIC_READ | GENERIC_WRITE,
-                            0, 0,
-                            OPEN_ALWAYS, 0, NULL);
-    if (fh == INVALID_HANDLE_VALUE)
-      return false;
-    is_locked = true;
-    file_handle = fh;
-    return true;
-#else
-    int fd = open(lock_file_path.string().c_str(), O_RDWR|O_CREAT, 0644);
-    if (fd < 0)
-      return false;
-    if (flock(fd, LOCK_EX|LOCK_NB) == -1)
-    {
-      close(fd);
-      return false;
-    }
-    is_locked = true;
-    file_handle = fd;
-    return true;
-#endif
-  }
-
-  void simple_lock_file::impl::unlock()
-  {
-#ifdef WIN32
-    CloseHandle(file_handle);
-    file_handle = INVALID_HANDLE_VALUE;
-    is_locked = false;
-#else
-    flock(file_handle, LOCK_UN);
-    close(file_handle);
-    file_handle = -1;
-    is_locked = false;
-#endif
-  }
-
-
-  simple_lock_file::simple_lock_file(const path& lock_file_path) :
-    my(new impl(lock_file_path))
-  {
-  }
-
-  simple_lock_file::~simple_lock_file()
-  {
-  }
-
-  bool simple_lock_file::try_lock()
-  {
-    return my->try_lock();
-  }
-
-  void simple_lock_file::unlock()
-  {
-    my->unlock();
-  }
-#endif // FC_HAS_SIMPLE_FILE_LOCK
 
 }

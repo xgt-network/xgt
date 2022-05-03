@@ -505,18 +505,6 @@ namespace fc
       } catch ( const fc::eof_exception& ){}
       return result;
    } FC_RETHROW_EXCEPTIONS( warn, "", ("str",utf8_str) ) }
-   /*
-   void toUTF8( const char str, ostream& os )
-   {
-      // validate str == valid utf8
-      utf8::replace_invalid( &str, &str + 1, ostream_iterator<char>(os) );
-   }
-
-   void toUTF8( const wchar_t c, ostream& os )
-   {
-      utf8::utf16to8( &c, (&c)+1, ostream_iterator<char>(os) );
-   }
-   */
 
    /**
     *  Convert '\t', '\a', '\n', '\\' and '"'  to "\t\a\n\\\""
