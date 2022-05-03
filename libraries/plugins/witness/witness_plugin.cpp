@@ -27,12 +27,6 @@
 #include <random>
 #include <thread>
 
-
-#define DISTANCE_CALC_PRECISION (10000)
-#define BLOCK_PRODUCING_LAG_TIME (750)
-#define BLOCK_PRODUCTION_LOOP_SLEEP_TIME (200000)
-
-
 namespace xgt { namespace plugins { namespace witness {
 
 using namespace xgt::chain;
