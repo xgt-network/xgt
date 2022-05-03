@@ -25,6 +25,7 @@
 #include <iostream>
 #include <limits>
 #include <random>
+#include <thread>
 
 
 #define DISTANCE_CALC_PRECISION (10000)
@@ -240,9 +241,17 @@ namespace detail {
       }
    }
 
+   uint64_t mknonce() {
+      std::random_device rd;
+      std::uniform_int_distribution<uint64_t> dist(0, UINT64_MAX);
+      auto nonce = dist(rd);
+      dlog("${thread} initializing nonce: ${nonce}", ("thread", (std::stringstream() << std::this_thread::get_id()).str())("nonce", nonce));
+      return nonce;
+   }
+
    // mine_rounds performs work in work for miner solving for block_id with target and returns the number of rounds attempted.
    uint64_t mine_rounds(std::shared_ptr<protocol::sha2_pow> work, uint32_t target, uint64_t rounds) {
-      thread_local uint64_t nonce = std::hash<std::thread::id>()(std::this_thread::get_id());
+      thread_local uint64_t nonce = mknonce();
       uint64_t done = 0;
       for (; done != rounds; ++done) {
          work->update(++nonce);
