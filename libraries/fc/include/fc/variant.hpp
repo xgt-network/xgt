@@ -156,7 +156,7 @@ namespace fc
 
    #ifdef __APPLE__
    void to_variant( size_t s, variant& v );
-   #elif !defined(_MSC_VER)
+   #elif !defined(_WIN32)
    void to_variant( long long int s, variant& v );
    void to_variant( unsigned long long int s, variant& v );
    #endif
@@ -381,6 +381,14 @@ namespace fc
    /** @ingroup Serializable */
    void from_variant( const variant& var,  uint32_t& vo );
    /** @ingroup Serializable */
+   template<typename T>
+   void to_variant( optional<T>& var, variant& vo )
+   {
+      if( var.is_null() )
+        vo = variant();
+      else
+        to_variant( *var, vo );
+   }
    template<typename T>
    void from_variant( const variant& var,  optional<T>& vo )
    {

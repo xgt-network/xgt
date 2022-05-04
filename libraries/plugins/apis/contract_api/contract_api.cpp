@@ -38,11 +38,11 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
    const auto& idx = _db.get_index< chain::contract_index, chain::by_owner >();
    auto itr = idx.lower_bound( args.owner );
    auto end = idx.end();
-   wlog("!!!!!! LIST_OWNER_CONTRACTS");
+   dlog("!!!!!! LIST_OWNER_CONTRACTS");
    while( itr != end )
    {
       if (itr->owner != args.owner) break;
-      wlog("!!!!!! LIST_OWNER_CONTRACTS ${w}", ("w",itr->owner));
+      dlog("!!!!!! LIST_OWNER_CONTRACTS ${w}", ("w",itr->owner));
       result.contracts.push_back(*itr);
       ++itr;
    }

@@ -231,4 +231,15 @@ void signed_transaction::verify_authority(
       flat_set< wallet_name_type >() );
 } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
+bool transaction::has_pow_op()const
+{
+   for (auto& op : operations) {
+      if (is_pow_operation(op)) {
+         return true;
+      }
+   }
+
+   return false;
+}
+
 } } // xgt::protocol

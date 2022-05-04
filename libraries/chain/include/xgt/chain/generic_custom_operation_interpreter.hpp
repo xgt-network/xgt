@@ -210,7 +210,7 @@ class generic_custom_operation_interpreter
       {
          try
          {
-            FC_TODO( "Should we hardfork out old serialization?" )
+            //FC_TODO( "Should we hardfork out old serialization?" )
             fc::variant v = fc::json::from_string( outer_o.json );
 
             std::vector< CustomOperationType > custom_operations;

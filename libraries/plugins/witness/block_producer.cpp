@@ -3,6 +3,7 @@
 #include <xgt/protocol/base.hpp>
 #include <xgt/protocol/config.hpp>
 #include <xgt/protocol/version.hpp>
+#include <xgt/protocol/operations.hpp>
 
 #include <xgt/chain/database_exceptions.hpp>
 #include <xgt/chain/db_with.hpp>
@@ -41,7 +42,7 @@ chain::signed_block block_producer::generate_block(
          });
       _db.set_producing( false );
    }
-   catch( fc::exception& e )
+   catch( const fc::exception& e )
    {
       _db.set_producing( false );
       throw e;
@@ -157,18 +158,7 @@ void block_producer::apply_pending_transactions(
    _db.pending_transaction_session().reset();
    _db.pending_transaction_session() = _db.start_undo_session();
 
-   FC_TODO( "Safe to remove after HF20 occurs because no more pre HF20 blocks will be generated" );
-   /// modify current witness so transaction evaluators can know who included the transaction
-   _db.modify(
-          _db.get_dynamic_global_properties(),
-          [&]( chain::dynamic_global_property_object& dgp )
-          {
-             dgp.current_witness = witness_recovery;
-          });
-
-
    uint64_t postponed_tx_count = 0;
-
 
    // postpone transaction if it would make block too big
 
@@ -192,9 +182,8 @@ void block_producer::apply_pending_transactions(
           }
           catch (const fc::exception& e)
           {
-              // Do nothing, transaction will not be re-applied
-              //wlog( "Transaction was not processed while generating block due to ${e}", ("e", e) );
-              //wlog( "The transaction was ${t}", ("t", tx) );
+            wlog("Block reward pow op transaction failed: ${e}", ("e", e));
+            throw e;
           }
       }
    }
@@ -210,6 +199,19 @@ void block_producer::apply_pending_transactions(
 
       if( tx.expiration < when )
          continue;
+
+      if (block_reward) {
+         bool contains_pow = false;
+         for (auto& op : tx.operations) {
+            if (protocol::is_pow_operation(op)) {
+               contains_pow = true;
+            }
+         }
+         if (contains_pow) {
+            wlog("Skipping pow tx's from others");
+            continue;
+         }
+      }
 
       uint64_t new_total_size = total_block_size + fc::raw::pack_size( tx );
 
@@ -264,16 +266,12 @@ void block_producer::apply_pending_transactions(
          total_block_size = new_total_size;
          required_actions.push_back( pending_required_itr->action );
 
-#ifdef ENABLE_MIRA
          auto old = pending_required_itr++;
          if( !( pending_required_itr != pending_required_action_idx.end() && pending_required_itr->execution_time <= when ) )
          {
             pending_required_itr = pending_required_action_idx.iterator_to( *old );
             ++pending_required_itr;
          }
-#else
-         ++pending_required_itr;
-#endif
       }
       catch( fc::exception& e )
       {
@@ -308,7 +306,7 @@ void block_producer::apply_pending_transactions(
          total_block_size = new_total_size;
          optional_actions.push_back( pending_optional_itr->action );
       }
-      catch( fc::exception& ) {}
+      catch( const fc::exception& ) {}
 
       ++pending_optional_itr;
    }

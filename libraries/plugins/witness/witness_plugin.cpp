@@ -16,6 +16,7 @@
 #include <fc/io/json.hpp>
 #include <fc/macros.hpp>
 #include <fc/smart_ref_impl.hpp>
+#include <fc/time.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
@@ -24,12 +25,7 @@
 #include <iostream>
 #include <limits>
 #include <random>
-
-
-#define DISTANCE_CALC_PRECISION (10000)
-#define BLOCK_PRODUCING_LAG_TIME (750)
-#define BLOCK_PRODUCTION_LOOP_SLEEP_TIME (200000)
-
+#include <thread>
 
 namespace xgt { namespace plugins { namespace witness {
 
@@ -47,7 +43,7 @@ void new_chain_banner( const chain::database& db )
       "********************************\n"
       "*                              *\n"
       "*   ------- NEW CHAIN ------   *\n"
-      "*   -   Welcome to Xgt!  -   *\n"
+      "*   -   Welcome to Xgt!    -   *\n"
       "*   ------------------------   *\n"
       "*                              *\n"
       "********************************\n"
@@ -93,12 +89,7 @@ namespace detail {
 
       bool _is_braking = false;
       std::vector<std::shared_ptr<fc::thread>> _threads;
-      std::map<chain::public_key_type, fc::ecc::private_key> _mining_private_keys;
       xgt::chain::legacy_chain_properties _miner_prop_vote;
-      uint64_t _head_block_num = 0;
-      block_id_type _head_block_id = block_id_type();
-      uint64_t _total_hashes = 0;
-      fc::time_point _hash_start_time;
    };
 
    void check_memo( const string& memo, const chain::wallet_object& account, const account_authority_object& auth )
@@ -110,8 +101,8 @@ namespace detail {
          // Check if memo is a private key
          keys.push_back( fc::ecc::extended_private_key::from_base58( memo ).get_public_key() );
       }
-      catch( fc::parse_error_exception& ) {}
-      catch( fc::assert_exception& ) {}
+      catch( const fc::parse_error_exception& ) {}
+      catch( const fc::assert_exception& ) {}
 
       // Get possible keys if memo was an account password
       string recovery_seed = account.name + "recovery" + memo;
@@ -244,9 +235,15 @@ namespace detail {
       }
    }
 
+   uint64_t mknonce() {
+      std::random_device rd;
+      std::uniform_int_distribution<uint64_t> dist(0, UINT64_MAX);
+      return dist(rd);
+   }
+
    // mine_rounds performs work in work for miner solving for block_id with target and returns the number of rounds attempted.
    uint64_t mine_rounds(std::shared_ptr<protocol::sha2_pow> work, uint32_t target, uint64_t rounds) {
-      thread_local uint64_t nonce = std::hash<std::thread::id>()(std::this_thread::get_id());
+      thread_local uint64_t nonce = mknonce();
       uint64_t done = 0;
       for (; done != rounds; ++done) {
          work->update(++nonce);
@@ -260,22 +257,26 @@ namespace detail {
 
    void witness_plugin_impl::start_mining( const fc::ecc::public_key& pub, const fc::ecc::private_key& pk, const string& miner )
    {
-      auto block_id = _db.head_block_id();
-      auto block_num = _db.head_block_num();
-      auto head_block_time = _db.head_block_time();
-      uint32_t target = _db.get_pow_summary_target();
-      wlog( "Miner has started work ${o} at block ${b} target ${t}", ("o", miner)("b", block_num)("t", target));
+     auto block_id = _db.with_read_lock([&]() { return _db.head_block_id(); });
+     auto block_num = _db.with_read_lock([&]() { return _db.head_block_num(); });
+     auto head_block_time = _db.with_read_lock([&]() { return _db.head_block_time(); });
+     uint32_t target = _db.with_read_lock([&]() { return _db.get_pow_summary_target(); });
+     wlog("Miner has started work ${o} at block ${b} target ${t}", ("o", miner)("b", block_num)("t", target));
 
-      _total_hashes = 0;
-      _hash_start_time = fc::time_point::now();
-      const auto& acct_idx  = _db.get_index< chain::wallet_index >().indices().get< chain::by_name >();
-      auto acct_it = acct_idx.find( miner );
-      bool has_account = (acct_it != acct_idx.end());
+     uint64_t total_hashes = 0;
+     fc::time_point hash_start_time = fc::time_point::now();
+     fc::time_point_sec last_report_time = hash_start_time;
 
-      std::vector<std::shared_ptr<protocol::sha2_pow>> works(_num_threads);
-      for (auto& work : works) {
-         work = std::make_shared<protocol::sha2_pow>();
-         work->init(block_id, miner);
+     bool has_account = _db.with_read_lock([&]() {
+         const auto& acct_idx = _db.get_index<chain::wallet_index>().indices().get<chain::by_name>();
+         auto acct_it = acct_idx.find(miner);
+         return (acct_it != acct_idx.end());
+     });
+
+     std::vector<std::shared_ptr<protocol::sha2_pow>> works(_num_threads);
+     for (auto& work : works) {
+       work = std::make_shared<protocol::sha2_pow>();
+       work->init(block_id, miner);
       }
 
       std::vector<fc::future<uint64_t>> tasks(_num_threads);
@@ -288,7 +289,7 @@ namespace detail {
          }
 
          for(auto f : tasks) {
-            this->_total_hashes += f.wait();
+            total_hashes += f.wait();
          }
 
          for(auto& work : works) {
@@ -305,8 +306,11 @@ namespace detail {
                trx.operations.push_back( op );
                trx.ref_block_num = block_num;
                trx.ref_block_prefix = work->input.prev_block._hash[1];
-               fc::time_point_sec now_sec = fc::time_point::now();
-               trx.set_expiration( now_sec + XGT_MAX_TIME_UNTIL_EXPIRATION );
+
+               // Subtle: this must not exceed head_block_time + XGT_MAX_TIME_UNTIL_EXPIRATION or it will be
+               // rejected by the expiration validation.
+               trx.set_expiration( head_block_time + XGT_MAX_TIME_UNTIL_EXPIRATION );
+
                trx.sign( pk, XGT_CHAIN_ID, fc::ecc::fc_canonical );
 
                wlog( "Broadcasting..." );
@@ -314,8 +318,7 @@ namespace detail {
                {
                   wlog("Mined block proceeding #${n} with timestamp ${t} at time ${c}", ("n", block_num)("t", head_block_time)("c", fc::time_point::now()));
                   fc::time_point now = fc::time_point::now();
-                  uint32_t head_num = _db.head_block_num();
-                  if (head_num < 2116800)
+                  if (block_num < 2116800)
                   {
                      auto block_reward = fc::optional< protocol::signed_transaction >();
                      auto block = _chain_plugin.generate_block(
@@ -325,10 +328,10 @@ namespace detail {
                         block_reward,
                         _production_skip_flags
                      );
-                     _db.push_block(block, (uint32_t)0);
+                     _chain_plugin.accept_block(block, false, _production_skip_flags);
+                     _chain_plugin.accept_transaction(trx);
                      appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
                      wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
-                     _db.push_transaction( trx );
                      appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_transaction( trx );
                   }
                   else
@@ -341,12 +344,11 @@ namespace detail {
                         block_reward,
                         _production_skip_flags
                      );
-                     _db.push_block(block, (uint32_t)0);
+                     _chain_plugin.accept_block(block, false, _production_skip_flags);
                      appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().broadcast_block( block );
                      wlog( "Broadcasting Proof of Work for ${miner}", ("miner", miner) );
                   }
 
-                  ++this->_head_block_num;
                   wlog( "Broadcast succeeded!" );
                }
                catch( const fc::exception& e )
@@ -354,35 +356,31 @@ namespace detail {
                   wlog( "Broadcast failed!" );
                   wdump((e.to_detail_string()));
                }
-               schedule_production_loop();
                return;
             }
          }
 
-         if (this->_total_hashes % 1000000 == 0) {
-            uint64_t micros = (fc::time_point::now() - _hash_start_time).count();
-            uint64_t hashrate = (this->_total_hashes * 1000000) / micros;
+         fc::time_point now = fc::time_point::now();
+         if (last_report_time + 3 < now) {
+            last_report_time = now;
+            uint64_t micros = (now - hash_start_time).count();
+            uint64_t hashrate = (total_hashes * 1000000) / micros;
             wlog("Miner working at block ${b} rate: ${r}H/s", ("b", block_num)("r",hashrate));
          }
 
-         auto head_block_num = _db.head_block_num();
-         if( this->_head_block_num != head_block_num )
+         auto head_block_num = _db.with_read_lock([&]() { return _db.head_block_num(); });
+         if( block_num != head_block_num )
          {
-            wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("o",this->_head_block_num)("p",head_block_num) );
-            this->_head_block_num = head_block_num;
+            wlog( "Stop mining due new block arrival. Working at ${o}. New block ${p}", ("o",block_num)("p",head_block_num) );
             break;
          }
-         if (this->_is_braking) {
-            break;
-         }
-      }
-      if (!this->_is_braking)
-      {
-         schedule_production_loop();
       }
    }
 
    void witness_plugin_impl::schedule_production_loop() {
+      if (this->_is_braking) {
+         return;
+      }
       if (!appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().ready_to_mine()) {
          _timer.expires_from_now( boost::posix_time::milliseconds( 1000 ) );
          _timer.async_wait( boost::bind( &witness_plugin_impl::schedule_production_loop, this ) );
@@ -394,8 +392,6 @@ namespace detail {
 
    void witness_plugin_impl::block_production_loop()
    {
-      _is_braking = false;
-
       fc::time_point now = fc::time_point::now();
 
       if( now < fc::time_point(XGT_GENESIS_TIME) )
@@ -413,7 +409,7 @@ namespace detail {
 
       auto name_ptr = _witnesses.begin();
 
-      if ( _db.head_block_num() == 0 )
+      if ( _db.with_read_lock([&]() { return _db.head_block_num(); }) == 0 )
       {
          if (*name_ptr == XGT_INIT_MINER_NAME)
          {
@@ -427,16 +423,13 @@ namespace detail {
                block_reward,
                _production_skip_flags
             );
-            _db.push_block(block, (uint32_t)0);
-            this->_head_block_num++;
-            schedule_production_loop();
-            return;
+            _chain_plugin.accept_block(block, false, _production_skip_flags);
          }
          schedule_production_loop();
          return;
       }
 
-      const hardfork_property_object& hfp = _db.get_hardfork_property_object();
+      const hardfork_property_object& hfp = _db.with_read_lock([&]() { return _db.get_hardfork_property_object(); });
       uint64_t processed_hardforks = hfp.processed_hardforks.size();
       uint64_t num_hardforks = (XGT_NUM_HARDFORKS > 0) ? (XGT_NUM_HARDFORKS - 1) : 0;
       if ( processed_hardforks < num_hardforks )
@@ -447,7 +440,7 @@ namespace detail {
 
       try
       {
-         _db.get< chain::witness_object, chain::by_name >(*name_ptr);
+         _db.with_read_lock([&] () { return _db.get< chain::witness_object, chain::by_name >(*name_ptr); });
       }
       catch (const std::exception& e)
       {
@@ -461,6 +454,7 @@ namespace detail {
       {
          auto pair = _private_keys.begin();
          start_mining(pair->first, pair->second, *name_ptr);
+         schedule_production_loop();
       }
       catch( const fc::canceled_exception& )
       {
@@ -528,8 +522,8 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
 
    my->_chain_plugin.register_block_generator( get_name(), my->_block_producer );
 
-   ilog ("my->_witnesses ${h}", ("h", my->_witnesses));
    XGT_LOAD_VALUE_SET( options, "witness", my->_witnesses, xgt::protocol::wallet_name_type )
+   ilog ("my->_witnesses ${h}", ("h", my->_witnesses));
 
    // Set witnesses in the DB so they can be used elsewhere.
    my->_db.set_witnesses(my->_witnesses);
@@ -585,9 +579,6 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
    my->_post_apply_operation_conn = my->_db.add_pre_apply_operation_handler(
       [&]( const chain::operation_notification& note ){ my->on_post_apply_operation( note ); }, *this, 0);
 
-   if( my->_witnesses.size() && my->_private_keys.size() )
-      my->_chain_plugin.set_write_lock_hold_time( -1 );
-
    XGT_ADD_PLUGIN_INDEX(my->_db, witness_custom_op_index);
 
 } FC_LOG_AND_RETHROW() }
@@ -605,7 +596,7 @@ void witness_plugin::plugin_startup()
          appbase::app().get_plugin< xgt::plugins::p2p::p2p_plugin >().set_block_production( true );
 
          ilog( "Block production is enabled" );
-         if( d.head_block_num() == 0 )
+         if( d.with_read_lock([&]() { return d.head_block_num(); }) == 0 )
             new_chain_banner( d );
          my->_production_skip_flags |= chain::database::skip_undo_history_check;
 
@@ -626,7 +617,7 @@ void witness_plugin::plugin_shutdown()
       chain::util::disconnect_signal( my->_post_apply_operation_conn );
       my->_timer.cancel();
    }
-   catch(fc::exception& e)
+   catch( const fc::exception& e)
    {
       edump( (e.to_detail_string()) );
    }

@@ -83,12 +83,6 @@
 #ifndef XGT_MAX_WITNESSES
 #define XGT_MAX_WITNESSES 10
 #endif
-#ifndef XGT_MAX_VOTED_WITNESSES
-#define XGT_MAX_VOTED_WITNESSES 0
-#endif
-#ifndef XGT_MAX_MINER_WITNESSES
-#define XGT_MAX_MINER_WITNESSES 10
-#endif
 
 // TODO: Look into this logic
 #ifdef IS_TEST_NET

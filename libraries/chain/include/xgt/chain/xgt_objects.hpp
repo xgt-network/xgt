@@ -16,7 +16,6 @@ namespace xgt { namespace chain {
    using xgt::protocol::asset;
    using xgt::protocol::price;
    using xgt::protocol::asset_symbol_type;
-   using chainbase::t_deque;
 
    /**
     *  This object is used to track pending requests to convert sbd to xgt
@@ -24,12 +23,6 @@ namespace xgt { namespace chain {
    class convert_request_object : public object< convert_request_object_type, convert_request_object >
    {
       public:
-         template< typename Constructor, typename Allocator >
-         convert_request_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
          convert_request_object(){}
 
          id_type           id;
@@ -44,12 +37,6 @@ namespace xgt { namespace chain {
    class escrow_object : public object< escrow_object_type, escrow_object >
    {
       public:
-         template< typename Constructor, typename Allocator >
-         escrow_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
          escrow_object(){}
 
          id_type           id;
@@ -73,21 +60,15 @@ namespace xgt { namespace chain {
 
    class savings_withdraw_object : public object< savings_withdraw_object_type, savings_withdraw_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( savings_withdraw_object )
+      public:
+      savings_withdraw_object() = default;
 
       public:
-         template< typename Constructor, typename Allocator >
-         savings_withdraw_object( Constructor&& c, allocator< Allocator > a )
-            :memo( a )
-         {
-            c( *this );
-         }
-
          id_type           id;
 
          wallet_name_type  from;
          wallet_name_type  to;
-         shared_string     memo;
+         std::string     memo;
          uint32_t          request_id = 0;
          asset             amount;
          time_point_sec    complete;
@@ -114,19 +95,16 @@ namespace xgt { namespace chain {
             >,
             composite_key_compare< std::less< bool >, std::less< time_point_sec >, std::less< escrow_id_type > >
          >
-      >,
-      allocator< escrow_object >
+      >
    > escrow_index;
 
 } } // xgt::chain
 
-#ifdef ENABLE_MIRA
 namespace mira {
 
 template<> struct is_static_length< xgt::chain::escrow_object > : public boost::true_type {};
 
 } // mira
-#endif
 
 #include <xgt/chain/comment_object.hpp>
 #include <xgt/chain/wallet_object.hpp>

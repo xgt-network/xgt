@@ -192,12 +192,12 @@ namespace graphene { namespace net {
       }
       catch ( const fc::canceled_exception& e )
       {
-        wlog( "caught a canceled_exception in read_loop.  this should mean we're in the process of deleting this object already, so there's no need to notify the delegate: ${e}", ("e", e.to_detail_string() ) );
+        dlog( "caught a canceled_exception in read_loop.  this should mean we're in the process of deleting this object already, so there's no need to notify the delegate: ${e}", ("e", e.to_detail_string() ) );
         throw;
       }
       catch ( const fc::eof_exception& e )
       {
-        wlog( "disconnected ${e}", ("e", e.to_detail_string() ) );
+        dlog( "disconnected ${e}", ("e", e.to_detail_string() ) );
         call_on_connection_closed = true;
       }
       catch ( const fc::exception& e )
@@ -289,7 +289,7 @@ namespace graphene { namespace net {
       fc::optional<fc::ip::endpoint> remote_endpoint;
       if (_sock.get_socket().is_open())
         remote_endpoint = _sock.get_socket().remote_endpoint();
-      ilog( "in destroy_connection(${caller}) for `${endpoint}'", ("caller", caller)("endpoint", remote_endpoint) );
+      dlog( "in destroy_connection(${caller}) for `${endpoint}'", ("caller", caller)("endpoint", remote_endpoint) );
 
       if (_send_message_in_progress)
         elog("Error: message_oriented_connection is being destroyed while a send_message is in progress.  "
@@ -302,11 +302,11 @@ namespace graphene { namespace net {
       }
       catch ( const fc::exception& e )
       {
-        wlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring: ${e}", ("e",e) );
+        dlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring: ${e}", ("e",e) );
       }
       catch (...)
       {
-        wlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring" );
+        dlog( "Exception thrown while canceling message_oriented_connection's read_loop, ignoring" );
       }
     }
 

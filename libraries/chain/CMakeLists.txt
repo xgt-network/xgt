@@ -1,4 +1,4 @@
-file(GLOB HEADERS "include/xgt/chain/*.hpp" "include/xgt/chain/util/*.hpp" "include/xgt/chain/xtt_objects/*.hpp")
+file(GLOB_RECURSE HEADERS include/*.hpp)
 
 ## SORT .cpp by most likely to change / break compile
 add_library( xgt_chain
@@ -6,6 +6,10 @@ add_library( xgt_chain
              # As database takes the longest to compile, start it first
              database.cpp
              index.cpp
+
+             index_init1.cpp
+             index_init2.cpp
+             index_init3.cpp
 
              machine.cpp
 
@@ -32,36 +36,5 @@ add_library( xgt_chain
              ${HEADERS}
            )
 
-target_link_libraries( xgt_chain xgt_protocol fc chainbase xgt_schema appbase mira
-                       ${PATCH_MERGE_LIB} )
-target_include_directories( xgt_chain
-                            PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}"
-                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" "${CMAKE_CURRENT_BINARY_DIR}/include" )
-
-if( CLANG_TIDY_EXE )
-   set_target_properties(
-      xgt_chain PROPERTIES
-      CXX_CLANG_TIDY "${DO_CLANG_TIDY}"
-   )
-endif( CLANG_TIDY_EXE )
-
-if(MSVC)
-  set_source_files_properties( database.cpp PROPERTIES COMPILE_FLAGS "/bigobj" )
-endif(MSVC)
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=sign-compare")
-# supress unwanted warnings:
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-Wno-error=deprecated-copy -Wno-error=pessimizing-move" SUPPRESS_SOME_WARNINGS)
-if(SUPPRESS_SOME_WARNINGS)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated-copy -Wno-error=pessimizing-move")
-endif()
-
-INSTALL( TARGETS
-   xgt_chain
-
-   RUNTIME DESTINATION bin
-   LIBRARY DESTINATION lib
-   ARCHIVE DESTINATION lib
-)
-INSTALL( FILES ${HEADERS} DESTINATION "include/xgt/chain" )
+target_link_libraries( xgt_chain xgt_protocol chainbase xgt_schema appbase fc mira)
+target_include_directories( xgt_chain PUBLIC include )

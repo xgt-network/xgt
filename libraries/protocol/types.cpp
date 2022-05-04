@@ -25,7 +25,7 @@ namespace xgt { namespace protocol {
        const size_t prefix_len = prefix.size();
        FC_ASSERT( base58str.size() > prefix_len );
        FC_ASSERT( base58str.substr( 0, prefix_len ) ==  prefix , "", ("base58str", base58str) );
-       //wlog("?????? libraries/protocol/types.cpp:28 ${b}", base58str);
+       //dlog("?????? libraries/protocol/types.cpp:28 ${b}", base58str);
        auto bin = fc::from_base58( base58str.substr( prefix_len ) );
        auto bin_key = fc::raw::unpack_from_vector<binary_key>(bin);
        key_data = bin_key.data;
@@ -86,7 +86,7 @@ namespace xgt { namespace protocol {
        const size_t prefix_len = prefix.size();
        FC_ASSERT( base58str.size() > prefix_len );
        FC_ASSERT( base58str.substr( 0, prefix_len ) ==  prefix , "", ("base58str", base58str) );
-       wlog("?????? libraries/protocol/types.cpp:88");
+       dlog("?????? libraries/protocol/types.cpp:88");
        auto bin = fc::from_base58( base58str.substr( prefix_len ) );
        auto bin_key = fc::raw::unpack_from_vector<binary_key>(bin);
        FC_ASSERT( fc::ripemd160::hash( bin_key.data.data, bin_key.data.size() )._hash[0] == bin_key.check );
@@ -141,7 +141,7 @@ namespace xgt { namespace protocol {
        const size_t prefix_len = prefix.size();
        FC_ASSERT( base58str.size() > prefix_len );
        FC_ASSERT( base58str.substr( 0, prefix_len ) ==  prefix , "", ("base58str", base58str) );
-       wlog("?????? libraries/protocol/types.cpp:142");
+       dlog("?????? libraries/protocol/types.cpp:142");
        auto bin = fc::from_base58( base58str.substr( prefix_len ) );
        auto bin_key = fc::raw::unpack_from_vector<binary_key>(bin);
        FC_ASSERT( fc::ripemd160::hash( bin_key.data.data, bin_key.data.size() )._hash[0] == bin_key.check );

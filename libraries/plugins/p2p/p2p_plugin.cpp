@@ -47,9 +47,11 @@ std::vector<fc::ip::endpoint> resolve_string_to_ip_endpoints( const std::string&
    try
    {
       string::size_type colon_pos = endpoint_string.find( ':' );
-      if( colon_pos == std::string::npos )
-         FC_THROW( "Missing required port number in endpoint string \"${endpoint_string}\"",
+      if( colon_pos == std::string::npos ) {
+         wlog( "Missing required port number in endpoint string \"${endpoint_string}\"",
                   ("endpoint_string", endpoint_string) );
+         return {};
+      }
 
       std::string port_string = endpoint_string.substr( colon_pos + 1 );
 
@@ -195,13 +197,13 @@ bool p2p_plugin_impl::handle_block( const graphene::net::block_message& blk_msg,
                ("head", head_block_num));
 
       try {
-         // TODO: in the case where this block is valid but on a fork that's too old for us to switch to,
+         // In the case where this block is valid but on a fork that's too old for us to switch to,
          // you can help the network code out by throwing a block_older_than_undo_history exception.
          // when the net code sees that, it will stop trying to push blocks from that chain, but
          // leave that peer connected so that they can get sync blocks from us
          bool result = chain.accept_block( blk_msg.block, sync_mode, ( block_producer | force_validate ) ? chain::database::skip_nothing : chain::database::skip_transaction_signatures );
 
-         if( !sync_mode )
+         if( !sync_mode && result)
          {
             fc::microseconds offset = fc::time_point::now() - blk_msg.block.timestamp;
             ilog( "Got ${t} transactions on block ${b} by ${w} -- Block Time Offset: ${l} ms",
@@ -209,29 +211,24 @@ bool p2p_plugin_impl::handle_block( const graphene::net::block_message& blk_msg,
                ("b", blk_msg.block.block_num())
                ("w", blk_msg.block.witness)
                ("l", offset.count() / 1000) );
+
+            // TODO: add a flag to disable this waiting behavior.
+            if (!ready_to_mine)
+               ready_to_mine = true;
          }
 
          return result;
-      } catch ( const chain::unlinkable_block_exception& e ) {
-         // translate to a graphene::net exception
-         fc_elog(fc::logger::get("sync"),
-               "Error when pushing block, current head block is ${head}:\n${e}",
-               ("e", e.to_detail_string())
-               ("head", head_block_num));
-         elog("Error when pushing block:\n${e}", ("e", e.to_detail_string()));
-         FC_THROW_EXCEPTION(graphene::net::unlinkable_block_exception, "Error when pushing block:\n${e}", ("e", e.to_detail_string()));
-      } catch( const fc::exception& e ) {
-         fc_elog(fc::logger::get("sync"),
-               "Error when pushing block, current head block is ${head}:\n${e}",
-               ("e", e.to_detail_string())
-               ("head", head_block_num));
-         elog("Error when pushing block:\n${e}", ("e", e.to_detail_string()));
-         if (e.code() == 4080000) {
-           elog("Rethrowing as graphene::net exception");
-           FC_THROW_EXCEPTION(graphene::net::unlinkable_block_exception, "Error when pushing block:\n${e}", ("e", e.to_detail_string()));
-         } else {
-           throw;
+      } catch (const fc::exception &e) {
+         switch (e.code()) {
+         case chain::unlinkable_block_exception::code_value:
+            FC_THROW_EXCEPTION(graphene::net::unlinkable_block_exception, "unlinkable block");
+         case chain::block_too_old_exception::code_value:
+            FC_THROW_EXCEPTION(graphene::net::block_older_than_undo_history, "old block");
          }
+         fc_elog(fc::logger::get("sync"),
+                  "Error when pushing block, current head block is ${head}:\n${e}",
+                  ("e", e.to_detail_string())("head", head_block_num));
+         throw;
       }
    }
    else
@@ -478,9 +475,8 @@ std::vector< graphene::net::item_hash_t > p2p_plugin_impl::get_blockchain_synops
 
 void p2p_plugin_impl::sync_status( uint32_t item_type, uint32_t item_count )
 {
-   if (item_count == 0) {
-      this->ready_to_mine = true;
-   }
+   if (!ready_to_mine && item_count == 0 && node->is_connected())
+      ready_to_mine = true;
    // any status reports to GUI go here
 }
 
@@ -539,6 +535,8 @@ bool p2p_plugin_impl::is_included_block(const block_id_type& block_id)
       block_id_type block_id_in_preferred_chain = chain.db().get_block_id_for_num(block_num);
       return block_id == block_id_in_preferred_chain;
    });
+} catch (const fc::key_not_found_exception&) {
+   return false;
 } FC_CAPTURE_AND_RETHROW() }
 
 ////////////////////////////// End node_delegate Implementation //////////////////////////////
@@ -661,20 +659,6 @@ void p2p_plugin::plugin_startup()
          my->node->listen_on_endpoint(*my->endpoint, true);
       }
 
-      for( const auto& seed : my->seeds )
-      {
-         try
-         {
-            ilog("P2P adding seed node ${s}", ("s", seed));
-            my->node->add_node(seed);
-            my->node->connect_to_endpoint(seed);
-         }
-         catch( graphene::net::already_connected_to_requested_peer& )
-         {
-            wlog( "Already connected to seed node ${s}. Is it specified twice in config?", ("s", seed) );
-         }
-      }
-
       if( my->max_connections )
       {
          if( my->config.find( "maximum_number_of_connections" ) != my->config.end() )
@@ -685,18 +669,30 @@ void p2p_plugin::plugin_startup()
 
       my->node->set_advanced_node_parameters( my->config );
 
+      block_id_type block_id;
+      my->chain.db().with_read_lock( [&]() { block_id = my->chain.db().head_block_id(); });
+      my->node->sync_from(graphene::net::item_id(graphene::net::block_message_type, block_id), std::vector<uint32_t>());
+
       ilog("Listening on P2P network...");
       my->node->listen_to_p2p_network();
 
       ilog("Connecting to P2P network...");
       my->node->connect_to_p2p_network();
 
-      block_id_type block_id;
-      my->chain.db().with_read_lock( [&]()
+      for( const auto& seed : my->seeds )
       {
-         block_id = my->chain.db().head_block_id();
-      });
-      my->node->sync_from(graphene::net::item_id(graphene::net::block_message_type, block_id), std::vector<uint32_t>());
+         try
+         {
+            ilog("P2P adding seed node ${s}", ("s", seed));
+            my->node->add_node(seed);
+            my->node->connect_to_endpoint(seed);
+         }
+         catch( const graphene::net::already_connected_to_requested_peer& )
+         {
+            wlog( "Already connected to seed node ${s}. Is it specified twice in config?", ("s", seed) );
+         }
+      }
+
       ilog("P2P node listening at ${ep}", ("ep", my->node->get_actual_listening_endpoint()));
    }).wait();
    ilog( "P2P Plugin started" );

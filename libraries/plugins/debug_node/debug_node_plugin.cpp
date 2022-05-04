@@ -227,7 +227,7 @@ void debug_node_plugin::debug_generate_blocks(
       uint32_t new_slot = args.miss_blocks+1;
       std::string scheduled_witness_name = XGT_INIT_MINER_NAME;
       fc::time_point_sec scheduled_time = fc::time_point_sec(0);
-      const chain::witness_object& scheduled_witness = db.get_witness( scheduled_witness_name );
+      const chain::witness_object& scheduled_witness = db.with_read_lock([&]() { return db.get_witness( scheduled_witness_name ); });
       chain::public_key_type scheduled_key = scheduled_witness.signing_key;
       if( logging )
       {

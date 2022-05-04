@@ -32,7 +32,6 @@
 #include <xgt/chain/xgt_objects.hpp>
 #include <xgt/chain/history_object.hpp>
 
-#include <xgt/plugins/wallet_history/wallet_history_plugin.hpp>
 #include <xgt/plugins/witness/block_producer.hpp>
 
 #include <xgt/utilities/tempdir.hpp>
@@ -47,17 +46,14 @@ using namespace xgt::chain;
 using namespace xgt::protocol;
 using namespace xgt::plugins;
 
-#define TEST_SHARED_MEM_SIZE (1024 * 1024 * 8)
-
 BOOST_AUTO_TEST_SUITE(block_tests)
 /*
 void open_test_database( database& db, const fc::path& dir )
 {
    database::open_args args;
    args.data_dir = dir;
-   args.shared_mem_dir = dir;
+   args.blockchain_dir = dir;
    args.initial_supply = INITIAL_TEST_SUPPLY;
-   args.shared_file_size = TEST_SHARED_MEM_SIZE;
    args.database_cfg = xgt::utilities::default_database_configuration();
    db.open( args );
 }
@@ -106,28 +102,17 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
          db._log_hardforks = false;
          open_test_database( db, data_dir.path() );
 
-#ifndef ENABLE_MIRA
-         BOOST_CHECK_EQUAL( db.head_block_num(), cutoff_block.block_num() );
-#endif
-
          b = cutoff_block;
          for( uint32_t i = 0; i < 200; ++i )
          {
-#ifndef ENABLE_MIRA
-            BOOST_CHECK( db.head_block_id() == b.id() );
-#else
             BOOST_CHECK( i==0 || ( db.head_block_id() == b.id() ) );
-#endif
             //witness_id_type prev_witness = b.witness;
             string cur_witness = db.get_scheduled_witness(1);
             //BOOST_CHECK( cur_witness != prev_witness );
             b = bp.generate_block(db.get_slot_time(1), cur_witness, init_account_priv_key, database::skip_nothing);
          }
-#ifndef ENABLE_MIRA
-         BOOST_CHECK_EQUAL( db.head_block_num(), cutoff_block.block_num()+200 );
-#endif
       }
-   } catch (fc::exception& e) {
+   } catch( const fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
    }
@@ -177,7 +162,7 @@ BOOST_AUTO_TEST_CASE( undo_block )
          }
          BOOST_CHECK( db.head_block_num() == 7 );
       }
-   } catch (fc::exception& e) {
+   } catch( const fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
    }
@@ -247,7 +232,7 @@ BOOST_AUTO_TEST_CASE( fork_blocks )
       BOOST_CHECK_EQUAL(db2.head_block_num(), 14);
       PUSH_BLOCK( db1, good_block );
       BOOST_CHECK_EQUAL(db1.head_block_id().str(), db2.head_block_id().str());
-   } catch (fc::exception& e) {
+   } catch( const fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
    }
@@ -309,7 +294,7 @@ BOOST_AUTO_TEST_CASE( switch_forks_undo_create )
 
       BOOST_CHECK( db1.get(alice_id).name == "alice");
       BOOST_CHECK( db2.get(alice_id).name == "alice");
-   } catch (fc::exception& e) {
+   } catch( const fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
    }
@@ -365,7 +350,7 @@ BOOST_AUTO_TEST_CASE( duplicate_transactions )
       XGT_CHECK_THROW(PUSH_TX( db2, trx, skip_sigs ), fc::exception);
       BOOST_CHECK_EQUAL(db1.get_balance( "alice", XGT_SYMBOL ).amount.value, 500);
       BOOST_CHECK_EQUAL(db2.get_balance( "alice", XGT_SYMBOL ).amount.value, 500);
-   } catch (fc::exception& e) {
+   } catch( const fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
    }
@@ -421,7 +406,7 @@ BOOST_AUTO_TEST_CASE( tapos )
       trx.signatures.clear();
       trx.sign( init_account_priv_key, db1.get_chain_id(), fc::ecc::fc_canonical );
       BOOST_REQUIRE_THROW( db1.push_transaction(trx, 0[>database::skip_transaction_signatures | database::skip_authority_check<]), fc::exception );
-   } catch (fc::exception& e) {
+   } catch( const fc::exception& e) {
       edump((e.to_detail_string()));
       throw;
    }
@@ -489,7 +474,7 @@ BOOST_FIXTURE_TEST_CASE( optional_tapos, clean_database_fixture )
       sign( tx, alice_private_key );
       XGT_REQUIRE_THROW( PUSH_TX( *db, tx, database::skip_transaction_dupe_check ), fc::exception );
    }
-   catch (fc::exception& e)
+   catch( const fc::exception& e)
    {
       edump((e.to_detail_string()));
       throw;
@@ -824,12 +809,12 @@ BOOST_FIXTURE_TEST_CASE( hardfork_test, database_fixture )
       BOOST_REQUIRE( db->get(itr->op).timestamp == db->head_block_time() - XGT_BLOCK_INTERVAL );
 
    }
-   catch( fc::exception& e )
+   catch( const fc::exception& e )
    {
       db->wipe( data_dir->path(), data_dir->path(), true );
       throw e;
    }
-   catch( std::exception& e )
+   catch( const std::exception& e )
    {
       db->wipe( data_dir->path(), data_dir->path(), true );
       throw e;

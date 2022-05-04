@@ -19,7 +19,9 @@
 #include <websocketpp/config/asio_client.hpp>
 #include <websocketpp/client.hpp>
 #include <websocketpp/logger/stub.hpp>
+#ifndef _WIN32
 #include <websocketpp/logger/syslog.hpp>
+#endif
 
 #include <thread>
 #include <memory>
@@ -118,10 +120,7 @@ class webserver_plugin_impl
       webserver_plugin_impl(thread_pool_size_t thread_pool_size) :
          thread_pool_work( this->thread_pool_ios )
       {
-         if (http_endpoint || unix_endpoint) {
-            for( uint32_t i = 0; i < thread_pool_size; ++i )
-               thread_pool.create_thread( boost::bind( &asio::io_service::run, &thread_pool_ios ) );
-         }
+         this->thread_pool_size = thread_pool_size;
       }
 
       void start_webserver();
@@ -140,6 +139,7 @@ class webserver_plugin_impl
       optional< boost::asio::local::stream_protocol::endpoint >  unix_endpoint;
       websocket_local_server_type            unix_server;
 
+      thread_pool_size_t         thread_pool_size;
       boost::thread_group        thread_pool;
       asio::io_service           thread_pool_ios;
       asio::io_service::work     thread_pool_work;
@@ -150,6 +150,10 @@ class webserver_plugin_impl
 
 void webserver_plugin_impl::start_webserver()
 {
+   if (http_endpoint || unix_endpoint)
+      for( uint32_t i = 0; i < thread_pool_size; ++i )
+         thread_pool.create_thread( boost::bind( &asio::io_service::run, &thread_pool_ios ) );
+
    if( http_endpoint )
    {
       http_thread = std::make_shared<std::thread>( [&]()
@@ -247,7 +251,7 @@ void webserver_plugin_impl::handle_http_message( websocket_server_type* server, 
          con->append_header( "Content-Type", "application/json" );
          con->set_status( websocketpp::http::status_code::ok );
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          edump( (e) );
          con->set_body( "Could not call API" );
@@ -292,7 +296,7 @@ void webserver_plugin_impl::handle_http_request(websocket_local_server_type* ser
          con->append_header( "Content-Type", "application/json" );
          con->set_status( websocketpp::http::status_code::ok );
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          edump( (e) );
          con->set_body( "Could not call API" );
@@ -360,6 +364,9 @@ void webserver_plugin::plugin_initialize( const variables_map& options )
       boost::asio::local::stream_protocol::endpoint ep(unix_endpoint);
       my->unix_endpoint = ep;
       ilog( "configured http to listen on ${ep}", ("ep", unix_endpoint ));
+   }
+
+   if (my->http_endpoint || my->unix_endpoint) {
    }
 }
 

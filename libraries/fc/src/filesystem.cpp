@@ -246,7 +246,7 @@ namespace fc {
   void copy( const path& f, const path& t ) { 
      try {
   	    boost::filesystem::copy( boost::filesystem::path(f), boost::filesystem::path(t) ); 
-     } catch ( boost::system::system_error& e ) {
+     } catch ( const boost::system::system_error& e ) {
      	FC_THROW( "Copy from ${srcfile} to ${dstfile} failed because ${reason}",
 	         ("srcfile",f)("dstfile",t)("reason",e.what() ) );
      } catch ( ... ) {
@@ -259,7 +259,7 @@ namespace fc {
     try {
       boost::filesystem::resize_file( f, t );
     } 
-    catch ( boost::system::system_error& e )
+    catch ( const boost::system::system_error& e )
     {
       FC_THROW( "Resize file '${f}' to size ${s} failed: ${reason}",
                 ("f",f)("s",t)( "reason", e.what() ) );
@@ -301,11 +301,11 @@ namespace fc {
   void rename( const path& f, const path& t ) { 
      try {
   	    boost::filesystem::rename( boost::filesystem::path(f), boost::filesystem::path(t) ); 
-     } catch ( boost::system::system_error& ) {
+     } catch ( const boost::system::system_error& ) {
          try{
              boost::filesystem::copy( boost::filesystem::path(f), boost::filesystem::path(t) ); 
              boost::filesystem::remove( boost::filesystem::path(f)); 
-         } catch ( boost::system::system_error& e ) {
+         } catch ( const boost::system::system_error& e ) {
              FC_THROW( "Rename from ${srcfile} to ${dstfile} failed because ${reason}",
                      ("srcfile",f)("dstfile",t)("reason",e.what() ) );
          }

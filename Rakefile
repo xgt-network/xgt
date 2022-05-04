@@ -14,7 +14,8 @@ when /darwin/
     `brew` rescue raise "This build requires homebrew presently. Set $NO_HOMEBREW and $CMAKE_PREFIX_PATH to manually bypass."
   end
   cmake_prefix_paths = (ENV["CMAKE_PREFIX_PATH"] || "").split(":")
-  ENV['CMAKE_PREFIX_PATH'] = (cmake_prefix_paths + ["/usr/local/opt/openssl", "/usr/local/opt/icu4c"]).join(":")
+  cmake_prefix_paths += `brew --prefix openssl@1.1`
+  ENV['CMAKE_PREFIX_PATH'] = cmake_prefix_paths.uniq.join(":")
 end
 
 directory "../xgt-build"
@@ -32,8 +33,12 @@ def thread_count
   (ENV['THREAD_COUNT'] || Etc.nprocessors).to_i
 end
 
-def flush_testnet?
-  ENV['FLUSH_TESTNET']&.upcase == 'TRUE'
+def flush_chainstate?
+  if ENV['FLUSH_TESTNET']
+    STDERR.puts("FLUSH_TESTNET is deprecated, please use FLUSH_CHAINSTATE instead.")
+  end
+  ENV['FLUSH_CHAINSTATE']&.upcase == 'TRUE' || 
+    ENV['FLUSH_TESTNET']&.upcase == 'TRUE'
 end
 
 def mining_error(message)
@@ -62,8 +67,8 @@ def host
   ENV['XGT_HOST'] || 'http://localhost:8751'
 end
 
-def seed_hosts
-  Array((ENV['XGT_SEED_HOST'] || "").split(","))
+def override_seeds
+  Array((ENV['XGT_OVERRIDE_SEEDS'] || "").split(","))
 end
 
 def instance_index
@@ -129,7 +134,7 @@ end
 
 desc 'Builds the project'
 task :make do
-  sh %( ninja -C ../xgt-build xgtd )
+  sh %( ninja -C ../xgt-build xgtd -j#{thread_count})
 end
 
 desc 'Build all targets'
@@ -175,7 +180,6 @@ task :make_all => :configure do
     witness_plugin
     wallet_by_key_plugin
     wallet_history_plugin
-    wallet_history_rocksdb_plugin
     block_api_plugin
     chain_api_plugin
     contract_api_plugin
@@ -194,7 +198,6 @@ task :make_all => :configure do
     test_sqrt
     testharness
     test_fixed_string
-    test_shared_mem
     ecc_test
     log_test
     ecdsa_canon_test
@@ -232,7 +235,6 @@ task :bin_tests do
   xrun.call "schema_test"
   xrun.call "test_block_log"
   xrun.call "test_fixed_string"
-  xrun.call "test_shared_mem"
   xrun.call "test_sqrt"
 end
 
@@ -245,9 +247,9 @@ task :build_release => [:clean, :configure, :make, :strip]
 
 desc 'Runs a basic example instance locally'
 task :run do
-  data_dir = "../xgt-build/chain-data-#{instance_index}"
+  data_dir = "../xgt-chainstate-#{instance_index}"
 
-  if flush_testnet?
+  if flush_chainstate?
     sh "rm -rf #{data_dir}"
   end
   sh "mkdir -p #{data_dir}"
@@ -269,12 +271,10 @@ task :run do
       log-logger = {"name":"default","level":"debug","appender":"logfile"}
       #log-logger = {"name":"sync","level":"debug","appender":"stderr"}
       #log-logger = {"name":"sync","level":"debug","appender":"logfile"}
-      #log-logger = {"name":"p2p","level":"debug","appender":"stderr"}
-      #log-logger = {"name":"p2p","level":"debug","appender":"logfile"}
+      log-logger = {"name":"p2p","level":"info","appender":"stderr"}
+      log-logger = {"name":"p2p","level":"info","appender":"logfile"}
 
       backtrace = yes
-
-      shared-file-size = 12G
 
       p2p-endpoint = #{my_host}:#{2001 + instance_index}
       webserver-http-endpoint = #{my_host}:#{8751 + instance_index * 2}
@@ -287,13 +287,13 @@ task :run do
 
       enable-stale-production = #{mining_disabled? ? 'false' : 'true'}
     )))
-    if seed_hosts && seed_hosts.any?
-      f.puts "p2p-seed-node = #{seed_hosts.join(" ")}"
+    if override_seeds && override_seeds.any?
+      f.puts "p2p-seed-node = #{override_seeds.join(" ")}"
     end
   end
   $stderr.puts(File.read("#{data_dir}/config.ini"))
 
-  sh %(cd #{data_dir} && ../programs/xgtd/xgtd --data-dir=.)
+  sh %(cd #{data_dir} && ../xgt-build/programs/xgtd/xgtd --data-dir=.)
 end
 
 desc 'Get approximate C++ LoC'
