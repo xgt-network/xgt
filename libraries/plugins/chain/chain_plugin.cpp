@@ -99,7 +99,7 @@ class chain_plugin_impl
       std::string                      to_state = "";
       statefile::state_format_info     state_format;
 
-      uint32_t allow_future_time = 5;
+      uint32_t                         allow_future_time = 48;
 
       std::shared_ptr< std::thread >   write_processor_thread;
       boost::concurrent::sync_queue< write_context* > write_queue;
