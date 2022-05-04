@@ -1,25 +1,17 @@
 #pragma once
 
-#include <boost/interprocess/managed_mapped_file.hpp>
-#include <boost/interprocess/containers/map.hpp>
-#include <boost/interprocess/containers/set.hpp>
-#include <boost/interprocess/containers/flat_map.hpp>
-#include <boost/interprocess/containers/deque.hpp>
-#include <boost/interprocess/containers/string.hpp>
-#include <boost/interprocess/allocators/allocator.hpp>
-#include <boost/interprocess/sync/interprocess_sharable_mutex.hpp>
-#include <boost/interprocess/sync/sharable_lock.hpp>
-#include <boost/interprocess/sync/file_lock.hpp>
-
 #include <boost/any.hpp>
 #include <boost/chrono.hpp>
 #include <boost/config.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
+#include <boost/thread/shared_mutex.hpp>
 #include <boost/throw_exception.hpp>
+#include <boost/container/deque.hpp>
+#include <boost/container/set.hpp>
+#include <boost/container/map.hpp>
 
-#include <chainbase/allocators.hpp>
 #include <chainbase/util/object_id.hpp>
 
 #include <array>
@@ -34,13 +26,8 @@
    #define CHAINBASE_NUM_RW_LOCKS 10
 #endif
 
-#ifdef CHAINBASE_CHECK_LOCKING
-   #define CHAINBASE_REQUIRE_READ_LOCK(m, t) require_read_lock(m, typeid(t).name())
-   #define CHAINBASE_REQUIRE_WRITE_LOCK(m, t) require_write_lock(m, typeid(t).name())
-#else
-   #define CHAINBASE_REQUIRE_READ_LOCK(m, t)
-   #define CHAINBASE_REQUIRE_WRITE_LOCK(m, t)
-#endif
+#define CHAINBASE_REQUIRE_READ_LOCK(m, t) require_read_lock(m, typeid(t).name())
+#define CHAINBASE_REQUIRE_WRITE_LOCK(m, t) require_write_lock(m, typeid(t).name())
 
 namespace helpers
 {
@@ -62,11 +49,6 @@ namespace helpers
       info->_item_count = index.size();
       info->_item_sizeof = sizeof(typename IndexType::value_type);
       info->_item_additional_allocation = 0;
-#ifndef ENABLE_MIRA
-      size_t pureNodeSize = sizeof(typename IndexType::node_type) -
-         sizeof(typename IndexType::value_type);
-      info->_additional_container_allocation = info->_item_count*pureNodeSize;
-#endif
    }
 
    template <class IndexType>
@@ -84,7 +66,6 @@ namespace helpers
 
 namespace chainbase {
 
-   namespace bip = boost::interprocess;
    namespace bfs = boost::filesystem;
    using std::unique_ptr;
    using std::vector;
@@ -97,22 +78,11 @@ namespace chainbase {
 
    struct strcmp_less
    {
-      bool operator()( const shared_string& a, const shared_string& b )const
+      bool operator()( const std::string& a, const std::string& b )const
       {
          return less( a.c_str(), b.c_str() );
       }
 
-#ifndef ENABLE_MIRA
-      bool operator()( const shared_string& a, const std::string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-
-      bool operator()( const std::string& a, const shared_string& b )const
-      {
-         return less( a.c_str(), b.c_str() );
-      }
-#endif
       private:
          inline bool less( const char* a, const char* b )const
          {
@@ -140,26 +110,19 @@ namespace chainbase {
    #define CHAINBASE_SET_INDEX_TYPE( OBJECT_TYPE, INDEX_TYPE )  \
    namespace chainbase { template<> struct get_index_type<OBJECT_TYPE> { typedef INDEX_TYPE type; }; }
 
-   #define CHAINBASE_DEFAULT_CONSTRUCTOR( OBJECT_TYPE ) \
-   template<typename Constructor, typename Allocator> \
-   OBJECT_TYPE( Constructor&& c, Allocator&&  ) { c(*this); }
-
    template< typename value_type >
    class undo_state
    {
       public:
          typedef typename value_type::id_type                      id_type;
-         typedef allocator< std::pair<const id_type, value_type> > id_value_allocator_type;
-         typedef allocator< id_type >                              id_allocator_type;
 
-         template<typename T>
-         undo_state( allocator<T> al )
-         :old_values( id_value_allocator_type( al ) ),
-          removed_values( id_value_allocator_type( al ) ),
-          new_ids( id_allocator_type( al ) ){}
+         undo_state(  )
+         :old_values(  ),
+          removed_values(  ),
+          new_ids(  ){}
 
-         typedef boost::interprocess::map< id_type, value_type, std::less<id_type>, id_value_allocator_type >  id_value_type_map;
-         typedef boost::interprocess::set< id_type, std::less<id_type>, id_allocator_type >                    id_type_set;
+         typedef boost::container::map< id_type, value_type, std::less<id_type>>  id_value_type_map;
+         typedef boost::container::set< id_type, std::less<id_type>>                    id_type_set;
 
          id_value_type_map            old_values;
          id_value_type_map            removed_values;
@@ -179,7 +142,7 @@ namespace chainbase {
    class int_incrementer
    {
       public:
-         int_incrementer( int32_t& target ) : _target(target)
+         int_incrementer( std::atomic<int32_t>& target ) : _target(target)
          { ++_target; }
 
          int_incrementer( int_incrementer& ii ) : _target( ii._target )
@@ -192,14 +155,47 @@ namespace chainbase {
          { return _target; }
 
       private:
-         int32_t& _target;
+         std::atomic<int32_t>& _target;
    };
+
+   class counted_shared_lock {
+      public:
+      counted_shared_lock ( std::atomic<int32_t>& counter, boost::shared_mutex& mutex) : count(counter), mutex(mutex) {
+         if (!mutex.try_lock_shared_for(boost::chrono::seconds(60))) {
+            throw std::runtime_error("failed to acquire lock for 60s");
+         }
+         ++count;
+      }
+      ~counted_shared_lock() {
+         --count;
+         mutex.unlock_shared();
+      }
+
+      std::atomic<int32_t>& count;
+      boost::shared_mutex& mutex;
+   };
+
+   class counted_lock {
+      public:
+      counted_lock ( std::atomic<int32_t>& counter, boost::shared_mutex& mutex) : count(counter), mutex(mutex) {
+         if (!mutex.try_lock_for(boost::chrono::seconds(60))) {
+            throw std::runtime_error("failed to acquire write lock for 60s");
+         }
+         ++count;
+      }
+      ~counted_lock() {
+         --count;
+         mutex.unlock();
+      }
+
+      std::atomic<int32_t>& count;
+      boost::shared_mutex& mutex;
+   };
+
 
    /**
     *  The value_type stored in the multiindex container must have a integer field with the name 'id'.  This will
     *  be the primary key and it will be assigned and managed by generic_index.
-    *
-    *  Additionally, the constructor for value_type must take an allocator
     */
    template<typename MultiIndexType>
    class generic_index
@@ -207,23 +203,18 @@ namespace chainbase {
       public:
          typedef MultiIndexType                                        index_type;
          typedef typename index_type::value_type                       value_type;
-         typedef allocator< generic_index >                            allocator_type;
          typedef undo_state< value_type >                              undo_state_type;
 
-         generic_index( allocator<value_type> a, bfs::path p )
-         :_stack(a),_indices( a, p ),_size_of_value_type( sizeof(typename MultiIndexType::value_type) ),_size_of_this(sizeof(*this))
+         generic_index( bfs::path p )
+         :_stack(),_indices( p ),_size_of_value_type( sizeof(typename MultiIndexType::value_type) ),_size_of_this(sizeof(*this))
          {
-#ifdef ENABLE_MIRA
             _revision = _indices.revision();
-#endif
          }
 
-         generic_index( allocator<value_type> a )
-         :_stack(a),_indices( a ),_size_of_value_type( sizeof(typename MultiIndexType::value_type) ),_size_of_this(sizeof(*this))
+         generic_index( )
+         :_stack(),_indices( ),_size_of_value_type( sizeof(typename MultiIndexType::value_type) ),_size_of_this(sizeof(*this))
          {
-#ifdef ENABLE_MIRA
             _revision = _indices.revision();
-#endif
          }
 
          void validate()const {
@@ -235,25 +226,20 @@ namespace chainbase {
           * Construct a new element in the multi_index_container.
           * Set the ID to the next available ID, then increment _next_id and fire off on_create().
           */
-         template<typename Constructor>
-         const value_type& emplace( Constructor&& c ) {
+         const value_type& emplace( const std::function <void (value_type&)>& f) {
             auto new_id = _next_id;
 
-            auto constructor = [&]( value_type& v ) {
-               v.id = new_id;
-               c( v );
-            };
-
-            auto insert_result = _indices.emplace( constructor, _indices.get_allocator() );
+            value_type v{};
+            v.id = new_id;
+            f(v);
+            auto insert_result = _indices.emplace( v );
 
             if( !insert_result.second ) {
                BOOST_THROW_EXCEPTION( std::logic_error("could not insert object, most likely a uniqueness constraint was violated") );
             }
 
             ++_next_id;
-#ifdef ENABLE_MIRA
             _indices.set_next_id( _next_id );
-#endif
             on_create( *insert_result.first );
             return *insert_result.first;
          }
@@ -270,21 +256,11 @@ namespace chainbase {
             _indices.erase( _indices.iterator_to( obj ) );
          }
 
-#ifdef ENABLE_MIRA
-//((bip::managed_mapped_file*)nullptr)
          template< typename ByIndex, typename IterType >
          IterType erase( IterType objI ) {
             on_remove( *objI );
             return _indices.template mutable_get< ByIndex >().erase( objI );
          }
-#else
-         template< typename ByIndex >
-         typename MultiIndexType::template index_iterator<ByIndex>::type erase(typename MultiIndexType::template index_iterator<ByIndex>::type objI) {
-            auto& idx = _indices.template get< ByIndex >();
-            on_remove(*objI);
-            return idx.erase(objI);
-         }
-#endif
 
          template<typename CompatibleKey>
          const value_type* find( CompatibleKey&& key )const {
@@ -306,7 +282,6 @@ namespace chainbase {
 
          void clear() { _indices.clear(); }
 
-#ifdef ENABLE_MIRA
          void open( const bfs::path& p, const boost::any& o )
          {
             _indices.open( p, o );
@@ -341,7 +316,6 @@ namespace chainbase {
          void end_bulk_load() { _indices.end_bulk_load(); }
 
          void flush_bulk_load() { _indices.flush_bulk_load(); }
-#endif
 
          class session {
             public:
@@ -388,11 +362,9 @@ namespace chainbase {
          session start_undo_session()
          {
             ++_revision;
-#ifdef ENABLE_MIRA
             _indices.set_revision( _revision );
             assert( _indices.revision() == _revision );
-#endif
-            _stack.emplace_back( _indices.get_allocator() );
+            _stack.emplace_back( );
             _stack.back().old_next_id = _next_id;
             _stack.back().revision = _revision;
             return session( *this, _revision );
@@ -432,9 +404,7 @@ namespace chainbase {
                _indices.erase( _indices.find( id ) );
             }
             _next_id = head.old_next_id;
-#ifdef ENABLE_MIRA
             _indices.set_next_id( _next_id );
-#endif
 
             for( auto& item : head.removed_values ) {
                bool ok = _indices.emplace( std::move( item.second ) ).second;
@@ -443,10 +413,8 @@ namespace chainbase {
 
             _stack.pop_back();
             --_revision;
-#ifdef ENABLE_MIRA
             _indices.set_revision( _revision );
             assert( _indices.revision() == _revision );
-#endif
          }
 
          /**
@@ -555,10 +523,8 @@ namespace chainbase {
 
             _stack.pop_back();
             --_revision;
-#ifdef ENABLE_MIRA
             _indices.set_revision( _revision );
             assert( _indices.revision() == _revision );
-#endif
          }
 
          /**
@@ -587,10 +553,8 @@ namespace chainbase {
          {
             if( _stack.size() != 0 ) BOOST_THROW_EXCEPTION( std::logic_error("cannot set revision while there is an existing undo stack") );
             _revision = revision;
-#ifdef ENABLE_MIRA
             _indices.set_revision( _revision );
             assert( _indices.revision() == _revision );
-#endif
          }
 
          int64_t next_id()const { return _next_id._id; }
@@ -643,7 +607,7 @@ namespace chainbase {
             head.new_ids.insert( v.id );
          }
 
-         boost::interprocess::deque< undo_state_type, allocator<undo_state_type> > _stack;
+         boost::container::deque< undo_state_type> _stack;
 
          /**
           *  Each new session increments the revision, a squash will decrement the revision by combining
@@ -714,7 +678,6 @@ namespace chainbase {
          virtual statistic_info get_statistics(bool onlyStaticInfo) const = 0;
          virtual size_t size() const = 0;
          virtual void clear() = 0;
-#ifdef ENABLE_MIRA
          virtual void open( const bfs::path&, const boost::any& ) = 0;
          virtual void close() = 0;
          virtual void wipe( const bfs::path& dir ) = 0;
@@ -727,7 +690,6 @@ namespace chainbase {
          virtual void begin_bulk_load() = 0;
          virtual void end_bulk_load() = 0;
          virtual void flush_bulk_load() = 0;
-#endif
 
          void add_index_extension( std::shared_ptr< index_extension > ext )  { _extensions.push_back( ext ); }
          const index_extensions& get_index_extensions()const  { return _extensions; }
@@ -745,12 +707,10 @@ namespace chainbase {
 
          index_impl( BaseIndex& base ):abstract_index( &base ),_base(base){}
 
-#ifdef ENABLE_MIRA
          ~index_impl()
          {
             delete (BaseIndex*) abstract_index::_idx_ptr;
          }
-#endif
 
          virtual unique_ptr<abstract_session> start_undo_session() override {
             return unique_ptr<abstract_session>(new session_impl<typename BaseIndex::session>( _base.start_undo_session() ) );
@@ -784,7 +744,6 @@ namespace chainbase {
             _base.clear();
          }
 
-#ifdef ENABLE_MIRA
          virtual void open( const bfs::path& p, const boost::any& o ) override final
          {
             _base.open( p, o );
@@ -844,7 +803,6 @@ namespace chainbase {
          {
             _base.mutable_indices().flush_bulk_load();
          }
-#endif
 
       private:
          BaseIndex& _base;
@@ -854,46 +812,6 @@ namespace chainbase {
    class index : public index_impl<IndexType> {
       public:
          index( IndexType& i ):index_impl<IndexType>( i ){}
-   };
-
-
-   class read_write_mutex_manager
-   {
-      public:
-         read_write_mutex_manager()
-         {
-            _current_lock = 0;
-         }
-
-         ~read_write_mutex_manager(){}
-
-         void next_lock()
-         {
-            _current_lock++;
-            new( &_locks[ _current_lock % CHAINBASE_NUM_RW_LOCKS ] ) read_write_mutex();
-         }
-
-         read_write_mutex& current_lock()
-         {
-            return _locks[ _current_lock % CHAINBASE_NUM_RW_LOCKS ];
-         }
-
-         uint32_t current_lock_num()
-         {
-            return _current_lock;
-         }
-
-      private:
-         std::array< read_write_mutex, CHAINBASE_NUM_RW_LOCKS >     _locks;
-         std::atomic< uint32_t >                                    _current_lock;
-   };
-
-   struct lock_exception : public std::exception
-   {
-      explicit lock_exception() {}
-      virtual ~lock_exception() {}
-
-      virtual const char* what() const noexcept { return "Unable to acquire database lock"; }
    };
 
    /**
@@ -921,7 +839,7 @@ namespace chainbase {
          };
 
       public:
-         void open( const bfs::path& dir, uint32_t flags = 0, size_t shared_file_size = 0, const boost::any& database_cfg = nullptr );
+         void open( const bfs::path& dir, uint32_t flags = 0, const boost::any& database_cfg = nullptr );
          void close();
          void flush();
          size_t get_cache_usage() const;
@@ -929,24 +847,20 @@ namespace chainbase {
          void dump_lb_call_counts();
          void trim_cache();
          void wipe( const bfs::path& dir );
-         void resize( size_t new_shared_file_size );
-         void set_require_locking( bool enable_require_locking );
 
-#ifdef CHAINBASE_CHECK_LOCKING
          void require_lock_fail( const char* method, const char* lock_type, const char* tname )const;
 
          void require_read_lock( const char* method, const char* tname )const
          {
-            if( BOOST_UNLIKELY( _enable_require_locking & (_read_lock_count <= 0) ) )
+            if( _read_lock_count <= 0 && _write_lock_count <= 0)
                require_lock_fail(method, "read", tname);
          }
 
          void require_write_lock( const char* method, const char* tname )
          {
-            if( BOOST_UNLIKELY( _enable_require_locking & (_write_lock_count <= 0) ) )
+            if( _write_lock_count <= 0 )
                require_lock_fail(method, "write", tname);
          }
-#endif
 
          struct session {
             public:
@@ -956,7 +870,7 @@ namespace chainbase {
                     _session_incrementer( s._session_incrementer )
                {}
 
-               session( vector<std::unique_ptr<abstract_session>>&& s, int32_t& session_count )
+               session( vector<std::unique_ptr<abstract_session>>&& s, std::atomic<int32_t>& session_count )
                   : _index_sessions( std::move(s) ), _session_incrementer( session_count )
                {
                   if( _index_sessions.size() )
@@ -1014,49 +928,16 @@ namespace chainbase {
              for( const auto& i : _index_list ) i->set_revision( revision );
          }
 
-#ifdef ENABLE_MIRA
          void print_stats()
          {
             for( const auto& i : _index_list )  i->print_stats();
          }
-#endif
 
          template<typename MultiIndexType>
          void add_index()
          {
             _index_types.push_back( unique_ptr< abstract_index_type >( new index_type_impl< MultiIndexType >() ) );
             _index_types.back()->add_index( *this );
-         }
-
-#ifndef ENABLE_MIRA
-         #pragma GCC diagnostic ignored "-Wnonnull"
-         auto get_segment_manager() -> decltype( ((bip::managed_mapped_file*)nullptr)->get_segment_manager()) {
-            return _segment->get_segment_manager();
-         }
-#endif
-         unsigned long long get_total_system_memory() const
-         {
-#if !defined( __APPLE__ ) // OS X does not support _SC_AVPHYS_PAGES
-            long pages = sysconf(_SC_AVPHYS_PAGES);
-            long page_size = sysconf(_SC_PAGE_SIZE);
-            return pages * page_size;
-#else
-            return 0;
-#endif
-         }
-
-         size_t get_free_memory()const
-         {
-#ifdef ENABLE_MIRA
-            return get_total_system_memory();
-#else
-            return _segment->get_segment_manager()->get_free_memory();
-#endif
-         }
-
-         size_t get_max_memory()const
-         {
-            return _file_size;
          }
 
          template<typename MultiIndexType>
@@ -1188,12 +1069,12 @@ namespace chainbase {
              return get_mutable_index<index_type>().remove( obj );
          }
 
-         template<typename ObjectType, typename Constructor>
-         const ObjectType& create( Constructor&& con )
+         template<typename ObjectType>
+         const ObjectType& create( const std::function <void (ObjectType&)> f)
          {
              CHAINBASE_REQUIRE_WRITE_LOCK("create", ObjectType);
              typedef typename get_index_type<ObjectType>::type index_type;
-             return get_mutable_index<index_type>().emplace( std::forward<Constructor>(con) );
+             return get_mutable_index<index_type>().emplace(f);
          }
 
          template< typename ObjectType >
@@ -1203,62 +1084,28 @@ namespace chainbase {
             return get_index< index_type >().indices().size();
          }
 
-         template< typename Lambda >
-         auto with_read_lock( Lambda&& callback, uint64_t wait_micro = 1000000 ) -> decltype( (*(Lambda*)nullptr)() )
-         {
-#ifndef ENABLE_MIRA
-            read_lock lock( _rw_manager.current_lock(), bip::defer_lock_type() );
-#else
-            read_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
-#endif
-
-#ifdef CHAINBASE_CHECK_LOCKING
-            BOOST_ATTRIBUTE_UNUSED
-            int_incrementer ii( _read_lock_count );
-#endif
-
-            if( !wait_micro )
-            {
-               lock.lock();
-            }
-            else
-            {
-               if( !lock.timed_lock( boost::posix_time::microsec_clock::universal_time() + boost::posix_time::microseconds( wait_micro ) ) )
-                  BOOST_THROW_EXCEPTION( lock_exception() );
-            }
-
-            return callback();
+         auto lock_read() {
+            return counted_shared_lock(_write_lock_count, _mutex);
          }
 
-         template< typename Lambda >
-         auto with_write_lock( Lambda&& callback, uint64_t wait_micro = 1000000 ) -> decltype( (*(Lambda*)nullptr)() )
-         {
-            write_lock lock( _rw_manager.current_lock(), boost::defer_lock_t() );
-#ifdef CHAINBASE_CHECK_LOCKING
-            BOOST_ATTRIBUTE_UNUSED
-            int_incrementer ii( _write_lock_count );
-#endif
-
-#if !defined ENABLE_MIRA || defined IS_TEST_NET
-            if( wait_micro )
-            {
-               while( !lock.timed_lock( boost::posix_time::microsec_clock::universal_time() + boost::posix_time::microseconds( wait_micro ) ) )
-               {
-                  _rw_manager.next_lock();
-                  std::cerr << "Lock timeout, moving to lock " << _rw_manager.current_lock_num() << std::endl;
-                  lock = write_lock( _rw_manager.current_lock(), boost::defer_lock_t() );
-               }
-            }
-            else
-#endif
-            {
-               lock.lock();
-            }
-
-            return callback();
+         auto lock_write() {
+            return counted_lock(_write_lock_count, _mutex);
          }
 
-#ifdef ENABLE_MIRA
+         template <class Function, class... Args>
+         auto with_read_lock(Function&& func, Args&&... args) -> decltype(func(args...)) {
+            auto _lock = lock_read();
+
+            return func(args...);
+         };
+
+         template <class Function, class... Args>
+         auto with_write_lock(Function&& func, Args&&... args) -> decltype(func(args...)) {
+            auto _lock = lock_write();
+
+            return func(args...);
+         }
+
          template< typename Lambda >
          void bulk_load( Lambda&& callback )
          {
@@ -1282,7 +1129,6 @@ namespace chainbase {
                item->flush_bulk_load();
             }
          }
-#endif
 
          template< typename IndexExtensionType, typename Lambda >
          void for_each_index_extension( Lambda&& callback )const
@@ -1309,7 +1155,6 @@ namespace chainbase {
          void add_index_helper() {
             const uint16_t type_id = generic_index<MultiIndexType>::value_type::type_id;
             typedef generic_index<MultiIndexType>          index_type;
-            typedef typename index_type::allocator_type    index_alloc;
 
             std::string type_name = boost::core::demangle( typeid( typename index_type::value_type ).name() );
 
@@ -1318,11 +1163,7 @@ namespace chainbase {
             }
 
             index_type* idx_ptr =  nullptr;
-#ifdef ENABLE_MIRA
-            idx_ptr = new index_type( index_alloc() );
-#else
-            idx_ptr = _segment->find_or_construct< index_type >( type_name.c_str() )( index_alloc( _segment->get_segment_manager() ) );
-#endif
+            idx_ptr = new index_type( );
             idx_ptr->validate();
 
             if( type_id >= _index_map.size() )
@@ -1333,17 +1174,8 @@ namespace chainbase {
             _index_map[ type_id ].reset( new_index );
             _index_list.push_back( new_index );
 
-#ifdef ENABLE_MIRA
             if( _is_open ) new_index->open( _data_dir, _database_cfg );
-#endif
          }
-
-         read_write_mutex_manager                                    _rw_manager;
-#ifndef ENABLE_MIRA
-         unique_ptr<bip::managed_mapped_file>                        _segment;
-         unique_ptr<bip::managed_mapped_file>                        _meta;
-         bip::file_lock                                              _flock;
-#endif
 
          /**
           * This is a sparse list of known indicies kept to accelerate creation of undo sessions
@@ -1359,13 +1191,13 @@ namespace chainbase {
 
          bfs::path                                                   _data_dir;
 
-         int32_t                                                     _read_lock_count = 0;
-         int32_t                                                     _write_lock_count = 0;
-         bool                                                        _enable_require_locking = false;
+         boost::shared_mutex                                         _mutex;
+         std::atomic<int32_t>                                        _read_lock_count = {0};
+         std::atomic<int32_t>                                        _write_lock_count = {0};
 
          bool                                                        _is_open = false;
 
-         int32_t                                                     _undo_session_count = 0;
+         std::atomic<int32_t>                                        _undo_session_count = {0};
          size_t                                                      _file_size = 0;
          boost::any                                                  _database_cfg = nullptr;
    };

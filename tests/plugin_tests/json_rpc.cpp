@@ -1,7 +1,7 @@
 #ifdef IS_TEST_NET
 #include <boost/test/unit_test.hpp>
 
-#include <xgt/chain/account_object.hpp>
+#include <xgt/chain/wallet_object.hpp>
 #include <xgt/chain/comment_object.hpp>
 #include <xgt/protocol/xgt_operations.hpp>
 #include <xgt/plugins/json_rpc/json_rpc_plugin.hpp>

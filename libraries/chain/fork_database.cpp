@@ -42,8 +42,8 @@ shared_ptr<fork_item>  fork_database::push_block(const signed_block& b)
    {
       wlog( "Pushing block to fork database that failed to link: ${id}, ${num}", ("id",b.id())("num",b.block_num()) );
       wlog( "Head: ${num}, ${id}", ("num",_head->data.block_num())("id",_head->data.id()) );
-      throw;
       _unlinked_index.insert( item );
+      throw;
    }
    return _head;
 }
@@ -52,7 +52,8 @@ void  fork_database::_push_block(const item_ptr& item)
 {
    if( _head ) // make sure the block is within the range that we are caching
    {
-      FC_ASSERT( item->num > std::max<int64_t>( 0, int64_t(_head->num) - (_max_size) ),
+      XGT_ASSERT( item->num > std::max<int64_t>( 0, int64_t(_head->num) - (_max_size) ),
+                 block_too_old_exception,
                  "attempting to push a block that is too old",
                  ("item->num",item->num)("head",_head->num)("max_size",_max_size));
    }
@@ -68,6 +69,7 @@ void  fork_database::_push_block(const item_ptr& item)
 
    _index.insert(item);
    if( !_head || item->num > _head->num ) _head = item;
+   _push_next(item);
 }
 
 /**
@@ -85,7 +87,11 @@ void fork_database::_push_next( const item_ptr& new_item )
     {
        auto tmp = *itr;
        prev_idx.erase( itr );
-       _push_block( tmp );
+       try {
+         _push_block( tmp );
+       } catch(const fc::assert_exception& e) {
+          wlog("failed to push block ${e}", ("e", e.to_detail_string()));
+       }
 
        itr = prev_idx.find( new_item->id );
     }
@@ -223,6 +229,10 @@ shared_ptr<fork_item> fork_database::walk_main_branch_to_num( uint32_t block_num
 
 shared_ptr<fork_item> fork_database::fetch_block_on_main_branch_by_number( uint32_t block_num )const
 {
+   if (!_head || block_num > _head->num){
+      return {};
+   }
+
    vector<item_ptr> blocks = fetch_block_by_number(block_num);
    if( blocks.size() == 1 )
       return blocks[0];

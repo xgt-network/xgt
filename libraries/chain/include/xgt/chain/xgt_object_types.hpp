@@ -11,18 +11,6 @@
 
 #include <xgt/chain/multi_index_types.hpp>
 
-#ifndef ENABLE_MIRA
-#define XGT_STD_ALLOCATOR_CONSTRUCTOR( object_type )   \
-      object_type () = delete;                         \
-   public:
-#else
-#define XGT_STD_ALLOCATOR_CONSTRUCTOR( object_type )   \
-   public:                                             \
-      object_type () {}
-#endif
-
-#define XGT_OBJECT_ID_TYPE( object ) typedef oid< object ## _object > object ## _id_type;
-
 namespace xgt {
 
 namespace protocol {
@@ -36,7 +24,6 @@ namespace chain {
 
 using chainbase::object;
 using chainbase::oid;
-using chainbase::allocator;
 
 using xgt::protocol::block_id_type;
 using xgt::protocol::transaction_id_type;
@@ -45,10 +32,10 @@ using xgt::protocol::wallet_name_type;
 using xgt::protocol::en_address_type;
 using xgt::protocol::share_type;
 
-using chainbase::shared_string;
+using std::string;
 
-inline std::string to_string( const shared_string& str ) { return std::string( str.begin(), str.end() ); }
-inline void from_string( shared_string& out, const string& in ){ out.assign( in.begin(), in.end() ); }
+inline std::string to_string( const std::string& str ) { return std::string( str.begin(), str.end() ); }
+inline void from_string( std::string& out, const string& in ){ out.assign( in.begin(), in.end() ); }
 
 struct by_id;
 struct by_name;
@@ -197,7 +184,6 @@ enum bandwidth_type
 
 } } //xgt::chain
 
-#ifdef ENABLE_MIRA
 namespace mira {
 
 template< typename T > struct is_static_length< chainbase::oid< T > > : public boost::true_type {};
@@ -208,24 +194,10 @@ template<> struct is_static_length< xgt::protocol::asset > : public boost::true_
 template<> struct is_static_length< xgt::protocol::price > : public boost::true_type {};
 
 } // mira
-#endif
 
 namespace fc
 {
 class variant;
-
-#ifndef ENABLE_MIRA
-inline void to_variant( const xgt::chain::shared_string& s, variant& var )
-{
-   var = fc::string( xgt::chain::to_string( s ) );
-}
-
-inline void from_variant( const variant& var, xgt::chain::shared_string& s )
-{
-   auto str = var.as_string();
-   s.assign( str.begin(), str.end() );
-}
-#endif
 
 template<typename T>
 void to_variant( const chainbase::oid<T>& var,  variant& vo )
@@ -264,26 +236,8 @@ void unpack( Stream& s, chainbase::oid<T>& id, uint32_t )
    s.read( (char*)&id._id, sizeof(id._id));
 }
 
-#ifndef ENABLE_MIRA
-template< typename Stream >
-void pack( Stream& s, const chainbase::shared_string& ss )
-{
-   std::string str = xgt::chain::to_string( ss );
-   fc::raw::pack( s, str );
-}
-
-template< typename Stream >
-void unpack( Stream& s, chainbase::shared_string& ss, uint32_t depth )
-{
-   depth++;
-   std::string str;
-   fc::raw::unpack( s, str, depth );
-   xgt::chain::from_string( ss, str );
-}
-#endif
-
 template< typename Stream, typename E, typename A >
-void pack( Stream& s, const boost::interprocess::deque<E, A>& dq )
+void pack( Stream& s, const boost::container::deque<E, A>& dq )
 {
    // This could be optimized
    std::vector<E> temp;
@@ -292,7 +246,7 @@ void pack( Stream& s, const boost::interprocess::deque<E, A>& dq )
 }
 
 template< typename Stream, typename E, typename A >
-void unpack( Stream& s, boost::interprocess::deque<E, A>& dq, uint32_t depth )
+void unpack( Stream& s, boost::container::deque<E, A>& dq, uint32_t depth )
 {
    depth++;
    FC_ASSERT( depth <= MAX_RECURSION_DEPTH );
@@ -304,7 +258,7 @@ void unpack( Stream& s, boost::interprocess::deque<E, A>& dq, uint32_t depth )
 }
 
 template< typename Stream, typename K, typename V, typename C, typename A >
-void pack( Stream& s, const boost::interprocess::flat_map< K, V, C, A >& value )
+void pack( Stream& s, const boost::container::flat_map< K, V, C, A >& value )
 {
    fc::raw::pack( s, unsigned_int((uint32_t)value.size()) );
    auto itr = value.begin();
@@ -317,7 +271,7 @@ void pack( Stream& s, const boost::interprocess::flat_map< K, V, C, A >& value )
 }
 
 template< typename Stream, typename K, typename V, typename C, typename A >
-void unpack( Stream& s, boost::interprocess::flat_map< K, V, C, A >& value, uint32_t depth )
+void unpack( Stream& s, boost::container::flat_map< K, V, C, A >& value, uint32_t depth )
 {
    depth++;
    FC_ASSERT( depth <= MAX_RECURSION_DEPTH );
@@ -333,27 +287,10 @@ void unpack( Stream& s, boost::interprocess::flat_map< K, V, C, A >& value, uint
    }
 }
 
-#ifndef ENABLE_MIRA
-template< typename T >
-T unpack_from_vector( const xgt::chain::buffer_type& s )
-{
-   try
-   {
-      T tmp;
-      if( s.size() )
-      {
-         datastream<const char*>  ds( s.data(), size_t(s.size()) );
-         fc::raw::unpack(ds,tmp);
-      }
-      return tmp;
-   } FC_RETHROW_EXCEPTIONS( warn, "error unpacking ${type}", ("type",fc::get_typename<T>::name() ) )
-}
-#endif
+
 }
 
-#ifndef ENABLE_MIRA
-template<> struct get_typename< xgt::chain::shared_string > { static const char* name() { return get_typename< string >::name(); } };
-#endif
+
 
 } // namespace fc::raw
 

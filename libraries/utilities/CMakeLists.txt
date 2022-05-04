@@ -9,14 +9,6 @@ endif(NOT XGT_GIT_REVISION_DESCRIPTION)
 
 file(GLOB HEADERS "include/xgt/utilities/*.hpp")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror -Wno-error=shadow -Wno-error=sign-compare")
-# supress unwanted warnings:
-include(CheckCXXCompilerFlag)
-CHECK_CXX_COMPILER_FLAG("-Wno-error=deprecated-copy -Wno-error=pessimizing-move" SUPPRESS_SOME_WARNINGS)
-if(SUPPRESS_SOME_WARNINGS)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=deprecated-copy -Wno-error=pessimizing-move")
-endif()
-
 set(sources
    benchmark_dumper.cpp
    key_conversion.cpp
@@ -34,24 +26,4 @@ add_library( xgt_utilities
              ${HEADERS} )
 target_link_libraries( xgt_utilities PUBLIC fc )
 target_include_directories( xgt_utilities
-                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
-if (USE_PCH)
-  set_target_properties(xgt_utilities PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
-  cotire(xgt_utilities)
-endif(USE_PCH)
-
-if( CLANG_TIDY_EXE )
-   set_target_properties(
-      xgt_utilities PROPERTIES
-      CXX_CLANG_TIDY "${DO_CLANG_TIDY}"
-   )
-endif( CLANG_TIDY_EXE )
-
-install( TARGETS
-   xgt_utilities
-
-   RUNTIME DESTINATION bin
-   LIBRARY DESTINATION lib
-   ARCHIVE DESTINATION lib
-)
-install( FILES ${HEADERS} DESTINATION "include/xgt/utilities" )
+                            PUBLIC include )

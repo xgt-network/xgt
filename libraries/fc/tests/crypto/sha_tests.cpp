@@ -2,7 +2,6 @@
 
 #include <fc/crypto/digest.hpp>
 #include <fc/crypto/ripemd160.hpp>
-#include <fc/crypto/sha1.hpp>
 #include <fc/crypto/sha224.hpp>
 #include <fc/crypto/sha256.hpp>
 #include <fc/crypto/sha512.hpp>
@@ -85,7 +84,6 @@ void test_stream( ) {
 }
 
 template void test_big<fc::ripemd160>( const std::string& expected );
-template void test_big<fc::sha1>( const std::string& expected );
 template void test_big<fc::sha224>( const std::string& expected );
 template void test_big<fc::sha256>( const std::string& expected );
 template void test_big<fc::sha512>( const std::string& expected );
@@ -106,17 +104,6 @@ BOOST_AUTO_TEST_CASE(ripemd160_test)
     test<fc::ripemd160>( TEST5, "52783243c1697bdbe16d37f97f68f08325dc1528" );
     test_big<fc::ripemd160>( "29b6df855772aa9a95442bf83b282b495f9f6541" );
     test_stream<fc::ripemd160>();
-}
-
-BOOST_AUTO_TEST_CASE(sha1_test)
-{
-    init_5();
-    test<fc::sha1>( TEST1, "a9993e364706816aba3e25717850c26c9cd0d89d" );
-    test<fc::sha1>( TEST2, "da39a3ee5e6b4b0d3255bfef95601890afd80709" );
-    test<fc::sha1>( TEST3, "84983e441c3bd26ebaae4aa1f95129e5e54670f1" );
-    test<fc::sha1>( TEST4, "a49b2446a02c645bf419f995b67091253a04a259" );
-    test<fc::sha1>( TEST5, "34aa973cd4c4daa4f61eeb2bdbad27316534016f" );
-    test_big<fc::sha1>( "7789f0c9ef7bfc40d93311143dfbe69e2017f592" );
 }
 
 BOOST_AUTO_TEST_CASE(sha224_test)
@@ -151,7 +138,7 @@ BOOST_AUTO_TEST_CASE(sha256_test)
     try {
         fc::sha256 fourth( yet_another.data(), yet_another.data_size() );
         BOOST_FAIL( "Expected exception!" );
-    } catch ( fc::exception& expected ) {}
+    } catch ( const fc::exception& expected ) {}
 
     fc::sha256 fourth( "445C7A8007A93D8733188288BB320A8FE2DEBD2AE1B47F0F50BC10BAE845C094" );
     BOOST_CHECK_EQUAL( "d61967f63c7dd183914a4ae452c9f6ad5d462ce3d277798075b107615c1a8a30", (std::string) fc::sha256::hash(fourth) );

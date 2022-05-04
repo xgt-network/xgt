@@ -11,15 +11,10 @@ using xgt::protocol::required_automated_action;
 
 class pending_required_action_object : public object< pending_required_action_object_type, pending_required_action_object >
 {
-   XGT_STD_ALLOCATOR_CONSTRUCTOR( pending_required_action_object )
+   public:
+      pending_required_action_object() = default;
 
    public:
-      template< typename Constructor, typename Allocator >
-      pending_required_action_object( Constructor&& c, allocator< Allocator > a )
-      {
-         c( *this );
-      }
-
       id_type                    id;
 
       time_point_sec             execution_time;
@@ -38,8 +33,7 @@ typedef multi_index_container<
             member< pending_required_action_object, pending_required_action_id_type, &pending_required_action_object::id >
          >
       >
-   >,
-   allocator< pending_required_action_object >
+   >
 > pending_required_action_index;
 
 } } //xgt::chain

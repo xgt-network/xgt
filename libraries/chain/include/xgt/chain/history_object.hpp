@@ -14,16 +14,10 @@ namespace xgt { namespace chain {
 
    class operation_object : public object< operation_object_type, operation_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( operation_object )
+      public:
+      operation_object() = default;
 
       public:
-         template< typename Constructor, typename Allocator >
-         operation_object( Constructor&& c, allocator< Allocator > a )
-            :serialized_op( a )
-         {
-            c( *this );
-         }
-
          id_type              id;
 
          transaction_id_type  trx_id;
@@ -58,19 +52,12 @@ namespace xgt { namespace chain {
             >
          >
 #endif
-      >,
-      allocator< operation_object >
+      >
    > operation_index;
 
    class account_history_object : public object< account_history_object_type, account_history_object >
    {
       public:
-         template< typename Constructor, typename Allocator >
-         account_history_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
          account_history_object() {}
 
          id_type           id;
@@ -93,18 +80,15 @@ namespace xgt { namespace chain {
             >,
             composite_key_compare< std::less< wallet_name_type >, std::greater< uint32_t > >
          >
-      >,
-      allocator< account_history_object >
+      >
    > account_history_index;
 } }
 
-#ifdef ENABLE_MIRA
 namespace mira {
 
 template<> struct is_static_length< xgt::chain::account_history_object > : public boost::true_type {};
 
 } // mira
-#endif
 
 FC_REFLECT( xgt::chain::operation_object, (id)(trx_id)(block)(trx_in_block)(op_in_trx)(virtual_op)(timestamp)(serialized_op) )
 CHAINBASE_SET_INDEX_TYPE( xgt::chain::operation_object, xgt::chain::operation_index )

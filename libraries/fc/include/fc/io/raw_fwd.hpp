@@ -13,7 +13,7 @@
 #include <boost/tuple/tuple.hpp>
 
 #define MAX_ARRAY_ALLOC_SIZE (1024*1024*10)
-#define MAX_RECURSION_DEPTH  (20)
+#define MAX_RECURSION_DEPTH  (40)
 
 namespace fc {
    class time_point;
@@ -22,7 +22,6 @@ namespace fc {
    class variant_object;
    class path;
    template<typename... Types> class static_variant;
-   template<typename T, size_t N> class int_array;
 
    template<typename IntType, typename EnumType> class enum_type;
    namespace ip { class endpoint; }
@@ -113,9 +112,6 @@ namespace fc {
 
     template<typename Stream, typename T, size_t N> inline void pack( Stream& s, const fc::array<T,N>& v);
     template<typename Stream, typename T, size_t N> inline void unpack( Stream& s, fc::array<T,N>& v, uint32_t depth = 0);
-
-    template<typename Stream, typename T, size_t N> inline void pack( Stream& s, const fc::int_array<T,N>& v);
-    template<typename Stream, typename T, size_t N> inline void unpack( Stream& s, fc::int_array<T,N>& v, uint32_t depth = 0);
 
     template<typename Stream> inline void pack( Stream& s, const bool& v );
     template<typename Stream> inline void unpack( Stream& s, bool& v, uint32_t depth = 0 );

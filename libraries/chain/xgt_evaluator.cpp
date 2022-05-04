@@ -39,7 +39,6 @@
 #if !defined( __clang__ )
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
-#include <diff_match_patch.h>
 #pragma GCC diagnostic pop
 #pragma GCC diagnostic pop
 #include <boost/locale/encoding_utf.hpp>
@@ -99,10 +98,10 @@ void witness_update_evaluator::do_apply( const witness_update_operation& o )
    _db.get_account( o.owner ); // verify owner exists
 
    FC_ASSERT( o.props.account_creation_fee.symbol.is_canon() );
-   FC_TODO( "Move to validate() after HF20" );
+   //FC_TODO( "Move to validate() after HF20" );
    FC_ASSERT( o.props.account_creation_fee.amount <= XGT_MAX_WALLET_CREATION_FEE, "account_creation_fee greater than maximum account creation fee" );
 
-   FC_TODO( "Check and move this to validate after HF 20" );
+   //FC_TODO( "Check and move this to validate after HF 20" );
    if( o.props.maximum_block_size > XGT_SOFT_MAX_BLOCK_SIZE )
       wlog( "NOTIFYALERT! max block size exceeds soft limit in replay" );
    FC_ASSERT( o.props.maximum_block_size <= XGT_SOFT_MAX_BLOCK_SIZE, "Max block size cannot be more than 2MiB" );
@@ -153,9 +152,9 @@ void verify_authority_accounts_exist(
 void initialize_wallet_object( wallet_object& acc, const wallet_name_type& name, const public_key_type& key,
    const dynamic_global_property_object& props, bool mined, const wallet_name_type& recovery_account, uint32_t hardfork, uint32_t nonce, std::string en_address = "" )
 {
-   wlog("?????? initialize_wallet_object name ${n}", ("n", name));
-   wlog("?????? initialize_wallet_object key ${n}", ("n", key));
-   wlog("?????? initialize_wallet_object created ${n}", ("n", props.time));
+   dlog("?????? initialize_wallet_object name ${n}", ("n", name));
+   dlog("?????? initialize_wallet_object key ${n}", ("n", key));
+   dlog("?????? initialize_wallet_object created ${n}", ("n", props.time));
    acc.name = name;
    acc.en_address = en_address == "" ? fc::ripemd160::hex_digest(name) : en_address;
    acc.memo_key = key;
@@ -164,7 +163,7 @@ void initialize_wallet_object( wallet_object& acc, const wallet_name_type& name,
    //acc.energybar.last_update_time = props.time.sec_since_epoch();
    //acc.mined = mined;
 
-   //FC_TODO( "If after HF 20, there are no temp account creations, the HF check can be removed." )
+   ////FC_TODO( "If after HF 20, there are no temp account creations, the HF check can be removed." )
    //if( recovery_account != XGT_TEMP_WALLET )
    //{
    //    acc.recovery_account = recovery_account;
@@ -177,12 +176,12 @@ void initialize_wallet_object( wallet_object& acc, const wallet_name_type& name,
 
 void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
 {
-   wlog("?????? wallet_create_evaluator");
+   dlog("?????? wallet_create_evaluator");
    const auto& props = _db.get_dynamic_global_properties();
    const string wallet_name = o.get_wallet_name();
-   wlog("?????? wallet_create_evaluator wallet_name ${w}", ("w",wallet_name));
-   wlog("?????? wallet_create_evaluator creator ${w}", ("w",o.creator));
-   wlog("?????? wallet_create_evaluator new_wallet_name ${w}", ("w",o.new_wallet_name));
+   dlog("?????? wallet_create_evaluator wallet_name ${w}", ("w",wallet_name));
+   dlog("?????? wallet_create_evaluator creator ${w}", ("w",o.creator));
+   dlog("?????? wallet_create_evaluator new_wallet_name ${w}", ("w",o.new_wallet_name));
 
    //const auto& creator = _db.get_account( o.creator );
 
@@ -190,13 +189,13 @@ void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
 
    // const witness_schedule_object& wso = _db.get_witness_schedule_object();
 
-   // FC_TODO( "Move to validate() after HF20" );
+   // //FC_TODO( "Move to validate() after HF20" );
    // FC_ASSERT( o.fee <= asset( XGT_MAX_WALLET_CREATION_FEE, XGT_SYMBOL ), "Account creation fee cannot be too large" );
    /*FC_ASSERT( o.fee == wso.median_props.account_creation_fee, "Must pay the exact account creation fee. paid: ${p} fee: ${f}",
                ("p", o.fee)
                ("f", wso.median_props.account_creation_fee) ); */
 
-   //FC_TODO( "Check and move to validate post HF20" );
+   ////FC_TODO( "Check and move to validate post HF20" );
    //validate_auth_size( o.recovery );
    //validate_auth_size( o.money );
    //validate_auth_size( o.social );
@@ -227,13 +226,13 @@ void wallet_create_evaluator::do_apply( const wallet_create_operation& o )
 
 void wallet_update_evaluator::do_apply( const wallet_update_operation& o )
 {
-   wlog("!!!!!! WALLET UPDATE");
+   dlog("!!!!!! WALLET UPDATE");
    FC_ASSERT( o.wallet != XGT_TEMP_WALLET, "Cannot update temp account." );
 
    if( o.social )
       o.social->validate();
 
-   wlog("!!!!!! WALLET UPDATE 2");
+   dlog("!!!!!! WALLET UPDATE 2");
 
    // Upsert
    // TODO: VALIDATE
@@ -269,7 +268,7 @@ void wallet_update_evaluator::do_apply( const wallet_update_operation& o )
       if( o.social )
          validate_auth_size( *o.social );
 
-      wlog("!!!!!! WALLET UPDATE 3");
+      dlog("!!!!!! WALLET UPDATE 3");
 
       if( o.recovery )
       {
@@ -286,7 +285,7 @@ void wallet_update_evaluator::do_apply( const wallet_update_operation& o )
       if( o.social )
          verify_authority_accounts_exist( _db, *o.social, o.wallet, authority::social );
 
-      wlog("!!!!!! WALLET UPDATE 4");
+      dlog("!!!!!! WALLET UPDATE 4");
 
       _db.modify( wallet, [&]( wallet_object& acc )
       {
@@ -310,7 +309,7 @@ void wallet_update_evaluator::do_apply( const wallet_update_operation& o )
       }
       #endif
 
-      wlog("!!!!!! WALLET UPDATE 5");
+      dlog("!!!!!! WALLET UPDATE 5");
 
       if( o.money || o.social )
       {
@@ -321,7 +320,7 @@ void wallet_update_evaluator::do_apply( const wallet_update_operation& o )
          });
       }
 
-      wlog("!!!!!! WALLET UPDATE 6");
+      dlog("!!!!!! WALLET UPDATE 6");
    }
 }
 
@@ -487,8 +486,8 @@ void comment_evaluator::do_apply( const comment_operation& o )
       {
          com.last_update   = _db.head_block_time();
          com.active        = com.last_update;
-         std::function< bool( const shared_string& a, const string& b ) > equal;
-         equal = []( const shared_string& a, const string& b ) -> bool { return a.size() == b.size() && std::strcmp( a.c_str(), b.c_str() ) == 0; };
+         std::function< bool( const std::string& a, const string& b ) > equal;
+         equal = []( const std::string& a, const string& b ) -> bool { return a.size() == b.size() && std::strcmp( a.c_str(), b.c_str() ) == 0; };
 
          if( !parent )
          {
@@ -506,36 +505,6 @@ void comment_evaluator::do_apply( const comment_operation& o )
       {
          a.last_post_edit = now;
       });
-   #ifndef IS_LOW_MEM
-      _db.modify( _db.get< comment_content_object, by_comment >( comment.id ), [&]( comment_content_object& con )
-      {
-         if( o.title.size() )         from_string( con.title, o.title );
-         if( o.json_metadata.size() )
-            from_string( con.json_metadata, o.json_metadata );
-
-         if( o.body.size() ) {
-            try {
-            diff_match_patch<std::wstring> dmp;
-            auto patch = dmp.patch_fromText( utf8_to_wstring(o.body) );
-            if( patch.size() ) {
-               auto result = dmp.patch_apply( patch, utf8_to_wstring( to_string( con.body ) ) );
-               auto patched_body = wstring_to_utf8(result.first);
-               if( !fc::is_utf8( patched_body ) ) {
-                  idump(("invalid utf8")(patched_body));
-                  from_string( con.body, fc::prune_invalid_utf8(patched_body) );
-               } else { from_string( con.body, patched_body ); }
-            }
-            else { // replace
-               from_string( con.body, o.body );
-            }
-            } catch ( ... ) {
-               from_string( con.body, o.body );
-            }
-         }
-      });
-   #endif
-
-
 
    } // end EDIT case
 
@@ -827,7 +796,7 @@ void generic_vote_evaluator(
    // Lazily delete vote
    if( itr != comment_vote_idx.end() && itr->num_changes == -1 )
    {
-      FC_TODO( "This looks suspicious. We might not be deleting vote objects that we should be on nodes that are configured to clear votes" );
+      //FC_TODO( "This looks suspicious. We might not be deleting vote objects that we should be on nodes that are configured to clear votes" );
       FC_ASSERT( false, "Cannot vote again on a comment after payout." );
 
       _db.remove( *itr );
@@ -866,7 +835,7 @@ void generic_vote_evaluator(
 
 void vote_evaluator::do_apply( const vote_operation& o )
 {
-   FC_TODO( "Remove after XTT Hardfork" );
+   //FC_TODO( "Remove after XTT Hardfork" );
 
    const auto& comment = _db.get_comment( o.author, o.permlink );
    const auto& voter   = _db.get_account( o.voter );
@@ -972,7 +941,7 @@ void pow_evaluator::do_apply( const pow_operation& o )
    double value = base_reward.amount.value * (1.0 / static_cast<double>(divisor));
    long price = static_cast<long>(floor(value));
    asset reward = asset(price, base_reward.symbol);
-   //wlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
+   //dlog("!!!!!! Mining reward for ${w} amount ${r}", ("w",worker_account)("r",reward));
 
    const wallet_object* w = db.find_account( worker_account );
    if (w == nullptr)
@@ -1473,7 +1442,7 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
 
 void contract_create_evaluator::do_apply( const contract_create_operation& op )
 {
-   wlog("!!!!!! contract_create owner ${w} code size ${y}", ("w",op.owner)("y",op.code.size()));
+   dlog("!!!!!! contract_create owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
 
    const auto& contract_wallet = wallet_create(_db, 1);
 

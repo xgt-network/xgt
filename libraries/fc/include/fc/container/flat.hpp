@@ -69,7 +69,7 @@ namespace fc { namespace raw {
 
 
       template<typename Stream, typename T, typename A>
-      void pack( Stream& s, const bip::vector<T,A>& value )
+      void pack( Stream& s, const boost::container::vector<T,A>& value )
       {
          pack( s, unsigned_int((uint32_t)value.size()) );
          if( !std::is_fundamental<T>::value )
@@ -89,7 +89,7 @@ namespace fc { namespace raw {
       }
 
       template<typename Stream, typename T, typename A>
-      void unpack( Stream& s, bip::vector<T,A>& value, uint32_t depth )
+      void unpack( Stream& s, boost::container::vector<T,A>& value, uint32_t depth )
       {
          depth++;
          FC_ASSERT( depth <= MAX_RECURSION_DEPTH );

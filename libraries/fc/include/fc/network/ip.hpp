@@ -1,6 +1,5 @@
 #pragma once
 #include <fc/string.hpp>
-#include <fc/crypto/sha1.hpp>
 #include <fc/io/raw_fwd.hpp>
 #include <fc/crypto/city.hpp>
 #include <fc/reflect/reflect.hpp>

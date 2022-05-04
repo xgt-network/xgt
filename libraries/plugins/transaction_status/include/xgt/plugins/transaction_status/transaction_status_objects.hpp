@@ -30,12 +30,6 @@ enum transaction_status
 class transaction_status_object : public object< transaction_status_object_type, transaction_status_object >
 {
 public:
-   template< typename Constructor, typename Allocator >
-   transaction_status_object( Constructor&& c, allocator< Allocator > a )
-   {
-      c( *this );
-   }
-
    transaction_status_object() {}
 
    id_type                     id;
@@ -61,8 +55,7 @@ typedef multi_index_container<
          >,
          composite_key_compare< std::less< uint32_t >, std::less< transaction_id_type > >
       >
-   >,
-   allocator< transaction_status_object >
+   >
 > transaction_status_index;
 
 

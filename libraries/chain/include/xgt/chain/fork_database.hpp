@@ -7,6 +7,8 @@
 #include <boost/multi_index/hashed_index.hpp>
 #include <boost/multi_index/mem_fun.hpp>
 
+#define XGT_FORK_DB_MAX_SIZE 1024
+
 namespace xgt { namespace chain {
 
    using xgt::protocol::signed_block;
@@ -97,7 +99,7 @@ namespace xgt { namespace chain {
          void _push_block(const item_ptr& b );
          void _push_next(const item_ptr& newly_inserted);
 
-         uint32_t                 _max_size = 1024;
+         uint32_t                 _max_size = XGT_FORK_DB_MAX_SIZE;
 
          fork_multi_index_type    _unlinked_index;
          fork_multi_index_type    _index;

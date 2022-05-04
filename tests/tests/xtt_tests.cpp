@@ -2,7 +2,7 @@
 
 #if defined IS_TEST_NET
 
-FC_TODO(Extend testing scenarios to support multiple NAIs per account)
+//FC_TODO(Extend testing scenarios to support multiple NAIs per account)
 
 #include <boost/test/unit_test.hpp>
 
@@ -590,7 +590,7 @@ BOOST_AUTO_TEST_CASE( token_emission_timing )
  * The logic tests in legacy tests *should* be entirely duplicated in xtt_operation_tests.cpp
  * We are keeping these tests around to provide an additional layer re-assurance for the time being
  */
-FC_TODO( "Remove XTT legacy tests and ensure code coverage is not reduced" );
+//FC_TODO( "Remove XTT legacy tests and ensure code coverage is not reduced" );
 /*
 BOOST_AUTO_TEST_CASE( setup_validate )
 {

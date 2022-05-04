@@ -44,14 +44,7 @@ namespace xgt { namespace chain {
 
    class database;
 
-#ifdef ENABLE_MIRA
-   using set_index_type_func = std::function< void(database&, mira::index_type, const boost::filesystem::path&, const boost::any&) >;
-#endif
-
    struct index_delegate {
-#ifdef ENABLE_MIRA
-      set_index_type_func set_index_type;
-#endif
    };
 
    using index_delegate_map = std::map< std::string, index_delegate >;
@@ -114,17 +107,12 @@ namespace xgt { namespace chain {
          struct open_args
          {
             fc::path data_dir;
-            fc::path shared_mem_dir;
+            fc::path blockchain_dir;
             uint64_t initial_supply = XGT_INIT_SUPPLY;
-            uint64_t shared_file_size = 0;
-            uint16_t shared_file_full_threshold = 0;
-            uint16_t shared_file_scale_rate = 0;
             uint32_t chainbase_flags = 0;
             bool do_validate_invariants = false;
             bool benchmark_is_enabled = false;
             fc::variant database_cfg;
-            bool replay_in_memory = false;
-            std::vector< std::string > replay_memory_indices{};
 
             std::shared_ptr< std::function< void( database&, const open_args& ) > > genesis_func;
 
@@ -159,7 +147,7 @@ namespace xgt { namespace chain {
           *
           * Will close the database before wiping. Database will be closed when this function returns.
           */
-         void wipe(const fc::path& data_dir, const fc::path& shared_mem_dir, bool include_blocks);
+         void wipe(const fc::path& data_dir, const fc::path& blockchain_dir, bool include_blocks);
          void close(bool rewind = true);
 
          //////////////////// db_block.cpp ////////////////////
@@ -216,13 +204,8 @@ namespace xgt { namespace chain {
          const wallet_object*  find_account( const wallet_name_type& name )const;
          const wallet_object*  find_account_by_en_address(  const en_address_type& en_address )const;
 
-         const comment_object&  get_comment(  const wallet_name_type& author, const shared_string& permlink )const;
-         const comment_object*  find_comment( const wallet_name_type& author, const shared_string& permlink )const;
-
-#ifndef ENABLE_MIRA
-         const comment_object&  get_comment(  const wallet_name_type& author, const string& permlink )const;
-         const comment_object*  find_comment( const wallet_name_type& author, const string& permlink )const;
-#endif
+         const comment_object&  get_comment(  const wallet_name_type& author, const std::string& permlink )const;
+         const comment_object*  find_comment( const wallet_name_type& author, const std::string& permlink )const;
 
          const escrow_object&   get_escrow(  const wallet_name_type& name, uint32_t escrow_id )const;
          const escrow_object*   find_escrow( const wallet_name_type& name, uint32_t escrow_id )const;
@@ -544,11 +527,6 @@ namespace xgt { namespace chain {
 
          uint32_t                      _flush_blocks = 0;
          uint32_t                      _next_flush_block = 0;
-
-         uint32_t                      _last_free_gb_printed = 0;
-
-         uint16_t                      _shared_file_full_threshold = 0;
-         uint16_t                      _shared_file_scale_rate = 0;
 
          flat_map< custom_id_type, std::shared_ptr< custom_operation_interpreter > >   _custom_operation_interpreters;
          std::string                   _json_schema;

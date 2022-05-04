@@ -62,7 +62,7 @@ int main( int argc, char** argv )
       FC_ASSERT(  fc::ecc::public_key::is_canonical( bip_0062_canon2_sig,  fc::ecc::canonical_signature_type::fc_canonical ) );
       FC_ASSERT( !fc::ecc::public_key::is_canonical( non_canon_sig,        fc::ecc::canonical_signature_type::fc_canonical ) );
    }
-   catch( fc::exception& e )
+   catch( const fc::exception& e )
    {
       ilog( "Uncaught Exception: ${e}", ("e", e) );
       return 1;

@@ -1,57 +1,57 @@
 #pragma once
 
 #include <xgt/chain/xgt_fwd.hpp>
+#include <xgt/plugins/wallet_history/wallet_history_objects.hpp>
+
 #include <xgt/plugins/chain/chain_plugin.hpp>
 
-#define XGT_WALLET_HISTORY_PLUGIN_NAME "wallet_history"
+#include <appbase/application.hpp>
 
-namespace xgt { namespace plugins { namespace wallet_history {
+#include <functional>
+#include <memory>
 
-namespace detail { class wallet_history_plugin_impl; }
+namespace xgt {
 
-using namespace appbase;
-using xgt::protocol::wallet_name_type;
+namespace plugins { namespace wallet_history {
 
-//
-// Plugins should #define their SPACE_ID's so plugins with
-// conflicting SPACE_ID assignments can be compiled into the
-// same binary (by simply re-assigning some of the conflicting #defined
-// SPACE_ID's in a build script).
-//
-// Assignment of SPACE_ID's cannot be done at run-time because
-// various template automagic depends on them being known at compile
-// time.
-//
-#ifndef XGT_WALLET_HISTORY_SPACE_ID
-#define XGT_WALLET_HISTORY_SPACE_ID 5
-#endif
+namespace bfs = boost::filesystem;
 
-/**
- *  This plugin is designed to track a range of operations by wallet so that one node
- *  doesn't need to hold the full operation history in memory.
- */
-class wallet_history_plugin : public plugin< wallet_history_plugin >
+
+
+class wallet_history_plugin final : public appbase::plugin< wallet_history_plugin >
 {
-   public:
-      wallet_history_plugin();
-      virtual ~wallet_history_plugin();
+public:
+   APPBASE_PLUGIN_REQUIRES((xgt::plugins::chain::chain_plugin))
 
-      APPBASE_PLUGIN_REQUIRES( (xgt::plugins::chain::chain_plugin) )
+   wallet_history_plugin();
+   virtual ~wallet_history_plugin();
 
-      static const std::string& name() { static std::string name = XGT_WALLET_HISTORY_PLUGIN_NAME; return name; }
+   static const std::string& name() { static std::string name = "wallet_history"; return name; }
 
-      virtual void set_program_options(
-         options_description& cli,
-         options_description& cfg ) override;
-      virtual void plugin_initialize( const variables_map& options ) override;
-      virtual void plugin_startup() override;
-      virtual void plugin_shutdown() override;
+   virtual void set_program_options(
+      boost::program_options::options_description &command_line_options,
+      boost::program_options::options_description &config_file_options
+      ) override;
 
-      flat_map< wallet_name_type, wallet_name_type > tracked_wallets()const; /// map start_range to end_range
+   virtual void plugin_initialize(const boost::program_options::variables_map& options) override;
+   virtual void plugin_startup() override;
+   virtual void plugin_shutdown() override;
 
-   private:
-      std::unique_ptr< detail::wallet_history_plugin_impl > my;
+   void find_wallet_history_data(const protocol::wallet_name_type& name, uint64_t start, uint32_t limit,
+      std::function<void(unsigned int, const rocksdb_operation_object&)> processor) const;
+   bool find_operation_object(size_t opId, rocksdb_operation_object* data) const;
+   void find_operations_by_block(size_t blockNum,
+      std::function<void(const rocksdb_operation_object&)> processor) const;
+   uint32_t enum_operations_from_block_range(uint32_t blockRangeBegin, uint32_t blockRangeEnd,
+      std::function<void(const rocksdb_operation_object&)> processor) const;
+
+private:
+   class impl;
+
+   std::unique_ptr<impl> _my;
+   uint32_t              _blockLimit = 0;
+   bool                  _doImmediateImport = false;
 };
 
-} } } //xgt::plugins::wallet_history
 
+} } } // xgt::plugins::wallet_history

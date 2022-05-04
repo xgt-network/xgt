@@ -25,12 +25,6 @@ namespace xgt { namespace chain {
    class dynamic_global_property_object : public object< dynamic_global_property_object_type, dynamic_global_property_object>
    {
       public:
-         template< typename Constructor, typename Allocator >
-         dynamic_global_property_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
          dynamic_global_property_object(){}
 
          id_type           id;
@@ -38,7 +32,6 @@ namespace xgt { namespace chain {
          uint32_t          head_block_number = 0;
          block_id_type     head_block_id;
          time_point_sec    time;
-         wallet_name_type  current_witness;
 
          fc::sha256 mining_target;
          time_point_sec last_mining_recalc_time; // @since 1.1.2 - Deprecated
@@ -123,26 +116,22 @@ namespace xgt { namespace chain {
       indexed_by<
          ordered_unique< tag< by_id >,
             member< dynamic_global_property_object, dynamic_global_property_object::id_type, &dynamic_global_property_object::id > >
-      >,
-      allocator< dynamic_global_property_object >
+      >
    > dynamic_global_property_index;
 
 } } // xgt::chain
 
-#ifdef ENABLE_MIRA
 namespace mira {
 
 template<> struct is_static_length< xgt::chain::dynamic_global_property_object > : public boost::true_type {};
 
 } // mira
-#endif
 
 FC_REFLECT( xgt::chain::dynamic_global_property_object,
              (id)
              (head_block_number)
              (head_block_id)
              (time)
-             (current_witness)
              (mining_target)
              (total_pow)
              (num_pow_witnesses)

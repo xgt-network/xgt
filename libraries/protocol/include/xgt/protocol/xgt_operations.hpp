@@ -1,6 +1,7 @@
 #pragma once
 #include <sstream>
 #include <fc/crypto/base58.hpp>
+#include <fc/crypto/hex.hpp>
 #include <xgt/protocol/base.hpp>
 #include <xgt/protocol/block_header.hpp>
 #include <xgt/protocol/asset.hpp>

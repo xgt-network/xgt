@@ -58,7 +58,6 @@
 #define BOOST_MULTI_INDEX_CHECK_INVARIANT
 
 #define DEFAULT_COLUMN 0
-#define MIRA_MAX_OPEN_FILES_PER_DB 64
 
 #define ENTRY_COUNT_KEY "ENTRY_COUNT"
 #define REVISION_KEY "REV"
@@ -67,24 +66,19 @@ namespace mira{
 
 namespace multi_index{
 
-#if BOOST_WORKAROUND(BOOST_MSVC,BOOST_TESTED_AT(1500))
-#pragma warning(push)
-#pragma warning(disable:4522) /* spurious warning on multiple operator=()'s */
-#endif
-
-template<typename Value,typename IndexSpecifierList,typename Allocator>
+template<typename Value,typename IndexSpecifierList>
 class multi_index_container:
   public detail::multi_index_base_type<
-    Value,IndexSpecifierList,Allocator>::type
+    Value,IndexSpecifierList>::type
 {
 
 private:
   BOOST_COPYABLE_AND_MOVABLE(multi_index_container)
 
-  template <typename,typename,typename> friend class  detail::index_base;
+  template <typename,typename> friend class  detail::index_base;
 
   typedef typename detail::multi_index_base_type<
-      Value,IndexSpecifierList,Allocator>::type   super;
+      Value,IndexSpecifierList>::type   super;
 
    int64_t                                         _revision = -1;
 
@@ -108,7 +102,6 @@ public:
   typedef typename super::const_iterator_type_list const_iterator_type_list;
   typedef typename super::value_type               value_type;
   typedef typename value_type::id_type             id_type;
-  typedef typename super::final_allocator_type     allocator_type;
   typedef typename super::iterator                 iterator;
   typedef typename super::const_iterator           const_iterator;
 
@@ -367,11 +360,6 @@ public:
       detail::cache_manager::get()->adjust_capacity();
    }
 
-  allocator_type get_allocator()const BOOST_NOEXCEPT
-  {
-    return allocator_type();
-  }
-
   /* retrieval of indices by number */
 
   template<int N>
@@ -616,6 +604,12 @@ primary_iterator erase( primary_iterator position )
       Value v( std::forward< Args >(args)... );
       return insert_( v );
    }
+   
+   bool emplace_rocksdb_(  )
+   {
+      Value v{};
+      return insert_( v );
+   }
 
    bool insert_( const value_type& v )
    {
@@ -823,9 +817,8 @@ private:
       std::vector< ::rocksdb::ColumnFamilyHandle* > handles;
 
       ::rocksdb::Options opts;
-      //opts.IncreaseParallelism();
-      //opts.OptimizeLevelStyleCompaction();
-      opts.max_open_files = MIRA_MAX_OPEN_FILES_PER_DB;
+      opts.IncreaseParallelism();
+      opts.OptimizeLevelStyleCompaction();
 
       ::rocksdb::Status s = ::rocksdb::DB::OpenForReadOnly( opts, str_path, column_defs, &handles, &db );
 
