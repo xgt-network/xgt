@@ -6,7 +6,10 @@
 namespace xgt{ namespace plugins { namespace p2p {
 
 #ifdef IS_TEST_NET
-const std::vector< std::string > default_seeds = {};
+const std::vector< std::string > default_seeds = {
+   "seed-node-1.xgt.co.in:2101",
+   "testnet.xgtcrypto.com:2101",
+};
 #else
 const std::vector< std::string > default_seeds = {
     "mainnet.xgtcrypto.com:2001",

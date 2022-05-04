@@ -113,6 +113,7 @@ public:
    uint32_t max_connections = 0;
    bool force_validate = false;
    bool block_producer = false;
+   bool from_genesis   = false;
    std::atomic_bool   ready_to_mine;
    std::atomic_bool   running;
    std::atomic_bool   activeHandleBlock;
@@ -567,6 +568,7 @@ void p2p_plugin::set_program_options( bpo::options_description& cli, bpo::option
    cli.add_options()
       ("force-validate", bpo::bool_switch()->default_value(false), "Force validation of all transactions. Deprecated in favor of p2p-force-validate" )
       ("p2p-force-validate", bpo::bool_switch()->default_value(false), "Force validation of all transactions." )
+      ("from-genesis", bpo::bool_switch()->default_value(false), "Start chain from genesis." )
       ;
 }
 
@@ -574,7 +576,7 @@ void p2p_plugin::plugin_initialize(const boost::program_options::variables_map& 
 {
    my = std::make_unique< detail::p2p_plugin_impl >( appbase::app().get_plugin< plugins::chain::chain_plugin >() );
 
-   my->ready_to_mine = false;
+   my->ready_to_mine = true;
 
    if( options.count( "p2p-endpoint" ) )
       my->endpoint = fc::ip::endpoint::from_string( options.at( "p2p-endpoint" ).as< string >() );
@@ -631,6 +633,9 @@ void p2p_plugin::plugin_initialize(const boost::program_options::variables_map& 
    }
 
    my->force_validate = options.at( "p2p-force-validate" ).as< bool >();
+   my->from_genesis = options.at( "from-genesis" ).as< bool >();
+
+   my->ready_to_mine = my->from_genesis;
 
    if( !my->force_validate && options.at( "force-validate" ).as< bool >() )
    {

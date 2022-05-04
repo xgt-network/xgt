@@ -10,7 +10,6 @@
 #include <xgt/chain/node_property_object.hpp>
 #include <xgt/chain/notifications.hpp>
 #include <xgt/chain/contract_objects.hpp>
-#include <xgt/chain/machine.hpp>
 
 #include <xgt/chain/util/advanced_benchmark_dumper.hpp>
 #include <xgt/chain/util/signal.hpp>
@@ -189,19 +188,27 @@ namespace xgt { namespace chain {
          void foreach_operation(std::function<bool(const signed_block_header&, const signed_block&,
             const signed_transaction&, uint32_t, const operation&, uint16_t)> processor) const;
 
+         const contract_storage_object& get_contract_storage( const contract_hash_type& owner, const wallet_name_type& caller )const;
+         const contract_storage_object* find_contract_storage( const contract_hash_type& owner, const wallet_name_type& caller )const;
+
          const witness_object&  get_witness(  const wallet_name_type& name )const;
          const witness_object*  find_witness( const wallet_name_type& name )const;
 
+         const contract_object&  get_contract(  const contract_hash_type& hash )const;
+         const contract_object&  get_contract_by_wallet(  const wallet_name_type& wallet )const;
+         const contract_object*  find_contract(  const contract_hash_type& hash )const;
+         const contract_object*  find_contract_by_wallet(  const wallet_name_type& wallet )const;
+
          const wallet_object&  get_account(  const wallet_name_type& name )const;
+         const wallet_object&  get_account_by_en_address(  const en_address_type& en_address )const;
          const wallet_object*  find_account( const wallet_name_type& name )const;
+         const wallet_object*  find_account_by_en_address(  const en_address_type& en_address )const;
 
          const comment_object&  get_comment(  const wallet_name_type& author, const std::string& permlink )const;
          const comment_object*  find_comment( const wallet_name_type& author, const std::string& permlink )const;
 
          const escrow_object&   get_escrow(  const wallet_name_type& name, uint32_t escrow_id )const;
          const escrow_object*   find_escrow( const wallet_name_type& name, uint32_t escrow_id )const;
-
-         //const contract_object& get_contract( const contract_hash_type& contract_hash )const;
 
          const dynamic_global_property_object&  get_dynamic_global_properties()const;
          const node_property_object&            get_node_properties()const;
@@ -383,6 +390,29 @@ namespace xgt { namespace chain {
          void validate_xtt_invariants()const;
          ///@}
 
+         fc::optional<fc::sha256> get_block_hash_from_block_num(uint32_t block_num) const
+         {
+           auto block = _block_log.read_block_by_num(block_num);
+           if (block) {
+             for( const auto& trx : block->transactions )
+             {
+
+               const auto& operations = trx.operations;
+               for (auto& op : operations)
+               {
+                 if ( is_pow_operation(op) )
+                 {
+                   const protocol::pow_operation& o = op.template get< protocol::pow_operation >();
+                   // TODO: May need a check to verify it is sha2_pow before continuing
+                   const auto& work = o.work.get< sha2_pow >();
+                   return fc::optional<fc::sha256>(work.proof);
+                 }
+               }
+             }
+           }
+           return fc::optional<fc::sha256>();
+         }
+
    protected:
          //Mark pop_undo() as protected -- we do not want outside calling pop_undo(); it should call pop_block() instead
          //void pop_undo() { object_database::pop_undo(); }
@@ -454,6 +484,22 @@ namespace xgt { namespace chain {
          const hardfork_versions& get_hardfork_versions()
          {
             return _hardfork_versions;
+         }
+
+         fc::sha256 bigint_to_hash(boost::multiprecision::uint256_t b)
+         {
+            std::ostringstream os;
+            os << std::hex << std::setw(64) << std::setfill('0') << b;
+            std::string string_hash = os.str();
+            return fc::sha256(string_hash);
+         }
+
+         boost::multiprecision::uint256_t hash_to_bigint(fc::sha256 h)
+         {
+            std::string prefix = "0x";
+            std::string string_hash = h.str();
+            std::string prepended_string_hash = prefix.append(string_hash);
+            return boost::multiprecision::uint256_t(prepended_string_hash);
          }
 
       private:

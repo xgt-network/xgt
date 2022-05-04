@@ -29,6 +29,7 @@ using xgt::protocol::block_id_type;
 using xgt::protocol::transaction_id_type;
 using xgt::protocol::chain_id_type;
 using xgt::protocol::wallet_name_type;
+using xgt::protocol::en_address_type;
 using xgt::protocol::share_type;
 
 using std::string;
@@ -38,6 +39,7 @@ inline void from_string( std::string& out, const string& in ){ out.assign( in.be
 
 struct by_id;
 struct by_name;
+struct by_en_address;
 
 enum object_type
 {
@@ -47,7 +49,6 @@ enum object_type
    account_authority_object_type,
    contract_object_type,
    contract_log_object_type,
-   contract_receipt_object_type,
    contract_storage_object_type,
    witness_object_type,
    transaction_object_type,
@@ -91,6 +92,7 @@ class wallet_object;
 class account_metadata_object;
 class account_authority_object;
 class contract_object;
+class contract_log_object;
 class contract_storage_object;
 class witness_object;
 class transaction_object;
@@ -134,6 +136,7 @@ typedef oid< wallet_object                          > wallet_id_type;
 typedef oid< account_metadata_object                > account_metadata_id_type;
 typedef oid< account_authority_object               > account_authority_id_type;
 typedef oid< contract_object                        > contract_id_type;
+typedef oid< contract_log_object                    > contract_log_id_type;
 typedef oid< contract_storage_object                > contract_storage_id_type;
 typedef oid< witness_object                         > witness_id_type;
 typedef oid< transaction_object                     > transaction_object_id_type;
@@ -298,7 +301,6 @@ FC_REFLECT_ENUM( xgt::chain::object_type,
                  (account_authority_object_type)
                  (contract_object_type)
                  (contract_log_object_type)
-                 (contract_receipt_object_type)
                  (contract_storage_object_type)
                  (witness_object_type)
                  (transaction_object_type)

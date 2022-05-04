@@ -7,6 +7,7 @@ add_library( xgt_chain
              database.cpp
              index.cpp
 
+             keccak256.c
              index_init1.cpp
              index_init2.cpp
              index_init3.cpp

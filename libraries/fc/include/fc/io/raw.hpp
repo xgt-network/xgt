@@ -1,4 +1,6 @@
 #pragma once
+#include <boost/multiprecision/cpp_int.hpp>
+#include <fc/crypto/ripemd160.hpp>
 #include <fc/io/raw_variant.hpp>
 #include <fc/reflect/reflect.hpp>
 #include <fc/io/datastream.hpp>
@@ -12,6 +14,7 @@
 #include <fc/exception/exception.hpp>
 #include <fc/safe.hpp>
 #include <fc/io/raw_fwd.hpp>
+#include <sstream>
 #include <map>
 #include <deque>
 

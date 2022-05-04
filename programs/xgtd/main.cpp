@@ -10,6 +10,7 @@
 
 // API plugins
 #include <xgt/plugins/block_api/block_api_plugin.hpp>
+#include <xgt/plugins/contract_api/contract_api_plugin.hpp>
 #include <xgt/plugins/chain_api/chain_api_plugin.hpp>
 #include <xgt/plugins/database_api/database_api_plugin.hpp>
 #include <xgt/plugins/transaction_api/transaction_api_plugin.hpp>
@@ -115,6 +116,7 @@ int main( int argc, char** argv )
 
          // APIs:
          xgt::plugins::block_api::block_api_plugin,
+         xgt::plugins::contract::contract_api_plugin,
          xgt::plugins::chain::chain_api_plugin,
          xgt::plugins::database_api::database_api_plugin,
          xgt::plugins::transaction_api::transaction_api_plugin,
