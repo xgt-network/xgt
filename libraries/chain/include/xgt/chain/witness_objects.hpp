@@ -4,7 +4,6 @@
 
 #include <xgt/protocol/authority.hpp>
 #include <xgt/protocol/xgt_operations.hpp>
-#include <xgt/chain/util/rd_dynamics.hpp>
 
 #include <xgt/chain/xgt_object_types.hpp>
 
@@ -17,7 +16,6 @@ namespace xgt { namespace chain {
    using xgt::protocol::price;
    using xgt::protocol::asset;
    using xgt::protocol::asset_symbol_type;
-   using xgt::chain::util::rd_dynamics_params;
 
    /**
     * Witnesses must vote on how to set certain chain properties to ensure a smooth
