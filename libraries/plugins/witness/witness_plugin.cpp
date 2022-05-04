@@ -238,9 +238,7 @@ namespace detail {
    uint64_t mknonce() {
       std::random_device rd;
       std::uniform_int_distribution<uint64_t> dist(0, UINT64_MAX);
-      auto nonce = dist(rd);
-      dlog("${thread} initializing nonce: ${nonce}", ("thread", (std::stringstream() << std::this_thread::get_id()).str())("nonce", nonce));
-      return nonce;
+      return dist(rd);
    }
 
    // mine_rounds performs work in work for miner solving for block_id with target and returns the number of rounds attempted.
