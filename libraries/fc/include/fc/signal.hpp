@@ -1,7 +1,6 @@
 #pragma once
 #include <functional>
 #include <memory>
-#include <fc/vector.hpp>
 #include <fc/log/logger.hpp>
 #include <fc/thread/mutex.hpp>
 #include <fc/thread/unique_lock.hpp>

@@ -2,6 +2,7 @@
 #include <xgt/protocol/operations.hpp>
 #include <xgt/protocol/sign_state.hpp>
 #include <xgt/protocol/types.hpp>
+#include <xgt/protocol/transaction.hpp>
 
 #include <numeric>
 

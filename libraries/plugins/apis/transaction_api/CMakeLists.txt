@@ -12,21 +12,6 @@ target_link_libraries( transaction_api_plugin
    block_api_plugin
    transaction_status_plugin
    xgt_utilities
+   xgt_chain
    appbase )
-target_include_directories( transaction_api_plugin PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
-
-if( CLANG_TIDY_EXE )
-   set_target_properties(
-      transaction_api_plugin PROPERTIES
-      CXX_CLANG_TIDY "${DO_CLANG_TIDY}"
-   )
-endif( CLANG_TIDY_EXE )
-
-install( TARGETS
-   transaction_api_plugin
-
-   RUNTIME DESTINATION bin
-   LIBRARY DESTINATION lib
-   ARCHIVE DESTINATION lib
-)
-install( FILES ${HEADERS} DESTINATION "include/xgt/transaction_api_plugin" )
+target_include_directories( transaction_api_plugin PUBLIC include )

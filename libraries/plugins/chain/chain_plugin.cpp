@@ -14,12 +14,11 @@
 #include <fc/io/json.hpp>
 #include <fc/io/fstream.hpp>
 
-#include <boost/asio.hpp>
 #include <boost/optional.hpp>
 #include <boost/bind.hpp>
 #include <boost/preprocessor/stringize.hpp>
 #include <boost/thread/future.hpp>
-#include <boost/lockfree/queue.hpp>
+#include <boost/thread/sync_queue.hpp>
 
 #include <thread>
 #include <memory>
@@ -31,7 +30,6 @@ namespace xgt { namespace plugins { namespace chain {
 using namespace xgt;
 using fc::flat_map;
 using xgt::chain::block_id_type;
-namespace asio = boost::asio;
 
 #define NUM_THREADS 1
 
@@ -65,6 +63,7 @@ struct write_context
 {
    write_request_ptr             req_ptr;
    uint32_t                      skip = 0;
+   bool                          shutdown = false;
    bool                          success = true;
    fc::optional< fc::exception > except;
    promise_ptr                   prom_ptr;
@@ -75,7 +74,7 @@ namespace detail {
 class chain_plugin_impl
 {
    public:
-      chain_plugin_impl() : write_queue( 64 ) {}
+      chain_plugin_impl() : write_queue() {}
       ~chain_plugin_impl() { stop_write_processing(); }
 
       void start_write_processing();
@@ -84,23 +83,17 @@ class chain_plugin_impl
 
       void post_block( const block_notification& note );
 
-      uint64_t                         shared_memory_size = 0;
-      uint16_t                         shared_file_full_threshold = 0;
-      uint16_t                         shared_file_scale_rate = 0;
       uint32_t                         chainbase_flags = 0;
-      bfs::path                        shared_memory_dir;
+      bfs::path                        blockchain_dir;
       bool                             replay = false;
       bool                             resync   = false;
       bool                             readonly = false;
-      bool                             check_locks = false;
       bool                             validate_invariants = false;
       bool                             dump_memory_details = false;
       bool                             benchmark_is_enabled = false;
       uint32_t                         stop_at_block = 0;
       uint32_t                         benchmark_interval = 0;
       uint32_t                         flush_interval = 0;
-      bool                             replay_in_memory = false;
-      std::vector< std::string >       replay_memory_indices{};
       flat_map<uint32_t,block_id_type> loaded_checkpoints;
       std::string                      from_state = "";
       std::string                      to_state = "";
@@ -108,10 +101,8 @@ class chain_plugin_impl
 
       uint32_t allow_future_time = 5;
 
-      bool                             running = true;
       std::shared_ptr< std::thread >   write_processor_thread;
-      boost::lockfree::queue< write_context* > write_queue;
-      int16_t                          write_lock_hold_time = 500;
+      boost::concurrent::sync_queue< write_context* > write_queue;
 
       flat_map< string, fc::variant_object > plugin_state_opts;
       bfs::path                        database_cfg;
@@ -142,7 +133,7 @@ struct write_request_visitor
       {
          result = db->push_block( *block, skip );
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          *except = e;
       }
@@ -165,7 +156,7 @@ struct write_request_visitor
 
          result = true;
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          *except = e;
       }
@@ -197,7 +188,7 @@ struct write_request_visitor
 
          result = true;
       }
-      catch( fc::exception& e )
+      catch( const fc::exception& e )
       {
          *except = e;
       }
@@ -228,78 +219,36 @@ void chain_plugin_impl::start_write_processing()
 {
    write_processor_thread = std::make_shared< std::thread >( [&]()
    {
-      bool is_syncing = true;
       write_context* cxt;
-      fc::time_point_sec start = fc::time_point::now();
       write_request_visitor req_visitor;
       req_visitor.db = &db;
       req_visitor.block_generator = block_generator;
 
       request_promise_visitor prom_visitor;
 
-      /* This loop monitors the write request queue and performs writes to the database. These
-       * can be blocks or pending transactions. Because the caller needs to know the success of
-       * the write and any exceptions that are thrown, a write context is passed in the queue
-       * to the processing thread which it will use to store the results of the write. It is the
-       * caller's responsibility to ensure the pointer to the write context remains valid until
-       * the contained promise is complete.
-       *
-       * The loop has two modes, sync mode and live mode. In sync mode we want to process writes
-       * as quickly as possible with minimal overhead. The outer loop busy waits on the queue
-       * and the inner loop drains the queue as quickly as possible. We exit sync mode when the
-       * head block is within 1 minute of system time.
-       *
-       * Live mode needs to balance between processing pending writes and allowing readers access
-       * to the database. It will batch writes together as much as possible to minimize lock
-       * overhead but will willingly give up the write lock after 500ms. The thread then sleeps for
-       * 10ms. This allows time for readers to access the database as well as more writes to come
-       * in. When the node is live the rate at which writes come in is slower and busy waiting is
-       * not an optimal use of system resources when we could give CPU time to read threads.
-       */
-      while( running )
+      while( true )
       {
-         if( !is_syncing )
-            start = fc::time_point::now();
+         write_queue >> cxt;
 
-         if( write_queue.pop( cxt ) )
+         if (cxt->shutdown)
+            break;
+
+         req_visitor.skip = cxt->skip;
+         req_visitor.except = &(cxt->except);
+
+         db.with_write_lock( [&]()
          {
-            db.with_write_lock( [&]()
-            {
-               while( running )
-               {
-                  req_visitor.skip = cxt->skip;
-                  req_visitor.except = &(cxt->except);
-                  cxt->success = cxt->req_ptr.visit( req_visitor );
-                  cxt->prom_ptr.visit( prom_visitor );
-
-                  if( is_syncing && start - db.head_block_time() < fc::minutes(1) )
-                  {
-                     start = fc::time_point::now();
-                     is_syncing = false;
-                  }
-
-                  if( !is_syncing && write_lock_hold_time >= 0 && fc::time_point::now() - start > fc::milliseconds( write_lock_hold_time ) )
-                  {
-                     break;
-                  }
-
-                  if( !write_queue.pop( cxt ) )
-                  {
-                     break;
-                  }
-               }
-            });
-         }
-
-         if( !is_syncing )
-            boost::this_thread::sleep_for( boost::chrono::milliseconds( 10 ) );
+            cxt->success = cxt->req_ptr.visit( req_visitor );
+            cxt->prom_ptr.visit( prom_visitor );
+         });
       }
    });
 }
 
 void chain_plugin_impl::stop_write_processing()
 {
-   running = false;
+   auto shutdown_msg = write_context{.shutdown = true};
+   write_queue << &shutdown_msg;
 
    if( write_processor_thread )
       write_processor_thread->join();
@@ -317,7 +266,7 @@ void chain_plugin_impl::post_block( const block_notification& note )
 {
    if( db.get_dynamic_global_properties().last_irreversible_block_num >= stop_at_block )
    {
-      running = false;
+      stop_write_processing();
       std::async( std::launch::async, [&]{ app().quit(); } );
    }
 }
@@ -333,28 +282,21 @@ const xgt::chain::database& chain_plugin::db() const { return my->db; }
 
 bfs::path chain_plugin::state_storage_dir() const
 {
-   return my->shared_memory_dir;
+   return my->blockchain_dir;
 }
 
 void chain_plugin::set_program_options(options_description& cli, options_description& cfg)
 {
    cfg.add_options()
-         ("shared-file-dir", bpo::value<bfs::path>()->default_value("blockchain"),
-            "the location of the chain shared memory files (absolute path or relative to application data dir)")
-         ("shared-file-size", bpo::value<string>()->default_value("54G"), "Size of the shared memory file. Default: 54G. If running a full node, increase this value to 200G.")
-         ("shared-file-full-threshold", bpo::value<uint16_t>()->default_value(0),
-            "A 2 precision percentage (0-10000) that defines the threshold for when to autoscale the shared memory file. Setting this to 0 disables autoscaling. Recommended value for consensus node is 9500 (95%). Full node is 9900 (99%)")
-         ("shared-file-scale-rate", bpo::value<uint16_t>()->default_value(0),
-            "A 2 precision percentage (0-10000) that defines how quickly to scale the shared memory file. When autoscaling occurs the file's size will be increased by this percent. Setting this to 0 disables autoscaling. Recommended value is between 1000-2000 (10-20%)")
+         ("blockchain-dir", bpo::value<bfs::path>()->default_value("blockchain"),
+            "the location of the blockchain data files (absolute path or relative to application data dir)")
          ("checkpoint,c", bpo::value<vector<string>>()->composing(), "Pairs of [BLOCK_NUM,BLOCK_ID] that should be enforced as checkpoints.")
          ("flush-state-interval", bpo::value<uint32_t>(),
             "flush shared memory changes to disk every N blocks")
          ("from-state", bpo::value<string>()->default_value(""), "Load from state, then replay subsequent blocks")
          ("to-state", bpo::value<string>()->default_value(""), "File to save state to on shutdown")
          ("state-format", bpo::value<string>()->default_value("binary"), "State file save format (binary|json)")
-#ifdef ENABLE_MIRA
          ("memory-replay-indices", bpo::value<vector<string>>()->multitoken()->composing(), "Specify which indices should be in memory during replay")
-#endif
          ;
    cli.add_options()
          ("replay-blockchain", bpo::bool_switch()->default_value(false), "clear chain database and replay all blocks")
@@ -364,36 +306,25 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
          ("advanced-benchmark", "Make profiling for every plugin.")
          ("set-benchmark-interval", bpo::value<uint32_t>(), "Print time and memory usage every given number of blocks")
          ("dump-memory-details", bpo::bool_switch()->default_value(false), "Dump database objects memory usage info. Use set-benchmark-interval to set dump interval.")
-         ("check-locks", bpo::bool_switch()->default_value(false), "Check correctness of chainbase locking")
          ("validate-database-invariants", bpo::bool_switch()->default_value(false), "Validate all supply invariants check out")
-#ifdef ENABLE_MIRA
          ("database-cfg", bpo::value<bfs::path>()->default_value("database.cfg"), "The database configuration file location")
          ("memory-replay,m", bpo::bool_switch()->default_value(false), "Replay with state in memory instead of on disk")
-#endif
          ("chain-id", bpo::value< std::string >()->default_value( XGT_CHAIN_ID ), "chain ID to connect to")
          ;
 }
 
 void chain_plugin::plugin_initialize(const variables_map& options)
 {
-   my->shared_memory_dir = app().data_dir() / "blockchain";
+   my->blockchain_dir = app().data_dir() / "blockchain";
 
-   if( options.count("shared-file-dir") )
+   if( options.count("blockchain-dir") )
    {
-      auto sfd = options.at("shared-file-dir").as<bfs::path>();
+      auto sfd = options.at("blockchain-dir").as<bfs::path>();
       if(sfd.is_relative())
-         my->shared_memory_dir = app().data_dir() / sfd;
+         my->blockchain_dir = app().data_dir() / sfd;
       else
-         my->shared_memory_dir = sfd;
+         my->blockchain_dir = sfd;
    }
-
-   my->shared_memory_size = fc::parse_size( options.at( "shared-file-size" ).as< string >() );
-
-   if( options.count( "shared-file-full-threshold" ) )
-      my->shared_file_full_threshold = options.at( "shared-file-full-threshold" ).as< uint16_t >();
-
-   if( options.count( "shared-file-scale-rate" ) )
-      my->shared_file_scale_rate = options.at( "shared-file-scale-rate" ).as< uint16_t >();
 
    my->chainbase_flags |= options.at( "force-open" ).as< bool >() ? chainbase::skip_env_check : chainbase::skip_nothing;
 
@@ -405,7 +336,6 @@ void chain_plugin::plugin_initialize(const variables_map& options)
       options.count( "stop-at-block" ) ? options.at( "stop-at-block" ).as<uint32_t>() : 0;
    my->benchmark_interval  =
       options.count( "set-benchmark-interval" ) ? options.at( "set-benchmark-interval" ).as<uint32_t>() : 0;
-   my->check_locks         = options.at( "check-locks" ).as< bool >();
    my->validate_invariants = options.at( "validate-database-invariants" ).as<bool>();
    my->dump_memory_details = options.at( "dump-memory-details" ).as<bool>();
    if( options.count( "flush-state-interval" ) )
@@ -439,7 +369,6 @@ void chain_plugin::plugin_initialize(const variables_map& options)
 
    my->benchmark_is_enabled = (options.count( "advanced-benchmark" ) != 0);
 
-#ifdef ENABLE_MIRA
    my->database_cfg = options.at( "database-cfg" ).as< bfs::path >();
 
    if( my->database_cfg.is_relative() )
@@ -450,19 +379,6 @@ void chain_plugin::plugin_initialize(const variables_map& options)
       my->write_default_database_config( my->database_cfg );
    }
 
-   my->replay_in_memory = options.at( "memory-replay" ).as< bool >();
-   if ( options.count( "memory-replay-indices" ) )
-   {
-      std::vector<std::string> indices = options.at( "memory-replay-indices" ).as< vector< string > >();
-      for ( auto& element : indices )
-      {
-         std::vector< std::string > tmp;
-         boost::split( tmp, element, boost::is_any_of("\t ") );
-         my->replay_memory_indices.insert( my->replay_memory_indices.end(), tmp.begin(), tmp.end() );
-      }
-   }
-#endif
-
    if( options.count( "chain-id" ) )
    {
       auto chain_id_str = options.at("chain-id").as< std::string >();
@@ -471,7 +387,7 @@ void chain_plugin::plugin_initialize(const variables_map& options)
       {
          my->db.set_chain_id( chain_id_type( chain_id_str) );
       }
-      catch( fc::exception& )
+      catch( const fc::exception& )
       {
          FC_ASSERT( false, "Could not parse chain_id as hex string. Chain ID String: ${s}", ("s", chain_id_str) );
       }
@@ -482,17 +398,14 @@ void chain_plugin::plugin_initialize(const variables_map& options)
 
 void chain_plugin::plugin_startup()
 {
-   ilog( "Starting chain with shared_file_size: ${n} bytes", ("n", my->shared_memory_size) );
-
    if(my->resync)
    {
       wlog("resync requested: deleting block log and shared memory");
-      my->db.wipe( app().data_dir() / "blockchain", my->shared_memory_dir, true );
+      my->db.wipe( app().data_dir() / "blockchain", my->blockchain_dir, true );
    }
 
    my->db.set_flush_interval( my->flush_interval );
    my->db.add_checkpoints( my->loaded_checkpoints );
-   my->db.set_require_locking( my->check_locks );
 
    bool dump_memory_details = my->dump_memory_details;
    xgt::utilities::benchmark_dumper dumper;
@@ -516,7 +429,6 @@ void chain_plugin::plugin_startup()
 
    fc::variant database_config;
 
-#ifdef ENABLE_MIRA
    try
    {
       database_config = fc::json::from_file( my->database_cfg, fc::json::strict_parser );
@@ -531,22 +443,16 @@ void chain_plugin::plugin_startup()
       elog( "Error while parsing database configuration: ${e}", ("e", e.what()) );
       exit( EXIT_FAILURE );
    }
-#endif
 
    database::open_args db_open_args;
    db_open_args.data_dir = app().data_dir() / "blockchain";
-   db_open_args.shared_mem_dir = my->shared_memory_dir;
+   db_open_args.blockchain_dir = my->blockchain_dir;
    db_open_args.initial_supply = XGT_INIT_SUPPLY;
-   db_open_args.shared_file_size = my->shared_memory_size;
-   db_open_args.shared_file_full_threshold = my->shared_file_full_threshold;
-   db_open_args.shared_file_scale_rate = my->shared_file_scale_rate;
    db_open_args.chainbase_flags = my->chainbase_flags;
    db_open_args.do_validate_invariants = my->validate_invariants;
    db_open_args.stop_at_block = my->stop_at_block;
    db_open_args.benchmark_is_enabled = my->benchmark_is_enabled;
    db_open_args.database_cfg = database_config;
-   db_open_args.replay_in_memory = my->replay_in_memory;
-   db_open_args.replay_memory_indices = my->replay_memory_indices;
 
    auto benchmark_lambda = [&dumper, &get_indexes_memory_details, dump_memory_details] ( uint32_t current_block_number,
       const chainbase::database::abstract_index_cntr_t& abstract_index_cntr )
@@ -589,7 +495,7 @@ void chain_plugin::plugin_startup()
       {
          db_open_args.genesis_func = std::make_shared< std::function<void( database&, const database::open_args& )> >( [&]( database& db, const database::open_args& args )
          {
-            statefile::init_genesis_from_state( db, ( app().data_dir() / my->from_state ).string(), args.shared_mem_dir, args.database_cfg );
+            statefile::init_genesis_from_state( db, ( app().data_dir() / my->from_state ).string(), args.blockchain_dir, args.database_cfg );
          } );
       }
       uint32_t last_block_number = my->db.reindex( db_open_args );
@@ -623,7 +529,7 @@ void chain_plugin::plugin_startup()
 
       try
       {
-         ilog("Opening shared memory from ${path}", ("path",my->shared_memory_dir.generic_string()));
+         ilog("Opening shared memory from ${path}", ("path",my->blockchain_dir.generic_string()));
 
          my->db.open( db_open_args );
 
@@ -640,7 +546,9 @@ void chain_plugin::plugin_startup()
       }
    }
 
-   ilog( "Started on blockchain with ${n} blocks", ("n", my->db.head_block_num()) );
+   my->db.with_read_lock([&]() {
+      ilog( "Started on blockchain with ${n} blocks", ("n", my->db.head_block_num()) );
+   });
    on_sync();
 
    if( my->stop_at_block )
@@ -663,7 +571,7 @@ void chain_plugin::plugin_shutdown()
       {
          db().undo_all();
 
-         FC_TODO( "Serializing and deserializing transaction objects does not seem to be working... :/" );
+         //FC_TODO( "Serializing and deserializing transaction objects does not seem to be working... :/" );
          //const auto& trx_idx = db().get_index< xgt::chain::transaction_index, by_id >();
          //while( trx_idx.begin() != trx_idx.end() )
          //{
@@ -713,7 +621,7 @@ bool chain_plugin::accept_block( const xgt::chain::signed_block& block, bool cur
    cxt.skip = skip;
    cxt.prom_ptr = &prom;
 
-   my->write_queue.push( &cxt );
+   my->write_queue << &cxt;
 
    prom.get_future().get();
 
@@ -729,7 +637,7 @@ void chain_plugin::accept_transaction( const xgt::chain::signed_transaction& trx
    cxt.req_ptr = &trx;
    cxt.prom_ptr = &prom;
 
-   my->write_queue.push( &cxt );
+   my->write_queue << &cxt;
 
    prom.get_future().get();
 
@@ -751,7 +659,7 @@ xgt::chain::signed_block chain_plugin::generate_block(
    cxt.req_ptr = &req;
    cxt.prom_ptr = &prom;
 
-   my->write_queue.push( &cxt );
+   my->write_queue << &cxt;
 
    prom.get_future().get();
 
@@ -760,16 +668,6 @@ xgt::chain::signed_block chain_plugin::generate_block(
    FC_ASSERT( cxt.success, "Block could not be generated" );
 
    return req.block;
-}
-
-int16_t chain_plugin::set_write_lock_hold_time( int16_t new_time )
-{
-   FC_ASSERT( get_state() == appbase::abstract_plugin::state::initialized,
-      "Can only change write_lock_hold_time while chain_plugin is initialized." );
-
-   int16_t old_time = my->write_lock_hold_time;
-   my->write_lock_hold_time = new_time;
-   return old_time;
 }
 
 bool chain_plugin::block_is_on_preferred_chain(const xgt::chain::block_id_type& block_id )

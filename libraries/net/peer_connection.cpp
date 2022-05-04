@@ -260,7 +260,7 @@ namespace graphene { namespace net
         our_state = our_connection_state::just_connected;
         ilog( "established outbound connection to ${remote_endpoint}", ("remote_endpoint", remote_endpoint ) );
       }
-      catch ( fc::exception& e )
+      catch ( const fc::exception& e )
       {
         elog( "fatal: error connecting to peer ${remote_endpoint}: ${e}", ("remote_endpoint", remote_endpoint )("e", e.to_detail_string() ) );
         throw;

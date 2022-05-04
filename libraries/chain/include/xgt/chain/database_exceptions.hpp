@@ -79,6 +79,7 @@ namespace xgt { namespace chain {
    FC_DECLARE_DERIVED_EXCEPTION( utility_exception,                 xgt::chain::chain_exception, 4060000, "utility method exception" )
    FC_DECLARE_DERIVED_EXCEPTION( undo_database_exception,           xgt::chain::chain_exception, 4070000, "undo database exception" )
    FC_DECLARE_DERIVED_EXCEPTION( unlinkable_block_exception,        xgt::chain::chain_exception, 4080000, "unlinkable block" )
+   FC_DECLARE_DERIVED_EXCEPTION( block_too_old_exception,           xgt::chain::chain_exception, 4080001, "block too old to link" )
    FC_DECLARE_DERIVED_EXCEPTION( unknown_hardfork_exception,        xgt::chain::chain_exception, 4090000, "chain attempted to apply unknown hardfork" )
    FC_DECLARE_DERIVED_EXCEPTION( plugin_exception,                  xgt::chain::chain_exception, 4100000, "plugin exception" )
    FC_DECLARE_DERIVED_EXCEPTION( block_log_exception,               xgt::chain::chain_exception, 4110000, "block log exception" )

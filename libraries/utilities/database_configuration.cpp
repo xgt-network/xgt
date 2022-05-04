@@ -55,7 +55,7 @@ fc::variant default_database_configuration()
    database::configuration::configuration config;
 
    // global
-   config.global.object_count = 62500; // 4GB heaviest usage
+   config.global.object_count = 500000; // About 500mb w/ mira on XGT history.
    config.global.statistics = false;   // Incurs severe performance degradation when true
 
    // global::shared_cache

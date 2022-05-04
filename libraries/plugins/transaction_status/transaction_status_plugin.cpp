@@ -54,6 +54,7 @@ public:
    uint32_t                      nominal_track_after_block = 0; //!< User provided track-after-block
    uint32_t                      actual_block_depth = 0;        //!< Calculated block-depth
    uint32_t                      actual_track_after_block = 0;  //!< Calculated track-after-block
+   bool                          reindexing = false;
    bool                          tracking = false;
    bool                          rebuild_state_flag = false;
    boost::signals2::connection   post_apply_transaction_connection;
@@ -105,7 +106,7 @@ void transaction_status_impl::on_post_apply_block( const block_notification& not
          }
       }
    }
-   else if ( actual_track_after_block <= note.block_num )
+   else if ( !reindexing && actual_track_after_block <= note.block_num )
    {
       ilog( "Transaction status tracking activated at block ${block_num}, statuses will be available after block ${nominal_track_after_block}",
          ("block_num", note.block_num)("nominal_track_after_block", nominal_track_after_block) );
@@ -167,6 +168,8 @@ fc::optional< transaction_id_type > transaction_status_impl::get_latest_transact
  */
 bool transaction_status_impl::state_is_valid()
 {
+   auto lock = _db.lock_read();
+
    const auto head_block_num = _db.head_block_num();
    uint32_t earliest_tracked_block_num = get_earliest_tracked_block_num();
 
@@ -195,7 +198,7 @@ bool transaction_status_impl::state_is_valid()
 void transaction_status_impl::rebuild_state()
 {
    ilog( "Rebuilding transaction status state" );
-
+   auto lock = _db.lock_write();
    // Clear out the transaction status index
    const auto& tx_status_idx = _db.get_index< transaction_status_index >().indices().get< by_trx_id >();
    auto itr = tx_status_idx.begin();
@@ -259,7 +262,6 @@ void transaction_status_plugin::plugin_initialize( const boost::program_options:
 {
    try
    {
-      ilog( "transaction_status: plugin_initialize() begin" );
       my = std::make_unique< detail::transaction_status_impl >();
 
       fc::mutable_variant_object state_opts;
@@ -286,11 +288,10 @@ void transaction_status_plugin::plugin_initialize( const boost::program_options:
       // We need to track 1 hour of blocks in addition to the depth the user would like us to track
       my->actual_block_depth = my->nominal_block_depth + ( XGT_MAX_TIME_UNTIL_EXPIRATION / XGT_BLOCK_INTERVAL );
 
-      dlog( "transaction status initializing" );
-      dlog( "  -> nominal block depth: ${block_depth}", ("block_depth", my->nominal_block_depth) );
-      dlog( "  -> actual block depth: ${actual_block_depth}", ("actual_block_depth", my->actual_block_depth) );
-      dlog( "  -> nominal track after block: ${track_after_block}", ("track_after_block", my->nominal_track_after_block) );
-      dlog( "  -> actual track after block: ${actual_track_after_block}", ("actual_track_after_block", my->actual_track_after_block) );
+      ilog( "Nominal block depth: ${block_depth}", ("block_depth", my->nominal_block_depth) );
+      ilog( "Actual block depth: ${actual_block_depth}", ("actual_block_depth", my->actual_block_depth) );
+      ilog( "Nominal track after block: ${track_after_block}", ("track_after_block", my->nominal_track_after_block) );
+      ilog( "Actual track after block: ${actual_track_after_block}", ("actual_track_after_block", my->actual_track_after_block) );
 
       if ( !my->actual_track_after_block )
       {
@@ -305,7 +306,17 @@ void transaction_status_plugin::plugin_initialize( const boost::program_options:
       my->post_apply_transaction_connection = my->_db.add_post_apply_transaction_handler( [&]( const transaction_notification& note ) { try { my->on_post_apply_transaction( note ); } FC_LOG_AND_RETHROW() }, *this, 0 );
       my->post_apply_block_connection = my->_db.add_post_apply_block_handler( [&]( const block_notification& note ) { try { my->on_post_apply_block( note ); } FC_LOG_AND_RETHROW() }, *this, 0 );
 
-      ilog( "transaction_status: plugin_initialize() end" );
+      my->_db.add_pre_reindex_handler([&](const xgt::chain::reindex_notification& note) -> void {
+         my->reindexing = true;
+         my->tracking = false;
+      }, *this, 0);
+
+      my->_db.add_post_reindex_handler([&](const xgt::chain::reindex_notification& note) -> void {
+         my->reindexing = false;
+         my->tracking = true;
+         my->rebuild_state();
+      }, *this, 0);
+
    } FC_CAPTURE_AND_RETHROW()
 }
 
@@ -316,10 +327,7 @@ void transaction_status_plugin::plugin_startup()
       ilog( "transaction_status: plugin_startup() begin" );
       if ( my->rebuild_state_flag )
       {
-         my->_db.with_write_lock( [&]()
-         {
             my->rebuild_state();
-         });
       }
       else if ( !my->state_is_valid() )
       {

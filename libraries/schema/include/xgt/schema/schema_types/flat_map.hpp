@@ -57,8 +57,8 @@ void schema_flat_map_impl< K, V >::get_str_schema( std::string& s )
 
 }
 
-template< typename K, typename V, typename Compare, typename Allocator >
-struct schema_reflect< boost::container::flat_map< K, V, Compare, Allocator > >
+template< typename K, typename V, typename Compare>
+struct schema_reflect< boost::container::flat_map< K, V, Compare> >
 {
    typedef detail::schema_flat_map_impl< K, V >        schema_impl_type;
 };

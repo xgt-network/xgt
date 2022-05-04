@@ -724,9 +724,6 @@ inline bool Zlib_Compress(const CompressionInfo& info,
     output_header_len = compression::PutDecompressedSizeInfo(
         output, static_cast<uint32_t>(length));
   }
-  // Resize output to be the plain data length.
-  // This may not be big enough if the compression actually expands data.
-  output->resize(output_header_len + length);
 
   // The memLevel parameter specifies how much memory should be allocated for
   // the internal compression state.
@@ -760,12 +757,17 @@ inline bool Zlib_Compress(const CompressionInfo& info,
     }
   }
 
+  // Get an upper bound on the compressed size.
+  size_t upper_bound =
+      deflateBound(&_stream, static_cast<unsigned long>(length));
+  output->resize(output_header_len + upper_bound);
+
   // Compress the input, and put compressed data in output.
   _stream.next_in = (Bytef*)input;
   _stream.avail_in = static_cast<unsigned int>(length);
 
   // Initialize the output size.
-  _stream.avail_out = static_cast<unsigned int>(length);
+  _stream.avail_out = static_cast<unsigned int>(upper_bound);
   _stream.next_out = reinterpret_cast<Bytef*>(&(*output)[output_header_len]);
 
   bool compressed = false;
@@ -1136,7 +1138,11 @@ inline CacheAllocationPtr LZ4_Uncompress(const UncompressionInfo& info,
     if (input_length < 8) {
       return nullptr;
     }
-    memcpy(&output_len, input_data, sizeof(output_len));
+    if (port::kLittleEndian) {
+      memcpy(&output_len, input_data, sizeof(output_len));
+    } else {
+      memcpy(&output_len, input_data + 4, sizeof(output_len));
+    }
     input_length -= 8;
     input_data += 8;
   }
@@ -1224,8 +1230,10 @@ inline bool LZ4HC_Compress(const CompressionInfo& info,
   const char* compression_dict_data =
       compression_dict.size() > 0 ? compression_dict.data() : nullptr;
   size_t compression_dict_size = compression_dict.size();
-  LZ4_loadDictHC(stream, compression_dict_data,
-                 static_cast<int>(compression_dict_size));
+  if (compression_dict_data != nullptr) {
+    LZ4_loadDictHC(stream, compression_dict_data,
+                  static_cast<int>(compression_dict_size));
+  }
 
 #if LZ4_VERSION_NUMBER >= 10700  // r129+
   outlen =

@@ -54,12 +54,6 @@ namespace xgt { namespace chain {
          signed_block read_head()const;
          const optional< signed_block >& head()const;
 
-         /*
-          * Used by the database to skip locking when reindexing
-          * APIs don't work at this point, so there is no danger.
-          */
-         void set_locking( bool );
-
          static const uint64_t npos = std::numeric_limits<uint64_t>::max();
 
       private:

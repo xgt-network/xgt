@@ -10,7 +10,6 @@
 
 #include <boost/config.hpp> /* keep it first to prevent nasty warns in MSVC */
 #include <boost/core/addressof.hpp>
-#include <boost/detail/allocator_utilities.hpp>
 #include <boost/core/no_exceptions_support.hpp>
 #include <boost/detail/workaround.hpp>
 #include <boost/move/core.hpp>
@@ -45,14 +44,13 @@ namespace detail{
 //struct rvalue_tag{};
 //struct emplaced_tag{};
 
-template<typename Value,typename IndexSpecifierList,typename Allocator>
+template<typename Value,typename IndexSpecifierList>
 class index_base
 {
 protected:
    typedef multi_index_container<
-      Value,IndexSpecifierList,Allocator>       final_type;
+      Value,IndexSpecifierList>       final_type;
    typedef boost::tuples::null_type            ctor_args_list;
-   typedef typename std::allocator< Value >    final_allocator_type;
    typedef boost::mpl::vector0<>               index_type_list;
    typedef boost::mpl::vector0<>               iterator_type_list;
    typedef boost::mpl::vector0<>               const_iterator_type_list;

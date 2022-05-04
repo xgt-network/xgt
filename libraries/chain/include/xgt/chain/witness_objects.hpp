@@ -49,22 +49,16 @@ namespace xgt { namespace chain {
     */
    class witness_object : public object< witness_object_type, witness_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( witness_object )
+      public:
+      witness_object() = default;
 
       public:
-         template< typename Constructor, typename Allocator >
-         witness_object( Constructor&& c, allocator< Allocator > a )
-            :url( a )
-         {
-            c( *this );
-         }
-
          id_type           id;
 
          /** the account that has authority over this witness */
          wallet_name_type  owner;
          time_point_sec    created;
-         shared_string     url;
+         std::string     url;
          uint32_t          total_missed = 0;
          uint64_t          last_aslot = 0;
          uint64_t          last_confirmed_block_num = 0;
@@ -135,12 +129,6 @@ namespace xgt { namespace chain {
    class witness_vote_object : public object< witness_vote_object_type, witness_vote_object >
    {
       public:
-         template< typename Constructor, typename Allocator >
-         witness_vote_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
          witness_vote_object(){}
 
          id_type           id;
@@ -187,8 +175,7 @@ namespace xgt { namespace chain {
                member< witness_object, witness_id_type, &witness_object::id >
             >
          >
-      >,
-      allocator< witness_object >
+      >
    > witness_index;
 
    struct by_account_witness;
@@ -211,19 +198,16 @@ namespace xgt { namespace chain {
             >,
             composite_key_compare< std::less< wallet_name_type >, std::less< wallet_name_type > >
          >
-      >, // indexed_by
-      allocator< witness_vote_object >
+      >
    > witness_vote_index;
 
 } }
 
-#ifdef ENABLE_MIRA
 namespace mira {
 
 template<> struct is_static_length< xgt::chain::witness_vote_object > : public boost::true_type {};
 
 } // mira
-#endif
 
 FC_REFLECT( xgt::chain::chain_properties,
              (account_creation_fee)

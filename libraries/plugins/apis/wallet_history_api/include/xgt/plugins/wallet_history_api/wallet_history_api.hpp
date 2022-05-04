@@ -5,10 +5,10 @@
 #include <xgt/chain/history_object.hpp>
 
 #include <xgt/protocol/types.hpp>
+#include <xgt/protocol/transaction.hpp>
 
 #include <fc/optional.hpp>
 #include <fc/variant.hpp>
-#include <fc/vector.hpp>
 
 namespace xgt { namespace plugins { namespace wallet_history {
 

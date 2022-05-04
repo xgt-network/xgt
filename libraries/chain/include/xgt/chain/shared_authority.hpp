@@ -5,7 +5,6 @@
 #include <xgt/protocol/authority.hpp>
 
 #include <chainbase/chainbase.hpp>
-#include <boost/interprocess/managed_mapped_file.hpp>
 
 namespace xgt { namespace chain {
    using xgt::protocol::authority;
@@ -13,24 +12,19 @@ namespace xgt { namespace chain {
    using xgt::protocol::wallet_name_type;
    using xgt::protocol::weight_type;
 
-   using chainbase::t_flat_map;
-   using chainbase::t_allocator_pair;
-
    /**
-    *  The purpose of this class is to represent an authority object in a manner compatiable with
-    *  shared memory storage.  This requires all dynamic fields to be allocated with the same allocator
-    *  that allocated the shared_authority.
+    *  The purpose of this class is to represent an authority object.
     */
    struct shared_authority
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( shared_authority )
+      public:
+      shared_authority() = default;
 
       public:
 
-      template< typename Allocator >
-      shared_authority( const authority& a, const Allocator& alloc ) :
-         wallet_auths( account_pair_allocator_type( alloc ) ),
-         key_auths( key_pair_allocator_type( alloc ) )
+      shared_authority( const authority& a ) :
+         wallet_auths(),
+         key_auths()
       {
          wallet_auths.reserve( a.wallet_auths.size() );
          key_auths.reserve( a.key_auths.size() );
@@ -45,16 +39,11 @@ namespace xgt { namespace chain {
          weight_threshold( cpy.weight_threshold ),
          wallet_auths( cpy.wallet_auths ), key_auths( cpy.key_auths ) {}
 
-      template< typename Allocator >
-      explicit shared_authority( const Allocator& alloc ) :
-         wallet_auths( account_pair_allocator_type( alloc ) ),
-         key_auths( key_pair_allocator_type( alloc ) ) {}
-
-      template< typename Allocator, class ...Args >
-      shared_authority( const Allocator& alloc, uint32_t weight_threshold, Args... auths ) :
+      template< class ...Args >
+      shared_authority( uint32_t weight_threshold, Args... auths ) :
          weight_threshold( weight_threshold ),
-         wallet_auths( account_pair_allocator_type( alloc ) ),
-         key_auths( key_pair_allocator_type( alloc ) )
+         wallet_auths( ),
+         key_auths(  )
       {
          add_authorities( auths... );
       }
@@ -86,11 +75,8 @@ namespace xgt { namespace chain {
       void     clear();
       void     validate()const;
 
-      using account_pair_allocator_type = t_allocator_pair< wallet_name_type, weight_type >;
-      using key_pair_allocator_type = t_allocator_pair< public_key_type, weight_type >;
-
-      typedef t_flat_map< wallet_name_type, weight_type> account_authority_map;
-      typedef t_flat_map< public_key_type, weight_type> key_authority_map;
+      typedef boost::container::flat_map< wallet_name_type, weight_type> account_authority_map;
+      typedef boost::container::flat_map< public_key_type, weight_type> key_authority_map;
 
       uint32_t                                                                weight_threshold = 0;
       account_authority_map                                                   wallet_auths;
@@ -103,5 +89,5 @@ namespace xgt { namespace chain {
 
 } } //xgt::chain
 
-FC_REFLECT_TYPENAME( xgt::chain::shared_authority::account_authority_map)
+//FC_REFLECT_TYPENAME( xgt::chain::shared_authority::account_authority_map)
 FC_REFLECT( xgt::chain::shared_authority, (weight_threshold)(wallet_auths)(key_auths) )

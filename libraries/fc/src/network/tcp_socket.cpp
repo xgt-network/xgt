@@ -177,7 +177,7 @@ namespace fc {
       keepalive_settings.keepaliveinterval = (ULONG)(interval.count() / fc::milliseconds(1).count());
 
       DWORD dwBytesRet = 0;
-      if (WSAIoctl(my->_sock.native(), SIO_KEEPALIVE_VALS, &keepalive_settings, sizeof(keepalive_settings),
+      if (WSAIoctl(my->_sock.native_handle(), SIO_KEEPALIVE_VALS, &keepalive_settings, sizeof(keepalive_settings),
                    NULL, 0, &dwBytesRet, NULL, NULL) == SOCKET_ERROR)
         wlog("Error setting TCP keepalive values");
 #elif !defined(__clang__) || (__clang_major__ >= 6)
@@ -254,7 +254,7 @@ namespace fc {
         try {
           _accept.close();
         }
-        catch ( boost::system::system_error& )
+        catch ( const boost::system::system_error& )
         {
            wlog( "unexpected exception ${e}", ("e", fc::except_str()) );
         }

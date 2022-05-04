@@ -6,7 +6,12 @@
 #include <fc/exception/exception.hpp>
 #include <fc/io/json.hpp>
 
+#include <unistd.h>
 #include <sys/time.h>
+
+#if defined(__clang__) && defined(_WIN32)
+#define pid_t int
+#endif
 
 namespace xgt { namespace utilities {
 

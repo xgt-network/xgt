@@ -64,6 +64,11 @@ static void interop_file(const char * const name) {
 
 int main( int argc, char** argv )
 {
+    if (argc < 2) {
+        std::cerr << "interop test requires an argument" << std::endl;
+        return 0;
+    }
+
     if (argc > 2) {
         interop_file(argv[2]);
     }

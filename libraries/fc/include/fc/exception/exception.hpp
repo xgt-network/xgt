@@ -376,7 +376,7 @@ namespace fc
   FC_MULTILINE_MACRO_END
 
 #define FC_CATCH_AND_LOG( )  \
-   catch( fc::exception& er ) { \
+   catch( const fc::exception& er ) { \
       wlog( "${details}", ("details",er.to_detail_string()) ); \
    } catch( const std::exception& e ) {  \
       fc::exception fce( \

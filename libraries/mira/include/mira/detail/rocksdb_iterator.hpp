@@ -407,21 +407,6 @@ public:
       return *this;
    }
 
-   rocksdb_iterator& operator=( rocksdb_iterator&& other )
-   {
-      _handles = other._handles;
-      _index = other._index;
-      _snapshot = other._snapshot;
-      _db = other._db;
-      _cache = other._cache;
-      _cache_value = other._cache_value;
-
-      _iter = std::move( other._iter );
-
-      return *this;
-   }
-
-
    static rocksdb_iterator begin(
       column_handles* handles,
       size_t index,
