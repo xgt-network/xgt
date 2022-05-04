@@ -1,7 +1,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <xgt/chain/xgt_fwd.hpp>
 
-#include <xgt/plugins/wallet_history_rocksdb/wallet_history_rocksdb_plugin.hpp>
+#include <xgt/plugins/wallet_history/wallet_history_plugin.hpp>
 
 #include <xgt/chain/database.hpp>
 #include <xgt/chain/history_object.hpp>
@@ -32,7 +32,6 @@
 namespace bpo = boost::program_options;
 
 #define XGT_NAMESPACE_PREFIX "xgt::protocol::"
-#define OPEN_FILE_LIMIT 750
 
 #define DIAGNOSTIC(s)
 //#define DIAGNOSTIC(s) s
@@ -56,7 +55,7 @@ namespace bpo = boost::program_options;
 #define STORE_MAJOR_VERSION          1
 #define STORE_MINOR_VERSION          0
 
-namespace xgt { namespace plugins { namespace wallet_history_rocksdb {
+namespace xgt { namespace plugins { namespace wallet_history {
 
 using xgt::protocol::wallet_name_type;
 using xgt::protocol::block_id_type;
@@ -356,10 +355,10 @@ private:
 
 } /// anonymous
 
-class wallet_history_rocksdb_plugin::impl final
+class wallet_history_plugin::impl final
 {
 public:
-   impl( wallet_history_rocksdb_plugin& self, const bpo::variables_map& options, const bfs::path& storagePath) :
+   impl( wallet_history_plugin& self, const bpo::variables_map& options, const bfs::path& storagePath) :
       _self(self),
       _mainDb(appbase::app().get_plugin<xgt::plugins::chain::chain_plugin>().db()),
       _storagePath(storagePath),
@@ -394,23 +393,20 @@ public:
       DB* storageDb = nullptr;
       auto strPath = _storagePath.string();
       Options options;
-      /// Optimize RocksDB. This is the easiest way to get RocksDB to perform well
       options.IncreaseParallelism();
       options.OptimizeLevelStyleCompaction();
 
       DBOptions dbOptions(options);
-      options.max_open_files = OPEN_FILE_LIMIT;
 
       auto status = DB::Open(dbOptions, strPath, columnDefs, &_columnHandles, &storageDb);
 
       if(status.ok())
       {
-         ilog("RocksDB opened successfully storage at location: `${p}'.", ("p", strPath));
          verifyStoreVersion(storageDb);
          loadSeqIdentifiers(storageDb);
          _storage.reset(storageDb);
 
-         const auto& rocksdb_plugin = appbase::app().get_plugin< wallet_history_rocksdb_plugin >();
+         const auto& rocksdb_plugin = appbase::app().get_plugin< wallet_history_plugin >();
 
          // I do not like using exceptions for control paths, but column definitions are set multiple times
          // opening the db, so that is not a good place to write the initial lib.
@@ -662,7 +658,7 @@ private:
 private:
    typedef flat_map< wallet_name_type, wallet_name_type > wallet_name_range_index;
 
-   wallet_history_rocksdb_plugin&   _self;
+   wallet_history_plugin&   _self;
    chain::database&                 _mainDb;
    bfs::path                        _storagePath;
    std::unique_ptr<DB>              _storage;
@@ -703,37 +699,37 @@ private:
    bool                             _prune = false;
 };
 
-void wallet_history_rocksdb_plugin::impl::collectOptions(const boost::program_options::variables_map& options)
+void wallet_history_plugin::impl::collectOptions(const boost::program_options::variables_map& options)
 {
     fc::mutable_variant_object state_opts;
 
    typedef std::pair< wallet_name_type, wallet_name_type > pairstring;
-   XGT_LOAD_VALUE_SET(options, "account-history-rocksdb-track-account-range", _tracked_wallets, pairstring);
+   XGT_LOAD_VALUE_SET(options, "wallet-history-track-account-range", _tracked_wallets, pairstring);
 
-   state_opts[ "account-history-rocksdb-track-account-range" ] = _tracked_wallets;
+   state_opts[ "wallet-history-track-account-range" ] = _tracked_wallets;
 
-   if(options.count("account-history-rocksdb-whitelist-ops"))
+   if(options.count("wallet-history-whitelist-ops"))
    {
-      const auto& args = options.at("account-history-rocksdb-whitelist-ops").as<std::vector<std::string>>();
+      const auto& args = options.at("wallet-history-whitelist-ops").as<std::vector<std::string>>();
       storeOpFilteringParameters(args, &_op_list);
 
       if( _op_list.size() )
       {
-         state_opts["account-history-rocksdb-whitelist-ops"] = _op_list;
+         state_opts["wallet-history-whitelist-ops"] = _op_list;
       }
    }
 
    if(_op_list.empty() == false)
       ilog( "Account History: whitelisting ops ${o}", ("o", _op_list) );
 
-   if(options.count("account-history-rocksdb-blacklist-ops"))
+   if(options.count("wallet-history-blacklist-ops"))
    {
-      const auto& args = options.at("account-history-rocksdb-blacklist-ops").as<std::vector<std::string>>();
+      const auto& args = options.at("wallet-history-blacklist-ops").as<std::vector<std::string>>();
       storeOpFilteringParameters(args, &_blacklisted_op_list);
 
       if( _blacklisted_op_list.size() )
       {
-         state_opts["account-history-rocksdb-blacklist-ops"] = _blacklisted_op_list;
+         state_opts["wallet-history-blacklist-ops"] = _blacklisted_op_list;
       }
    }
 
@@ -744,7 +740,7 @@ void wallet_history_rocksdb_plugin::impl::collectOptions(const boost::program_op
    // appbase::app().get_plugin< chain::chain_plugin >().report_state_options( _self.name(), state_opts );
 }
 
-inline bool wallet_history_rocksdb_plugin::impl::isTrackedAccount(const wallet_name_type& name) const
+inline bool wallet_history_plugin::impl::isTrackedAccount(const wallet_name_type& name) const
 {
    if(_tracked_wallets.empty())
       return true;
@@ -791,7 +787,7 @@ inline bool wallet_history_rocksdb_plugin::impl::isTrackedAccount(const wallet_n
    return inRange;
 }
 
-std::vector<wallet_name_type> wallet_history_rocksdb_plugin::impl::getImpactedAccounts(const operation& op) const
+std::vector<wallet_name_type> wallet_history_plugin::impl::getImpactedAccounts(const operation& op) const
 {
    flat_set<wallet_name_type> impacted;
    xgt::app::operation_get_impacted_accounts(op, impacted);
@@ -817,7 +813,7 @@ std::vector<wallet_name_type> wallet_history_rocksdb_plugin::impl::getImpactedAc
    return retVal;
 }
 
-inline bool wallet_history_rocksdb_plugin::impl::isTrackedOperation(const operation& op) const
+inline bool wallet_history_plugin::impl::isTrackedOperation(const operation& op) const
 {
    if(_op_list.empty() && _blacklisted_op_list.empty())
       return true;
@@ -831,7 +827,7 @@ inline bool wallet_history_rocksdb_plugin::impl::isTrackedOperation(const operat
    return isTracked;
 }
 
-void wallet_history_rocksdb_plugin::impl::storeOpFilteringParameters(const std::vector<std::string>& opList,
+void wallet_history_plugin::impl::storeOpFilteringParameters(const std::vector<std::string>& opList,
    flat_set<std::string>* storage) const
    {
       for(const auto& arg : opList)
@@ -847,7 +843,7 @@ void wallet_history_rocksdb_plugin::impl::storeOpFilteringParameters(const std::
       }
    }
 
-void wallet_history_rocksdb_plugin::impl::find_wallet_history_data(const wallet_name_type& name, uint64_t start,
+void wallet_history_plugin::impl::find_wallet_history_data(const wallet_name_type& name, uint64_t start,
    uint32_t limit, std::function<void(unsigned int, const rocksdb_operation_object&)> processor) const
 {
    ReadOptions rOptions;
@@ -906,7 +902,7 @@ void wallet_history_rocksdb_plugin::impl::find_wallet_history_data(const wallet_
    }
 }
 
-bool wallet_history_rocksdb_plugin::impl::find_operation_object(size_t opId, rocksdb_operation_object* op) const
+bool wallet_history_plugin::impl::find_operation_object(size_t opId, rocksdb_operation_object* op) const
 {
    std::string data;
    id_slice_t idSlice(opId);
@@ -923,7 +919,7 @@ bool wallet_history_rocksdb_plugin::impl::find_operation_object(size_t opId, roc
    return false;
 }
 
-void wallet_history_rocksdb_plugin::impl::find_operations_by_block(size_t blockNum,
+void wallet_history_plugin::impl::find_operations_by_block(size_t blockNum,
    std::function<void(const rocksdb_operation_object&)> processor) const
 {
    std::unique_ptr<::rocksdb::Iterator> it(_storage->NewIterator(ReadOptions(), _columnHandles[OPERATION_BY_BLOCK]));
@@ -943,7 +939,7 @@ void wallet_history_rocksdb_plugin::impl::find_operations_by_block(size_t blockN
    }
 }
 
-uint32_t wallet_history_rocksdb_plugin::impl::enumVirtualOperationsFromBlockRange(uint32_t blockRangeBegin,
+uint32_t wallet_history_plugin::impl::enumVirtualOperationsFromBlockRange(uint32_t blockRangeBegin,
    uint32_t blockRangeEnd, std::function<void(const rocksdb_operation_object&)> processor) const
 {
    FC_ASSERT(blockRangeEnd > blockRangeBegin, "Block range must be upward");
@@ -997,7 +993,7 @@ uint32_t wallet_history_rocksdb_plugin::impl::enumVirtualOperationsFromBlockRang
    return 0;
 }
 
-uint32_t wallet_history_rocksdb_plugin::impl::get_lib()
+uint32_t wallet_history_plugin::impl::get_lib()
 {
    std::string data;
    auto s = _storage->Get(ReadOptions(), _columnHandles[CURRENT_LIB], LIB_ID, &data );
@@ -1009,13 +1005,13 @@ uint32_t wallet_history_rocksdb_plugin::impl::get_lib()
    return lib;
 }
 
-void wallet_history_rocksdb_plugin::impl::update_lib( uint32_t lib )
+void wallet_history_plugin::impl::update_lib( uint32_t lib )
 {
    auto s = _writeBuffer.Put( _columnHandles[ CURRENT_LIB ], LIB_ID, lib_slice_t( lib ) );
    checkStatus( s );
 }
 
-wallet_history_rocksdb_plugin::impl::ColumnDefinitions wallet_history_rocksdb_plugin::impl::prepareColumnDefinitions(bool addDefaultColumn)
+wallet_history_plugin::impl::ColumnDefinitions wallet_history_plugin::impl::prepareColumnDefinitions(bool addDefaultColumn)
 {
    ColumnDefinitions columnDefs;
    if(addDefaultColumn)
@@ -1042,7 +1038,7 @@ wallet_history_rocksdb_plugin::impl::ColumnDefinitions wallet_history_rocksdb_pl
    return columnDefs;
 }
 
-bool wallet_history_rocksdb_plugin::impl::createDbSchema(const bfs::path& path)
+bool wallet_history_plugin::impl::createDbSchema(const bfs::path& path)
 {
    DB* db = nullptr;
 
@@ -1097,7 +1093,7 @@ bool wallet_history_rocksdb_plugin::impl::createDbSchema(const bfs::path& path)
    }
 }
 
-void wallet_history_rocksdb_plugin::impl::buildAccountHistoryRecord( const wallet_name_type& name, const rocksdb_operation_object& obj )
+void wallet_history_plugin::impl::buildAccountHistoryRecord( const wallet_name_type& name, const rocksdb_operation_object& obj )
 {
    std::string strName = name;
 
@@ -1143,7 +1139,7 @@ void wallet_history_rocksdb_plugin::impl::buildAccountHistoryRecord( const walle
    }
 }
 
-void wallet_history_rocksdb_plugin::impl::prunePotentiallyTooOldItems(wallet_history_info* ahInfo, const wallet_name_type& name,
+void wallet_history_plugin::impl::prunePotentiallyTooOldItems(wallet_history_info* ahInfo, const wallet_name_type& name,
    const fc::time_point_sec& now)
 {
    std::string strName = name;
@@ -1213,7 +1209,7 @@ void wallet_history_rocksdb_plugin::impl::prunePotentiallyTooOldItems(wallet_his
    }
 }
 
-void wallet_history_rocksdb_plugin::impl::on_pre_reindex(const xgt::chain::reindex_notification& note)
+void wallet_history_plugin::impl::on_pre_reindex(const xgt::chain::reindex_notification& note)
 {
    ilog("Received onReindexStart request, attempting to clean database storage.");
 
@@ -1238,7 +1234,7 @@ void wallet_history_rocksdb_plugin::impl::on_pre_reindex(const xgt::chain::reind
    ilog("onReindexStart request completed successfully.");
 }
 
-void wallet_history_rocksdb_plugin::impl::on_post_reindex(const xgt::chain::reindex_notification& note)
+void wallet_history_plugin::impl::on_post_reindex(const xgt::chain::reindex_notification& note)
 {
    ilog("Reindex completed up to block: ${b}. Setting back write limit to non-massive level.",
       ("b", note.last_block_number));
@@ -1251,7 +1247,7 @@ void wallet_history_rocksdb_plugin::impl::on_post_reindex(const xgt::chain::rein
    printReport( note.last_block_number, "RocksDB data reindex finished." );
 }
 
-void wallet_history_rocksdb_plugin::impl::printReport(uint32_t blockNo, const char* detailText) const
+void wallet_history_plugin::impl::printReport(uint32_t blockNo, const char* detailText) const
 {
    dlog("${t}Processed blocks: ${n}, containing: ${tx} transactions and ${op} operations.\n"
         "${ep} operations have been filtered out due to configured options.\n"
@@ -1265,7 +1261,7 @@ void wallet_history_rocksdb_plugin::impl::printReport(uint32_t blockNo, const ch
       );
 }
 
-void wallet_history_rocksdb_plugin::impl::importData(unsigned int blockLimit)
+void wallet_history_plugin::impl::importData(unsigned int blockLimit)
 {
    if(_storage == nullptr)
    {
@@ -1338,7 +1334,7 @@ void wallet_history_rocksdb_plugin::impl::importData(unsigned int blockLimit)
    printReport(blockNo, "RocksDB data import finished. ");
 }
 
-void wallet_history_rocksdb_plugin::impl::on_post_apply_operation(const operation_notification& n)
+void wallet_history_plugin::impl::on_post_apply_operation(const operation_notification& n)
 {
    if( n.block % 10000 == 0 && n.trx_in_block == 0 && n.op_in_trx == 0 && n.virtual_op == 0 )
    {
@@ -1399,7 +1395,7 @@ void wallet_history_rocksdb_plugin::impl::on_post_apply_operation(const operatio
    }
 }
 
-void wallet_history_rocksdb_plugin::impl::on_irreversible_block( uint32_t block_num )
+void wallet_history_plugin::impl::on_irreversible_block( uint32_t block_num )
 {
    if( _reindexing ) return;
 
@@ -1426,46 +1422,46 @@ void wallet_history_rocksdb_plugin::impl::on_irreversible_block( uint32_t block_
    update_lib( block_num );
 }
 
-wallet_history_rocksdb_plugin::wallet_history_rocksdb_plugin()
+wallet_history_plugin::wallet_history_plugin()
 {
 }
 
-wallet_history_rocksdb_plugin::~wallet_history_rocksdb_plugin()
+wallet_history_plugin::~wallet_history_plugin()
 {
 
 }
 
-void wallet_history_rocksdb_plugin::set_program_options(
+void wallet_history_plugin::set_program_options(
    boost::program_options::options_description &command_line_options,
    boost::program_options::options_description &cfg)
 {
    cfg.add_options()
-      ("account-history-rocksdb-path", bpo::value<bfs::path>()->default_value("blockchain/account-history-rocksdb-storage"),
-         "The location of the rocksdb database for account history. By default it is $DATA_DIR/account-history-rocksdb-storage")
-      ("account-history-rocksdb-track-account-range", boost::program_options::value< std::vector<std::string> >()->composing()->multitoken(), "Defines a range of wallets to track as a json pair [\"from\",\"to\"] [from,to] Can be specified multiple times.")
-      ("account-history-rocksdb-whitelist-ops", boost::program_options::value< std::vector<std::string> >()->composing(), "Defines a list of operations which will be explicitly logged.")
-      ("account-history-rocksdb-blacklist-ops", boost::program_options::value< std::vector<std::string> >()->composing(), "Defines a list of operations which will be explicitly ignored.")
+      ("wallet-history-path", bpo::value<bfs::path>()->default_value("blockchain/wallet-history-storage"),
+         "The location of the rocksdb database for account history. By default it is $DATA_DIR/wallet-history-storage")
+      ("wallet-history-track-account-range", boost::program_options::value< std::vector<std::string> >()->composing()->multitoken(), "Defines a range of wallets to track as a json pair [\"from\",\"to\"] [from,to] Can be specified multiple times.")
+      ("wallet-history-whitelist-ops", boost::program_options::value< std::vector<std::string> >()->composing(), "Defines a list of operations which will be explicitly logged.")
+      ("wallet-history-blacklist-ops", boost::program_options::value< std::vector<std::string> >()->composing(), "Defines a list of operations which will be explicitly ignored.")
 
    ;
    command_line_options.add_options()
-      ("account-history-rocksdb-immediate-import", bpo::bool_switch()->default_value(false),
+      ("wallet-history-immediate-import", bpo::bool_switch()->default_value(false),
          "Allows to force immediate data import at plugin startup. By default storage is supplied during reindex process.")
-      ("account-history-rocksdb-stop-import-at-block", bpo::value<uint32_t>()->default_value(0),
+      ("wallet-history-stop-import-at-block", bpo::value<uint32_t>()->default_value(0),
          "Allows to specify block number, the data import process should stop at.")
    ;
 }
 
-void wallet_history_rocksdb_plugin::plugin_initialize(const boost::program_options::variables_map& options)
+void wallet_history_plugin::plugin_initialize(const boost::program_options::variables_map& options)
 {
-   if(options.count("account-history-rocksdb-stop-import-at-block"))
-      _blockLimit = options.at("account-history-rocksdb-stop-import-at-block").as<uint32_t>();
+   if(options.count("wallet-history-stop-import-at-block"))
+      _blockLimit = options.at("wallet-history-stop-import-at-block").as<uint32_t>();
 
-   _doImmediateImport = options.at("account-history-rocksdb-immediate-import").as<bool>();
+   _doImmediateImport = options.at("wallet-history-immediate-import").as<bool>();
 
    bfs::path dbPath;
 
-   if(options.count("account-history-rocksdb-path"))
-      dbPath = options.at("account-history-rocksdb-path").as<bfs::path>();
+   if(options.count("wallet-history-path"))
+      dbPath = options.at("wallet-history-path").as<bfs::path>();
 
    if(dbPath.is_absolute() == false)
    {
@@ -1479,38 +1475,38 @@ void wallet_history_rocksdb_plugin::plugin_initialize(const boost::program_optio
    _my->openDb();
 }
 
-void wallet_history_rocksdb_plugin::plugin_startup()
+void wallet_history_plugin::plugin_startup()
 {
-   ilog("Starting up wallet_history_rocksdb_plugin...");
+   ilog("Starting up wallet_history_plugin...");
 
    if(_doImmediateImport)
       _my->importData(_blockLimit);
 }
 
-void wallet_history_rocksdb_plugin::plugin_shutdown()
+void wallet_history_plugin::plugin_shutdown()
 {
-   ilog("Shutting down wallet_history_rocksdb_plugin...");
+   ilog("Shutting down wallet_history_plugin...");
    _my->shutdownDb();
 }
 
-void wallet_history_rocksdb_plugin::find_wallet_history_data(const wallet_name_type& name, uint64_t start, uint32_t limit,
+void wallet_history_plugin::find_wallet_history_data(const wallet_name_type& name, uint64_t start, uint32_t limit,
    std::function<void(unsigned int, const rocksdb_operation_object&)> processor) const
 {
    _my->find_wallet_history_data(name, start, limit, processor);
 }
 
-bool wallet_history_rocksdb_plugin::find_operation_object(size_t opId, rocksdb_operation_object* op) const
+bool wallet_history_plugin::find_operation_object(size_t opId, rocksdb_operation_object* op) const
 {
    return _my->find_operation_object(opId, op);
 }
 
-void wallet_history_rocksdb_plugin::find_operations_by_block(size_t blockNum,
+void wallet_history_plugin::find_operations_by_block(size_t blockNum,
    std::function<void(const rocksdb_operation_object&)> processor) const
 {
    _my->find_operations_by_block(blockNum, processor);
 }
 
-uint32_t wallet_history_rocksdb_plugin::enum_operations_from_block_range(uint32_t blockRangeBegin, uint32_t blockRangeEnd,
+uint32_t wallet_history_plugin::enum_operations_from_block_range(uint32_t blockRangeBegin, uint32_t blockRangeEnd,
    std::function<void(const rocksdb_operation_object&)> processor) const
 {
    return _my->enumVirtualOperationsFromBlockRange(blockRangeBegin, blockRangeEnd, processor);
@@ -1518,5 +1514,5 @@ uint32_t wallet_history_rocksdb_plugin::enum_operations_from_block_range(uint32_
 
 } } }
 
-FC_REFLECT( xgt::plugins::wallet_history_rocksdb::wallet_history_info,
+FC_REFLECT( xgt::plugins::wallet_history::wallet_history_info,
    (id)(oldestEntryId)(newestEntryId)(oldestEntryTimestamp) )

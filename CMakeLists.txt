@@ -7,23 +7,16 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # http://stackoverflow.com/a/18369825
 if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 4.8)
-        message(FATAL_ERROR "GCC version must be at least 4.8!")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7)
+        message(FATAL_ERROR "GCC version must be at least 7!")
     endif()
 elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
-    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 3.3)
-        message(FATAL_ERROR "Clang version must be at least 3.3!")
+    if (CMAKE_CXX_COMPILER_VERSION VERSION_LESS 7)
+        message(FATAL_ERROR "Clang version must be at least 7!")
     endif()
 endif()
 
-list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules" )
-
 set(CMAKE_EXPORT_COMPILE_COMMANDS "ON")
-
-list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/CMakeModules" )
-list( APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/libraries/fc/GitVersionGen" )
-include( GetGitRevisionDescription )
-get_git_head_revision( GIT_REFSPEC GIT_SHA2 )
 
 OPTION( BUILD_XGT_TESTNET "Build source for test network (ON OR OFF)" OFF )
 MESSAGE( STATUS "BUILD_XGT_TESTNET: ${BUILD_XGT_TESTNET}" )
@@ -31,38 +24,11 @@ if( BUILD_XGT_TESTNET )
   add_compile_definitions("IS_TEST_NET")
 endif()
 
-OPTION( XGT_MAX_VOTED_WITNESSES "Number of max voted witnesses" OFF )
-MESSAGE( STATUS "XGT_MAX_VOTED_WITNESSES: ${XGT_MAX_VOTED_WITNESSES}" )
-if( XGT_MAX_VOTED_WITNESSES )
-  add_compile_definitions("XGT_MAX_VOTED_WITNESSES=${XGT_MAX_VOTED_WITNESSES}")
-endif()
-
-OPTION( XGT_MAX_MINER_WITNESSES "Number of max miner witnesses" OFF )
-MESSAGE( STATUS "XGT_MAX_MINER_WITNESSES: ${XGT_MAX_MINER_WITNESSES}" )
-if( XGT_MAX_MINER_WITNESSES )
-  add_compile_definitions("XGT_MAX_MINER_WITNESSES=${XGT_MAX_MINER_WITNESSES}")
-endif()
-
-OPTION( ENABLE_MIRA "Build source with MIRA (ON OR OFF)" ON )
-MESSAGE( STATUS "ENABLE_MIRA: ${ENABLE_MIRA}" )
-if( ENABLE_MIRA )
-  add_compile_definitions("ENABLE_MIRA")
-endif()
-
-OPTION( LOW_MEMORY_NODE "Build source for low memory node (ON OR OFF)" OFF )
-MESSAGE( STATUS "LOW_MEMORY_NODE: ${LOW_MEMORY_NODE}" )
-if( LOW_MEMORY_NODE )
-  add_compile_definitions("IS_LOW_MEM")
-endif()
-
 OPTION( SKIP_BY_TX_ID "Skip ordering operation history by transaction id (ON or OFF)" OFF )
 MESSAGE( STATUS "SKIP_BY_TX_ID: ${SKIP_BY_TX_ID}" )
 if( SKIP_BY_TX_ID )
   add_compile_definitions("SKIP_BY_TX_ID")
 endif()
-
-OPTION( XGT_STATIC_BUILD "Build xgtd as a static library (ON or OFF)" OFF )
-MESSAGE( STATUS "XGT_STATIC_BUILD: ${XGT_STATIC_BUILD}" )
 
 OPTION( XGT_OPT_NATIVE "Optimize for native architecture" OFF )
 if ( XGT_OPT_NATIVE )
@@ -74,6 +40,17 @@ OPTION(FAIL_ON_WARNINGS "Fail on compiler warnings" OFF)
 MESSAGE( STATUS "FAIL_ON_WARNINGS: ${FAIL_ON_WARNINGS}" )
 
 SET( Boost_USE_STATIC_LIBS ON CACHE STRING "ON or OFF" )
+
+string(REPLACE "-O2" "-O3" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
+
+if( "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" )
+  add_compile_options(-flto=thin)
+  add_link_options(-flto=thin -fuse-ld=lld)
+endif()
+
+if (MINGW)
+  add_compile_definitions(_FILE_OFFSET_BITS=64)
+endif()
 
 # The practice of declaring the Bind placeholders (_1, _2, ...) in the global namespace is deprecated. Please use
 # <boost/bind/bind.hpp> + using namespace boost::placeholders, or define BOOST_BIND_GLOBAL_PLACEHOLDERS to retain the

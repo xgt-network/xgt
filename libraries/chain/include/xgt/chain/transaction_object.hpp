@@ -12,7 +12,6 @@
 namespace xgt { namespace chain {
 
    using xgt::protocol::signed_transaction;
-   using chainbase::t_vector;
 
    /**
     * The purpose of this object is to enable the detection of duplicate transactions. When a transaction is included
@@ -21,16 +20,10 @@ namespace xgt { namespace chain {
     */
    class transaction_object : public object< transaction_object_type, transaction_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( transaction_object )
+      public:
+      transaction_object() = default;
 
       public:
-         template< typename Constructor, typename Allocator >
-         transaction_object( Constructor&& c, allocator< Allocator > a )
-            : packed_trx( a )
-         {
-            c( *this );
-         }
-
          id_type              id;
 
          typedef buffer_type t_packed_trx;
@@ -53,8 +46,7 @@ namespace xgt { namespace chain {
                member<transaction_object, transaction_object::id_type, &transaction_object::id >
             >
          >
-      >,
-      allocator< transaction_object >
+      >
    > transaction_index;
 
 } } // xgt::chain

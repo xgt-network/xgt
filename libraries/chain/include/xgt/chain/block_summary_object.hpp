@@ -19,12 +19,6 @@ namespace xgt { namespace chain {
    class block_summary_object : public object< block_summary_object_type, block_summary_object >
    {
       public:
-         template< typename Constructor, typename Allocator >
-         block_summary_object( Constructor&& c, allocator< Allocator > a )
-         {
-            c( *this );
-         }
-
          block_summary_object(){};
 
          id_type        id;
@@ -36,19 +30,16 @@ namespace xgt { namespace chain {
       indexed_by<
          ordered_unique< tag< by_id >,
             member< block_summary_object, block_summary_object::id_type, &block_summary_object::id > >
-      >,
-      allocator< block_summary_object >
+      >
    > block_summary_index;
 
 } } // xgt::chain
 
-#ifdef ENABLE_MIRA
 namespace mira {
 
 template<> struct is_static_length< xgt::chain::block_summary_object > : public boost::true_type {};
 
 } // mira
-#endif
 
 FC_REFLECT( xgt::chain::block_summary_object, (id)(block_id) )
 CHAINBASE_SET_INDEX_TYPE( xgt::chain::block_summary_object, xgt::chain::block_summary_index )

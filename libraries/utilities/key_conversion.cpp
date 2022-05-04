@@ -49,7 +49,6 @@ fc::optional<fc::ecc::private_key> wif_to_key( const std::string& wif_key )
   std::vector<char> wif_bytes;
   try
   {
-    dlog("?????? libraries/utilities/key_conversion.cpp:52");
     wif_bytes = fc::from_base58(wif_key);
   }
   catch (const fc::parse_error_exception&)

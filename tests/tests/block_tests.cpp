@@ -32,7 +32,6 @@
 #include <xgt/chain/xgt_objects.hpp>
 #include <xgt/chain/history_object.hpp>
 
-#include <xgt/plugins/wallet_history/wallet_history_plugin.hpp>
 #include <xgt/plugins/witness/block_producer.hpp>
 
 #include <xgt/utilities/tempdir.hpp>
@@ -47,17 +46,14 @@ using namespace xgt::chain;
 using namespace xgt::protocol;
 using namespace xgt::plugins;
 
-#define TEST_SHARED_MEM_SIZE (1024 * 1024 * 8)
-
 BOOST_AUTO_TEST_SUITE(block_tests)
 /*
 void open_test_database( database& db, const fc::path& dir )
 {
    database::open_args args;
    args.data_dir = dir;
-   args.shared_mem_dir = dir;
+   args.blockchain_dir = dir;
    args.initial_supply = INITIAL_TEST_SUPPLY;
-   args.shared_file_size = TEST_SHARED_MEM_SIZE;
    args.database_cfg = xgt::utilities::default_database_configuration();
    db.open( args );
 }
@@ -106,26 +102,15 @@ BOOST_AUTO_TEST_CASE( generate_empty_blocks )
          db._log_hardforks = false;
          open_test_database( db, data_dir.path() );
 
-#ifndef ENABLE_MIRA
-         BOOST_CHECK_EQUAL( db.head_block_num(), cutoff_block.block_num() );
-#endif
-
          b = cutoff_block;
          for( uint32_t i = 0; i < 200; ++i )
          {
-#ifndef ENABLE_MIRA
-            BOOST_CHECK( db.head_block_id() == b.id() );
-#else
             BOOST_CHECK( i==0 || ( db.head_block_id() == b.id() ) );
-#endif
             //witness_id_type prev_witness = b.witness;
             string cur_witness = db.get_scheduled_witness(1);
             //BOOST_CHECK( cur_witness != prev_witness );
             b = bp.generate_block(db.get_slot_time(1), cur_witness, init_account_priv_key, database::skip_nothing);
          }
-#ifndef ENABLE_MIRA
-         BOOST_CHECK_EQUAL( db.head_block_num(), cutoff_block.block_num()+200 );
-#endif
       }
    } catch( const fc::exception& e) {
       edump((e.to_detail_string()));

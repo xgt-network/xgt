@@ -77,8 +77,7 @@ int main( int argc, char** argv, char** envp )
    xgt::chain::database::open_args db_args;
 
    db_args.data_dir = "tempdata";
-   db_args.shared_mem_dir = "tempdata/blockchain";
-   db_args.shared_file_size = 1024*1024*8;
+   db_args.blockchain_dir = "tempdata/blockchain";
 
    std::map< std::string, schema_info > schema_map;
 

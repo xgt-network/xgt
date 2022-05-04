@@ -211,8 +211,10 @@ bool p2p_plugin_impl::handle_block( const graphene::net::block_message& blk_msg,
                ("b", blk_msg.block.block_num())
                ("w", blk_msg.block.witness)
                ("l", offset.count() / 1000) );
- 
-            ready_to_mine = true;
+
+            // TODO: add a flag to disable this waiting behavior.
+            if (!ready_to_mine)
+               ready_to_mine = true;
          }
 
          return result;
@@ -473,8 +475,8 @@ std::vector< graphene::net::item_hash_t > p2p_plugin_impl::get_blockchain_synops
 
 void p2p_plugin_impl::sync_status( uint32_t item_type, uint32_t item_count )
 {
-   if (item_count == 0)
-      this->ready_to_mine = true;
+   if (!ready_to_mine && item_count == 0 && node->is_connected())
+      ready_to_mine = true;
    // any status reports to GUI go here
 }
 
@@ -667,6 +669,10 @@ void p2p_plugin::plugin_startup()
 
       my->node->set_advanced_node_parameters( my->config );
 
+      block_id_type block_id;
+      my->chain.db().with_read_lock( [&]() { block_id = my->chain.db().head_block_id(); });
+      my->node->sync_from(graphene::net::item_id(graphene::net::block_message_type, block_id), std::vector<uint32_t>());
+
       ilog("Listening on P2P network...");
       my->node->listen_to_p2p_network();
 
@@ -687,12 +693,6 @@ void p2p_plugin::plugin_startup()
          }
       }
 
-      block_id_type block_id;
-      my->chain.db().with_read_lock( [&]()
-      {
-         block_id = my->chain.db().head_block_id();
-      });
-      my->node->sync_from(graphene::net::item_id(graphene::net::block_message_type, block_id), std::vector<uint32_t>());
       ilog("P2P node listening at ${ep}", ("ep", my->node->get_actual_listening_endpoint()));
    }).wait();
    ilog( "P2P Plugin started" );

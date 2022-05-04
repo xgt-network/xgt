@@ -137,14 +137,6 @@ public:
     key_type,
     Compare >                                        key_compare;
   typedef boost::tuple<key_from_value,key_compare>          ctor_args;
-  typedef typename super::final_allocator_type       allocator_type;
-#ifdef BOOST_NO_CXX11_ALLOCATOR
-  typedef typename allocator_type::reference         reference;
-  typedef typename allocator_type::const_reference   const_reference;
-#else
-  typedef value_type&                                reference;
-  typedef const value_type&                          const_reference;
-#endif
 
    typedef boost::false_type                          is_terminal_node;
 
@@ -202,14 +194,6 @@ public:
 
   typedef std::size_t                                size_type;
   typedef std::ptrdiff_t                             difference_type;
-#ifdef BOOST_NO_CXX11_ALLOCATOR
-  typedef typename allocator_type::pointer           pointer;
-  typedef typename allocator_type::const_pointer     const_pointer;
-#else
-  typedef std::allocator_traits<allocator_type>      allocator_traits;
-  typedef typename allocator_traits::pointer         pointer;
-  typedef typename allocator_traits::const_pointer   const_pointer;
-#endif
   typedef typename
     boost::reverse_iterator<iterator>                reverse_iterator;
   typedef typename
@@ -271,11 +255,6 @@ public:
    * not supposed to be created on their own. No range ctor either.
    * Assignment operators defined at ordered_index rather than here.
    */
-
-  allocator_type get_allocator()const BOOST_NOEXCEPT
-  {
-    return this->final().get_allocator();
-  }
 
   /* iterators */
 
@@ -801,11 +780,12 @@ private:
 
    template< BOOST_MULTI_INDEX_TEMPLATE_PARAM_PACK >
    std::pair< typename primary_index_type::iterator, bool >
-   emplace_impl( BOOST_MULTI_INDEX_FUNCTION_PARAM_PACK )
+   // emplace_impl( BOOST_MULTI_INDEX_FUNCTION_PARAM_PACK )
+   emplace_impl( const value_type& v )
    {
       BOOST_MULTI_INDEX_ORD_INDEX_CHECK_INVARIANT;
 
-      value_type v( std::forward< Args >(args)... );
+      //value_type v( std::forward< Args >(args)... );
 
       bool res = this->final_emplace_rocksdb_( v );
 
@@ -853,7 +833,6 @@ class ordered_index:
     >::type                                       super;
 public:
   typedef typename super::ctor_args_list          ctor_args_list;
-  typedef typename super::allocator_type          allocator_type;
   typedef typename super::iterator                iterator;
 
    ordered_index()                                   = default;

@@ -8,16 +8,11 @@ namespace xgt { namespace chain {
 
    class nai_pool_object : public object< nai_pool_object_type, nai_pool_object >
    {
-      XGT_STD_ALLOCATOR_CONSTRUCTOR( nai_pool_object );
+      public:
+      nai_pool_object() = default;;
 
    public:
       using pool_type = fc::array< asset_symbol_type, XTT_MAX_NAI_POOL_COUNT >;
-
-      template< typename Constructor, typename Allocator >
-      nai_pool_object( Constructor&& c, allocator< Allocator > a )
-      {
-         c( *this );
-      }
 
       id_type id;
 
@@ -44,8 +39,7 @@ namespace xgt { namespace chain {
       nai_pool_object,
       indexed_by<
          ordered_unique< tag< by_id >, member< nai_pool_object, nai_pool_id_type, &nai_pool_object::id > >
-      >,
-      allocator< nai_pool_object >
+      >
    > nai_pool_index;
 
 } } // namespace xgt::chain

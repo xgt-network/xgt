@@ -22,7 +22,7 @@
 #include <xgt/plugins/webserver/webserver_plugin.hpp>
 #include <xgt/plugins/witness/witness_plugin.hpp>
 #include <xgt/plugins/wallet_by_key/wallet_by_key_plugin.hpp>
-#include <xgt/plugins/wallet_history_rocksdb/wallet_history_rocksdb_plugin.hpp>
+#include <xgt/plugins/wallet_history/wallet_history_plugin.hpp>
 
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
@@ -30,6 +30,10 @@
 #include <boost/exception/diagnostic_information.hpp>
 #include <boost/program_options.hpp>
 #include <boost/stacktrace.hpp>
+
+#ifndef _WIN32
+#include <sys/resource.h>
+#endif
 
 #include <iostream>
 #include <csignal>
@@ -63,8 +67,6 @@ void info()
    std::cerr << "genesis_time: " << fc::string( XGT_GENESIS_TIME ) << "\n";
    std::cerr << "now: " << fc::string( (fc::time_point_sec(fc::time_point::now())) ) << "\n";
    std::cerr << "xgt_max_witnesses: " << XGT_MAX_WITNESSES << "\n";
-   std::cerr << "xgt_max_voted_witnesses: " << XGT_MAX_VOTED_WITNESSES << "\n";
-   std::cerr << "xgt_max_miner_witnesses: " << XGT_MAX_MINER_WITNESSES << "\n";
    std::cerr << "------------------------------------------------------\n";
 }
 
@@ -74,10 +76,23 @@ void segfault(int sig) {
    std::abort();
 }
 
+void rlimit_nofile() {
+   #ifndef _WIN32
+   struct rlimit l;
+
+   if (getrlimit(RLIMIT_NOFILE, &l) == 0) {
+      l.rlim_cur = l.rlim_max;
+      setrlimit(RLIMIT_NOFILE, &l);
+   }
+   #endif
+}
+
 int main( int argc, char** argv )
 {
    try
    {
+      rlimit_nofile();
+
       // Setup logging config
       bpo::options_description options;
 
@@ -96,7 +111,7 @@ int main( int argc, char** argv )
       appbase::app().set_default_plugins<
          xgt::plugins::witness::witness_plugin,
          xgt::plugins::wallet_by_key::wallet_by_key_plugin,
-         xgt::plugins::wallet_history_rocksdb::wallet_history_rocksdb_plugin,
+         xgt::plugins::wallet_history::wallet_history_plugin,
 
          // APIs:
          xgt::plugins::block_api::block_api_plugin,

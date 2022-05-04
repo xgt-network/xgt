@@ -158,18 +158,7 @@ void block_producer::apply_pending_transactions(
    _db.pending_transaction_session().reset();
    _db.pending_transaction_session() = _db.start_undo_session();
 
-   //FC_TODO( "Safe to remove after HF20 occurs because no more pre HF20 blocks will be generated" );
-   /// modify current witness so transaction evaluators can know who included the transaction
-   _db.modify(
-          _db.get_dynamic_global_properties(),
-          [&]( chain::dynamic_global_property_object& dgp )
-          {
-             dgp.current_witness = witness_recovery;
-          });
-
-
    uint64_t postponed_tx_count = 0;
-
 
    // postpone transaction if it would make block too big
 
@@ -277,16 +266,12 @@ void block_producer::apply_pending_transactions(
          total_block_size = new_total_size;
          required_actions.push_back( pending_required_itr->action );
 
-#ifdef ENABLE_MIRA
          auto old = pending_required_itr++;
          if( !( pending_required_itr != pending_required_action_idx.end() && pending_required_itr->execution_time <= when ) )
          {
             pending_required_itr = pending_required_action_idx.iterator_to( *old );
             ++pending_required_itr;
          }
-#else
-         ++pending_required_itr;
-#endif
       }
       catch( fc::exception& e )
       {

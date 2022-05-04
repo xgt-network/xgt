@@ -180,7 +180,6 @@ task :make_all => :configure do
     witness_plugin
     wallet_by_key_plugin
     wallet_history_plugin
-    wallet_history_rocksdb_plugin
     block_api_plugin
     chain_api_plugin
     contract_api_plugin
@@ -199,7 +198,6 @@ task :make_all => :configure do
     test_sqrt
     testharness
     test_fixed_string
-    test_shared_mem
     ecc_test
     log_test
     ecdsa_canon_test
@@ -237,7 +235,6 @@ task :bin_tests do
   xrun.call "schema_test"
   xrun.call "test_block_log"
   xrun.call "test_fixed_string"
-  xrun.call "test_shared_mem"
   xrun.call "test_sqrt"
 end
 
@@ -278,8 +275,6 @@ task :run do
       log-logger = {"name":"p2p","level":"info","appender":"logfile"}
 
       backtrace = yes
-
-      shared-file-size = 12G
 
       p2p-endpoint = #{my_host}:#{2001 + instance_index}
       webserver-http-endpoint = #{my_host}:#{8751 + instance_index * 2}

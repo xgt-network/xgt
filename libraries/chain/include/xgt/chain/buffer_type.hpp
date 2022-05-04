@@ -7,7 +7,7 @@
 
 namespace xgt { namespace chain {
 
-typedef chainbase::t_vector< char > buffer_type;
+typedef boost::container::vector< char > buffer_type;
 
 } } // xgt::chain
 
