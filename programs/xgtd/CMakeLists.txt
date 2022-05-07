@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.9.4)
+include(CPack)
 
 set(DEFAULT_XGTD_STATIC ON)
 if (APPLE)
