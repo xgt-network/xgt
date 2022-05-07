@@ -16,6 +16,11 @@ when /darwin/
   cmake_prefix_paths = (ENV["CMAKE_PREFIX_PATH"] || "").split(":")
   cmake_prefix_paths += `brew --prefix openssl@1.1`
   ENV['CMAKE_PREFIX_PATH'] = cmake_prefix_paths.uniq.join(":")
+else
+  # on macOS prefer the native clang drivers
+  if ENV["PATH"].split(':').find { |p| File.exists?(p + "/clang++")}
+    ENV['CMAKE_TOOLCHAIN_FILE'] = File.expand_path(__dir__ + "/.github/workflows/clang.toolchain.cmake")
+  end
 end
 
 directory "../xgt-build"
@@ -122,112 +127,22 @@ task :test do
   sh %(
     cmake
       -D BUILD_XGT_TESTNET=ON
-      -D BUILD_TESTING=TRUE
-      -D COLOR_DIAGNOSTICS=ON
       -D CMAKE_BUILD_TYPE=Debug
       -G Ninja
       -B ../xgt-tests-build
       -S .
   ) 
-  sh %( ninja -C ../xgt-tests-build chain_test )
+  sh %( ninja -C ../xgt-tests-build test )
 end
 
 desc 'Builds the project'
-task :make do
+task :make => :configure do
   sh %( ninja -C ../xgt-build xgtd -j#{thread_count})
 end
 
 desc 'Build all targets'
 task :make_all => :configure do
-
-  tlibs = %w(
-    rocksdb
-    rocksdb-shared
-    core_tools
-    ldb
-    project_secp256k1
-    bip_lock
-    rebuild_cache
-    edit_cache
-    fc
-    sst_dump
-    xgt_schema
-    db_fixture
-    dump_xgt_schema
-    get_dev_key
-    sign_digest
-    sign_transaction
-    js_operation_serializer
-    size_checker
-    xgtd
-    cat-parts
-    graphene_net
-    mira
-
-    appbase
-    appbase_example
-    chainbase
-
-    hash_table_bench
-    range_del_aggregator_bench
-    db_bench
-    cache_bench
-    filter_bench
-    memtablerep_bench
-    table_reader_bench
-
-    webserver_plugin
-    witness_plugin
-    wallet_by_key_plugin
-    wallet_history_plugin
-    block_api_plugin
-    chain_api_plugin
-    contract_api_plugin
-    database_api_plugin
-    test_api_plugin
-    transaction_api_plugin
-    wallet_by_key_api_plugin
-    wallet_history_api_plugin
-    chain_plugin
-    debug_node_plugin
-    json_rpc_plugin
-    p2p_plugin
-    transaction_status_plugin
-
-    gtest
-    test_sqrt
-    testharness
-    test_fixed_string
-    ecc_test
-    log_test
-    ecdsa_canon_test
-    saturation_test
-    chainbase_test
-    schema_test
-    chain_test
-    test_block_log
-
-    xgt_plugins
-    xgt_utilities
-    xgt_protocol
-    xgt_chain
-    xgtd
-  )
-
-  borked = %w(
-    bloom_test
-    plugin_test
-    inflation_model
-    serialize_set_properties
-    real128_test
-    all_tests
-    blind
-    hmac_test
-    thread_test
-    task_cancel_test
-  )
-
-  sh %( ninja -C ../xgt-build #{tlibs.join(" ")} )
+  sh %( ninja -C ../xgt-build )
 end
 
 task :bin_tests do
@@ -245,8 +160,10 @@ end
 
 task :build_release => [:clean, :configure, :make, :strip]
 
+task :default => :run
+
 desc 'Runs a basic example instance locally'
-task :run do
+task :run => :make do
   data_dir = "../xgt-chainstate-#{instance_index}"
 
   if flush_chainstate?
@@ -265,17 +182,6 @@ task :run do
   my_host = '0.0.0.0'
   File.open(File.join(data_dir, 'config.ini'), 'w') do |f|
     f.puts(unindent(%(
-      log-console-appender = {"appender":"stderr","stream":"std_error"}
-      log-file-appender = {"appender":"logfile","file":"logfile.log"}
-      log-logger = {"name":"default","level":"debug","appender":"stderr"}
-      log-logger = {"name":"default","level":"debug","appender":"logfile"}
-      #log-logger = {"name":"sync","level":"debug","appender":"stderr"}
-      #log-logger = {"name":"sync","level":"debug","appender":"logfile"}
-      log-logger = {"name":"p2p","level":"info","appender":"stderr"}
-      log-logger = {"name":"p2p","level":"info","appender":"logfile"}
-
-      backtrace = yes
-
       p2p-endpoint = #{my_host}:#{2001 + instance_index}
       webserver-http-endpoint = #{my_host}:#{8751 + instance_index * 2}
 
