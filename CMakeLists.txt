@@ -77,6 +77,11 @@ else()
   endif()
 endif()
 
+if(APPLE)
+    # For boost linkage
+    add_compile_options(-fvisibility=hidden -fvisibility-inlines-hidden)
+endif()
+
 # based on http://www.delorie.com/gnu/docs/gdb/gdb_70.html
 # uncomment this line to tell GDB about macros (slows compile times)
 # set( CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -gdwarf-2 -g3" )

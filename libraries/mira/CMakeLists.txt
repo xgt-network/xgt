@@ -1,6 +1,3 @@
-project( MIRA )
-cmake_minimum_required( VERSION 2.8.12 )
-
 file(GLOB_RECURSE sources src/*.cpp include/mira/*.hpp)
 add_library(mira ${sources})
 
