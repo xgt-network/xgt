@@ -244,30 +244,7 @@ void application::write_default_config(const bfs::path& cfg_file) {
    {
       if(!od->description().empty())
          out_cfg << "# " << od->description() << "\n";
-      boost::any store;
-      if(!od->semantic()->apply_default(store))
-         out_cfg << "# " << od->long_name() << " = \n";
-      else
-      {
-         auto example = od->format_parameter();
-         if( example.empty() )
-         {
-            // This is a boolean switch
-            out_cfg << od->long_name() << " = " << "false\n";
-         }
-         else if( example.length() <= 7 )
-         {
-            // The string is formatted "arg"
-            out_cfg << "# " << od->long_name() << " = \n";
-         }
-         else
-         {
-            // The string is formatted "arg (=<interesting part>)"
-            example.erase(0, 6);
-            example.erase(example.length()-1);
-            out_cfg << od->long_name() << " = " << example << "\n";
-         }
-      }
+      out_cfg << "# " << od->long_name() << " = \n";
       out_cfg << "\n";
    }
    out_cfg.close();
