@@ -296,6 +296,12 @@ task :run do
   sh %(cd #{data_dir} && ../xgt-build/programs/xgtd/xgtd --data-dir=.)
 end
 
+desc 'Debug with gdb'
+task :gdb_trace do
+  data_dir = "../xgt-chainstate-#{instance_index}"
+  sh %(cd #{data_dir} && gdb -ex "run -d ../xgt-build/programs/xgtd/xgtd --data-dir=." -ex bt ../xgt-build/programs/xgtd/xgtd)
+end
+
 desc 'Get approximate C++ LoC'
 task :wc do
   sh %(wc -l #{Dir.glob('**/*.{c,h}pp').join(' ')})
