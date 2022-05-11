@@ -494,7 +494,6 @@ void witness_plugin::set_program_options(
 {
    string witness_id_example = "initwitness";
    cfg.add_options()
-         ("enable-stale-production", bpo::value<bool>()->default_value( false ), "Enable block production, even if the chain is stale.")
          ("witness,w", bpo::value<vector<string>>()->composing()->multitoken(),
             ("name of witness controlled by this node (e.g. " + witness_id_example + " )" ).c_str() )
          ("mining-reward-key", bpo::value<vector<string>>()->composing()->multitoken(), "WIF PRIVATE KEY to be used by one or more witnesses or miners" )
@@ -503,7 +502,6 @@ void witness_plugin::set_program_options(
          ("mining-threads", bpo::value<unsigned int>()->default_value(std::thread::hardware_concurrency()), "Number of mining threads to run (default: number of hardware threads)");
          ;
    cli.add_options()
-         ("enable-stale-production", bpo::bool_switch()->default_value( false ), "Enable block production, even if the chain is stale.")
          ("mining-threads", bpo::value<unsigned int>()->default_value(std::thread::hardware_concurrency()), "Number of mining threads to run (default: number of hardware threads)");
          ;
 }
@@ -569,7 +567,7 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
       }
    }
 
-   my->_production_enabled = options.at( "enable-stale-production" ).as< bool >();
+   my->_production_enabled = my->_private_keys.size() > 0;
 
    my->_post_apply_block_conn = my->_db.add_post_apply_block_handler(
       [&]( const chain::block_notification& note ){ my->on_post_apply_block( note ); }, *this, 0 );
