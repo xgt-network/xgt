@@ -185,10 +185,8 @@ task :run => :make do
       p2p-endpoint = #{my_host}:#{2001 + instance_index}
       webserver-http-endpoint = #{my_host}:#{8751 + instance_index * 2}
 
-      miner = ["#{wallet}","#{wif}"]
       mining-threads = #{mining_threads}
       witness = "#{wallet}"
-      private-key = #{recovery_private_key}
       mining-reward-key = #{witness_private_key}
 
       enable-stale-production = #{mining_disabled? ? 'false' : 'true'}
