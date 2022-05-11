@@ -31,6 +31,8 @@ namespace xgt { namespace chain { namespace util {
    template< bool APPLY_CONTEXT >
    void advanced_benchmark_dumper::end( const std::string& str )
    {
+      if (!enabled) return;
+
       auto time = fc::time_point::now() - time_begin;
       auto res = info.emplace( APPLY_CONTEXT ? (apply_context_name + str) : str, time, 1 );
 
@@ -67,6 +69,8 @@ namespace xgt { namespace chain { namespace util {
 
    void advanced_benchmark_dumper::dump()
    {
+      if (!enabled) return;
+
       total_info< std::multiset< ritem > > rinfo( info.total_time );
       std::for_each(info.items.begin(), info.items.end(), [&rinfo]( const item& obj )
       {
