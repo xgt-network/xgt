@@ -291,12 +291,10 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
          ("blockchain-dir", bpo::value<bfs::path>()->default_value("blockchain"),
             "the location of the blockchain data files (absolute path or relative to application data dir)")
          ("checkpoint,c", bpo::value<vector<string>>()->composing(), "Pairs of [BLOCK_NUM,BLOCK_ID] that should be enforced as checkpoints.")
-         ("flush-state-interval", bpo::value<uint32_t>(),
-            "flush shared memory changes to disk every N blocks")
+         ("flush-state-interval", bpo::value<uint32_t>(), "flush changes to disk every N blocks")
          ("from-state", bpo::value<string>()->default_value(""), "Load from state, then replay subsequent blocks")
          ("to-state", bpo::value<string>()->default_value(""), "File to save state to on shutdown")
          ("state-format", bpo::value<string>()->default_value("binary"), "State file save format (binary|json)")
-         ("memory-replay-indices", bpo::value<vector<string>>()->multitoken()->composing(), "Specify which indices should be in memory during replay")
          ;
    cli.add_options()
          ("replay-blockchain", bpo::bool_switch()->default_value(false), "clear chain database and replay all blocks")
@@ -308,7 +306,6 @@ void chain_plugin::set_program_options(options_description& cli, options_descrip
          ("dump-memory-details", bpo::bool_switch()->default_value(false), "Dump database objects memory usage info. Use set-benchmark-interval to set dump interval.")
          ("validate-database-invariants", bpo::bool_switch()->default_value(false), "Validate all supply invariants check out")
          ("database-cfg", bpo::value<bfs::path>()->default_value("database.cfg"), "The database configuration file location")
-         ("memory-replay,m", bpo::bool_switch()->default_value(false), "Replay with state in memory instead of on disk")
          ("chain-id", bpo::value< std::string >()->default_value( XGT_CHAIN_ID ), "chain ID to connect to")
          ;
 }
