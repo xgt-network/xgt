@@ -47,10 +47,10 @@ CMD cd xgt && rake run
 #   --publish 2001:2001 \
 #   --env XGT_HOST=http://some-server.some-host.com:8751 \
 #   --env XGT_WALLET=XGT32P19NiqGKhTj \
-#   --env XGT_RECOVERY_PRIVATE_KEY=5J8rMsuzs5S1cGXyQCbEnfqzoMXpYyyhiJ7evJVDBe7ffNX7h5x \
+#   --env XGT_WITNESS_PRIVATE_KEY=5J8rMsuzs5S1cGXyQCbEnfqzoMXpYyyhiJ7evJVDBe7ffNX7h5x \
 #   xgt:0.0.1
 
 # sudo docker run -it
 #   --env XGT_WALLET=XGT0000000000000000000000000000000000000000 \
-#   --env XGT_RECOVERY_PRIVATE_KEY=5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n \
+#   --env XGT_WITNESS_PRIVATE_KEY=5JNHfZYKGaomSFvd4NUdQ9qMcEAC43kujbfjueTHpVapX1Kzq2n \
 #   xgt:0.0.1

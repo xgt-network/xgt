@@ -60,10 +60,6 @@ def wif
   ENV['XGT_WIF'] || mining_error("XGT_WIF not specified")
 end
 
-def recovery_private_key
-  ENV['XGT_RECOVERY_PRIVATE_KEY'] || mining_error("XGT_RECOVERY_PRIVATE_KEY not specified")
-end
-
 def witness_private_key
   ENV['XGT_WITNESS_PRIVATE_KEY'] || mining_error("XGT_WITNESS_PRIVATE_KEY not specified")
 end
