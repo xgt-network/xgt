@@ -28,7 +28,6 @@ add_library( xgt_chain
 
              generic_custom_operation_interpreter.cpp
 
-             util/rd.cpp
              util/impacted.cpp
              util/advanced_benchmark_dumper.cpp
              util/xtt_token.cpp

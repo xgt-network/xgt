@@ -21,7 +21,6 @@
 #include <xgt/chain/shared_db_merkle.hpp>
 
 #include <xgt/chain/util/uint256.hpp>
-#include <xgt/chain/util/rd_setup.hpp>
 #include <xgt/chain/util/nai_generator.hpp>
 #include <xgt/chain/util/xtt_token.hpp>
 
@@ -1359,34 +1358,6 @@ void database::init_genesis( uint64_t init_supply )
          hpo.processed_hardforks.push_back( XGT_GENESIS_TIME );
       } );
 
-      // TODO: XXX: Figure out how to set up rc dynamics
-      // // Create witness scheduler
-      // create< witness_schedule_object >( [&]( witness_schedule_object& wso )
-      // {
-      //    //FC_TODO( "Copied from witness_schedule.cpp, do we want to abstract this to a separate function?" );
-      //    wso.current_shuffled_witnesses[0] = XGT_INIT_MINER_NAME;
-      //    util::rd_system_params account_subsidy_system_params;
-      //    account_subsidy_system_params.resource_unit = XGT_WALLET_SUBSIDY_PRECISION;
-      //    account_subsidy_system_params.decay_per_time_unit_denom_shift = XGT_RD_DECAY_DENOM_SHIFT;
-      //    util::rd_user_params account_subsidy_user_params;
-      //    account_subsidy_user_params.budget_per_time_unit = wso.median_props.account_subsidy_budget;
-      //    account_subsidy_user_params.decay_per_time_unit = wso.median_props.account_subsidy_decay;
-
-      //    util::rd_user_params account_subsidy_per_witness_user_params;
-      //    int64_t w_budget = wso.median_props.account_subsidy_budget;
-      //    w_budget = (w_budget * XGT_WITNESS_SUBSIDY_BUDGET_PERCENT) / XGT_100_PERCENT;
-      //    w_budget = std::min( w_budget, int64_t(std::numeric_limits<int32_t>::max()) );
-      //    uint64_t w_decay = wso.median_props.account_subsidy_decay;
-      //    w_decay = (w_decay * XGT_WITNESS_SUBSIDY_DECAY_PERCENT) / XGT_100_PERCENT;
-      //    w_decay = std::min( w_decay, uint64_t(std::numeric_limits<uint32_t>::max()) );
-
-      //    account_subsidy_per_witness_user_params.budget_per_time_unit = int32_t(w_budget);
-      //    account_subsidy_per_witness_user_params.decay_per_time_unit = uint32_t(w_decay);
-
-      //    util::rd_setup_dynamics_params( account_subsidy_user_params, account_subsidy_system_params, wso.account_subsidy_rd );
-      //    util::rd_setup_dynamics_params( account_subsidy_per_witness_user_params, account_subsidy_system_params, wso.account_subsidy_witness_rd );
-      // } );
-
       create< nai_pool_object >( [&]( nai_pool_object& npo ) {} );
    }
    FC_CAPTURE_AND_RETHROW()
@@ -2211,30 +2182,6 @@ boost::signals2::connection database::any_apply_operation_handler_impl( const ap
       return _post_apply_operation_signal.connect(group, complex_func);
 }
 
-boost::signals2::connection database::add_pre_apply_required_action_handler( const apply_required_action_handler_t& func,
-   const abstract_plugin& plugin, int32_t group )
-{
-   return connect_impl(_pre_apply_required_action_signal, func, plugin, group, "->required_action");
-}
-
-boost::signals2::connection database::add_post_apply_required_action_handler( const apply_required_action_handler_t& func,
-   const abstract_plugin& plugin, int32_t group )
-{
-   return connect_impl(_post_apply_required_action_signal, func, plugin, group, "<-required_action");
-}
-
-boost::signals2::connection database::add_pre_apply_optional_action_handler( const apply_optional_action_handler_t& func,
-   const abstract_plugin& plugin, int32_t group )
-{
-   return connect_impl(_pre_apply_optional_action_signal, func, plugin, group, "->optional_action");
-}
-
-boost::signals2::connection database::add_post_apply_optional_action_handler( const apply_optional_action_handler_t& func,
-   const abstract_plugin& plugin, int32_t group )
-{
-   return connect_impl(_post_apply_optional_action_signal, func, plugin, group, "<-optional_action");
-}
-
 boost::signals2::connection database::add_pre_apply_operation_handler( const apply_operation_handler_t& func,
    const abstract_plugin& plugin, int32_t group )
 {
@@ -2257,18 +2204,6 @@ boost::signals2::connection database::add_post_apply_transaction_handler( const 
    const abstract_plugin& plugin, int32_t group )
 {
    return connect_impl(_post_apply_transaction_signal, func, plugin, group, "<-transaction");
-}
-
-boost::signals2::connection database::add_pre_apply_custom_operation_handler ( const apply_custom_operation_handler_t& func,
-   const abstract_plugin& plugin, int32_t group )
-{
-   return connect_impl(_pre_apply_custom_operation_signal, func, plugin, group, "->custom");
-}
-
-boost::signals2::connection database::add_post_apply_custom_operation_handler( const apply_custom_operation_handler_t& func,
-   const abstract_plugin& plugin, int32_t group )
-{
-   return connect_impl(_post_apply_custom_operation_signal, func, plugin, group, "<-custom");
 }
 
 boost::signals2::connection database::add_pre_apply_block_handler( const apply_block_handler_t& func,
@@ -2299,12 +2234,6 @@ boost::signals2::connection database::add_post_reindex_handler(const reindex_han
    const abstract_plugin& plugin, int32_t group )
 {
    return connect_impl(_post_reindex_signal, func, plugin, group, "<-reindex");
-}
-
-boost::signals2::connection database::add_generate_optional_actions_handler(const generate_optional_actions_handler_t& func,
-   const abstract_plugin& plugin, int32_t group )
-{
-   return connect_impl(_generate_optional_actions_signal, func, plugin, group, "->generate_optional_actions");
 }
 
 const witness_object& database::validate_block_header( uint32_t skip, const signed_block& next_block )const

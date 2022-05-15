@@ -13,11 +13,3 @@ target_link_libraries( xgt_plugins PUBLIC appbase fc
 target_include_directories( xgt_plugins
    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
    )
-
-INSTALL( TARGETS
-   xgt_plugins
-
-   RUNTIME DESTINATION bin
-   LIBRARY DESTINATION lib
-   ARCHIVE DESTINATION lib
-)

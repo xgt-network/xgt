@@ -4,8 +4,6 @@
 #include <fc/io/json.hpp>
 #include <fc/macros.hpp>
 
-#include <locale>
-
 namespace xgt { namespace protocol {
 
    void validate_auth_size( const authority& a )
@@ -26,7 +24,7 @@ namespace xgt { namespace protocol {
 
       if ( json_metadata.size() > 0 )
       {
-         FC_ASSERT( fc::is_utf8(json_metadata), "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( validutf8(json_metadata), "JSON Metadata not formatted in UTF8" );
          FC_ASSERT( fc::json::is_valid(json_metadata), "JSON Metadata not valid JSON" );
       }
       FC_ASSERT( fee >= asset( 0, XGT_SYMBOL ), "Account creation fee cannot be negative" );
@@ -38,13 +36,13 @@ namespace xgt { namespace protocol {
 
       if ( json_metadata.size() > 0 )
       {
-         FC_ASSERT( fc::is_utf8(json_metadata), "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( validutf8(json_metadata), "JSON Metadata not formatted in UTF8" );
          FC_ASSERT( fc::json::is_valid(json_metadata), "JSON Metadata not valid JSON" );
       }
 
       if ( social_json_metadata.size() > 0 )
       {
-         FC_ASSERT( fc::is_utf8(social_json_metadata), "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( validutf8(social_json_metadata), "JSON Metadata not formatted in UTF8" );
          FC_ASSERT( fc::json::is_valid(social_json_metadata), "JSON Metadata not valid JSON" );
       }
    }
@@ -53,9 +51,9 @@ namespace xgt { namespace protocol {
    {
       FC_ASSERT( title.size() < XGT_COMMENT_TITLE_LIMIT,
          "Title size limit exceeded. Max: ${max} Current: ${n}", ("max", XGT_COMMENT_TITLE_LIMIT - 1)("n", title.size()) );
-      FC_ASSERT( fc::is_utf8( title ), "Title not formatted in UTF8" );
+      FC_ASSERT( validutf8( title ), "Title not formatted in UTF8" );
       FC_ASSERT( body.size() > 0, "Body is empty" );
-      FC_ASSERT( fc::is_utf8( body ), "Body not formatted in UTF8" );
+      FC_ASSERT( validutf8( body ), "Body not formatted in UTF8" );
 
 
       if( parent_author.size() )
@@ -96,7 +94,7 @@ namespace xgt { namespace protocol {
       //validate_wallet_name( to );
       FC_ASSERT( amount.amount > 0, "Cannot transfer a negative amount (aka: stealing)" );
       FC_ASSERT( memo.size() < XGT_MAX_MEMO_SIZE, "Memo is too large" );
-      FC_ASSERT( fc::is_utf8( memo ), "Memo is not UTF8" );
+      FC_ASSERT( validutf8( memo ), "Memo is not UTF8" );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
    void witness_update_operation::validate() const
@@ -106,7 +104,7 @@ namespace xgt { namespace protocol {
       FC_ASSERT( url.size() <= XGT_MAX_WITNESS_URL_LENGTH, "URL is too long" );
 
       FC_ASSERT( url.size() > 0, "URL size must be greater than 0" );
-      FC_ASSERT( fc::is_utf8( url ), "URL is not valid UTF8" );
+      FC_ASSERT( validutf8( url ), "URL is not valid UTF8" );
       FC_ASSERT( fee >= asset( 0, XGT_SYMBOL ), "Fee cannot be negative" );
       props.validate< false >();
    }
@@ -120,7 +118,7 @@ namespace xgt { namespace protocol {
       FC_ASSERT( (required_auths.size() + required_social_auths.size()) > 0, "at least one account must be specified" );
       FC_ASSERT( id.size() <= XGT_CUSTOM_OP_ID_MAX_LENGTH,
          "Operation ID length exceeded. Max: ${max} Current: ${n}", ("max", XGT_CUSTOM_OP_ID_MAX_LENGTH)("n", id.size()) );
-      FC_ASSERT( fc::is_utf8(json), "JSON Metadata not formatted in UTF8" );
+      FC_ASSERT( validutf8(json), "JSON Metadata not formatted in UTF8" );
       FC_ASSERT( fc::json::is_valid(json), "JSON Metadata not valid JSON" );
    }
 
@@ -255,7 +253,7 @@ namespace xgt { namespace protocol {
       FC_ASSERT( ratification_deadline < escrow_expiration, "ratification deadline must be before escrow expiration" );
       if ( json_meta.size() > 0 )
       {
-         FC_ASSERT( fc::is_utf8(json_meta), "JSON Metadata not formatted in UTF8" );
+         FC_ASSERT( validutf8(json_meta), "JSON Metadata not formatted in UTF8" );
          FC_ASSERT( fc::json::is_valid(json_meta), "JSON Metadata not valid JSON" );
       }
    }

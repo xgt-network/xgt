@@ -494,17 +494,14 @@ void witness_plugin::set_program_options(
 {
    string witness_id_example = "initwitness";
    cfg.add_options()
-         ("enable-stale-production", bpo::value<bool>()->default_value( false ), "Enable block production, even if the chain is stale.")
          ("witness,w", bpo::value<vector<string>>()->composing()->multitoken(),
             ("name of witness controlled by this node (e.g. " + witness_id_example + " )" ).c_str() )
-         ("private-key", bpo::value<vector<string>>()->composing()->multitoken(), "WIF PRIVATE KEY to be used by one or more witnesses or miners" )
          ("mining-reward-key", bpo::value<vector<string>>()->composing()->multitoken(), "WIF PRIVATE KEY to be used by one or more witnesses or miners" )
          ("miner-account-creation-fee", bpo::value<uint64_t>()->implicit_value(100000),"Account creation fee to be voted on upon successful POW - Minimum fee is 100.000 XGT (written as 100000)")
          ("miner-maximum-block-size", bpo::value<uint32_t>()->implicit_value(131072),"Maximum block size (in bytes) to be voted on upon successful POW - Max block size must be between 128 KB and 750 MB")
          ("mining-threads", bpo::value<unsigned int>()->default_value(std::thread::hardware_concurrency()), "Number of mining threads to run (default: number of hardware threads)");
          ;
    cli.add_options()
-         ("enable-stale-production", bpo::bool_switch()->default_value( false ), "Enable block production, even if the chain is stale.")
          ("mining-threads", bpo::value<unsigned int>()->default_value(std::thread::hardware_concurrency()), "Number of mining threads to run (default: number of hardware threads)");
          ;
 }
@@ -570,7 +567,7 @@ void witness_plugin::plugin_initialize(const boost::program_options::variables_m
       }
    }
 
-   my->_production_enabled = options.at( "enable-stale-production" ).as< bool >();
+   my->_production_enabled = my->_private_keys.size() > 0;
 
    my->_post_apply_block_conn = my->_db.add_post_apply_block_handler(
       [&]( const chain::block_notification& note ){ my->on_post_apply_block( note ); }, *this, 0 );

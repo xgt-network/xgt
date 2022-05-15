@@ -66,7 +66,6 @@ target_include_directories(fc
 
 target_link_libraries( fc PRIVATE secp256k1 )
 
-add_subdirectory( vendor/websocketpp )
-include_directories( vendor/websocketpp )
+add_subdirectory( vendor/websocketpp EXCLUDE_FROM_ALL )
 
 add_subdirectory(tests)

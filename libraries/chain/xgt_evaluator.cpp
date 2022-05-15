@@ -15,34 +15,7 @@
 
 #include <fc/macros.hpp>
 #include <fc/crypto/rand.hpp>
-
-#ifndef IS_LOW_MEM
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-compare"
-#pragma GCC diagnostic push
-#if !defined( __clang__ )
-#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
-#endif
-#pragma GCC diagnostic pop
-#pragma GCC diagnostic pop
-#include <boost/locale/encoding_utf.hpp>
-
-using boost::locale::conv::utf_to_utf;
-
-std::wstring utf8_to_wstring(const std::string& str)
-{
-    return utf_to_utf<wchar_t>(str.c_str(), str.c_str() + str.size());
-}
-
-std::string wstring_to_utf8(const std::wstring& str)
-{
-    return utf_to_utf<char>(str.c_str(), str.c_str() + str.size());
-}
-
-#endif
-
 #include <fc/uint128.hpp>
-#include <fc/utf8.hpp>
 
 #include <limits>
 
@@ -366,7 +339,7 @@ void comment_evaluator::do_apply( const comment_operation& o )
       FC_ASSERT( parent->depth < XGT_MAX_COMMENT_DEPTH, "Comment is nested ${x} posts deep, maximum depth is ${y}.", ("x",parent->depth)("y",XGT_MAX_COMMENT_DEPTH) );
    }
 
-   FC_ASSERT( fc::is_utf8( o.json_metadata ), "JSON Metadata must be UTF-8" );
+   FC_ASSERT( validutf8( o.json_metadata ), "JSON Metadata must be UTF-8" );
 
    auto now = _db.head_block_time();
 

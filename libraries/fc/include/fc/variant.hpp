@@ -209,8 +209,6 @@ namespace fc
         /// @param str - UTF8 string
         variant( const char* str );
         variant( char* str );
-        variant( wchar_t* str );
-        variant( const wchar_t* str );
         variant( float val );
         variant( uint8_t val );
         variant( int8_t val );

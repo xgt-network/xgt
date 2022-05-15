@@ -3,8 +3,6 @@
 #include <xgt/protocol/block_header.hpp>
 #include <xgt/protocol/asset.hpp>
 
-#include <fc/utf8.hpp>
-
 namespace xgt { namespace protocol {
 
    struct shutdown_witness_operation : public virtual_operation

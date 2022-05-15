@@ -25,7 +25,7 @@ namespace  fc
           if(boostPath.empty() == false)
           {
             std::string varSetting("OPENSSL_CONF=");
-            varSetting += _configurationFilePath.to_native_ansi_path();
+            varSetting += _configurationFilePath.generic_string();
 #if defined(WIN32)
             _putenv((char*)varSetting.c_str());
 #else

@@ -3,6 +3,7 @@
 #include <xgt/protocol/base.hpp>
 #include <xgt/protocol/asset.hpp>
 #include <xgt/protocol/misc_utilities.hpp>
+#include <xgt/protocol/utf8.hpp>
 
 #define XTT_MAX_UNIT_ROUTES            10
 #define XTT_MAX_UNIT_COUNT             20

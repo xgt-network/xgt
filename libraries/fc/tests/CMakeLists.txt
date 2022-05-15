@@ -45,7 +45,6 @@ add_executable( all_tests all_tests.cpp
                           thread/task_cancel.cpp
                           thread/thread_tests.cpp
                           saturation_test.cpp
-                          utf8_test.cpp
                           )
 add_test(NAME all_tests COMMAND all_tests)
 target_link_libraries( all_tests fc  Boost::unit_test_framework)

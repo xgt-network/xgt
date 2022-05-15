@@ -263,8 +263,6 @@ namespace xgt { namespace chain {
          void notify_pre_apply_custom_operation( const custom_operation_notification& note );
          void notify_post_apply_custom_operation( const custom_operation_notification& note );
 
-         using apply_required_action_handler_t = std::function< void(const required_action_notification&) >;
-         using apply_optional_action_handler_t = std::function< void(const optional_action_notification&) >;
          using apply_operation_handler_t = std::function< void(const operation_notification&) >;
          using apply_transaction_handler_t = std::function< void(const transaction_notification&) >;
          using apply_block_handler_t = std::function< void(const block_notification&) >;
@@ -286,10 +284,6 @@ namespace xgt { namespace chain {
 
       public:
 
-         boost::signals2::connection add_pre_apply_required_action_handler  ( const apply_required_action_handler_t&     func, const abstract_plugin& plugin, int32_t group = -1 );
-         boost::signals2::connection add_post_apply_required_action_handler ( const apply_required_action_handler_t&     func, const abstract_plugin& plugin, int32_t group = -1 );
-         boost::signals2::connection add_pre_apply_optional_action_handler  ( const apply_optional_action_handler_t&     func, const abstract_plugin& plugin, int32_t group = -1 );
-         boost::signals2::connection add_post_apply_optional_action_handler ( const apply_optional_action_handler_t&     func, const abstract_plugin& plugin, int32_t group = -1 );
          boost::signals2::connection add_pre_apply_operation_handler        ( const apply_operation_handler_t&           func, const abstract_plugin& plugin, int32_t group = -1 );
          boost::signals2::connection add_post_apply_operation_handler       ( const apply_operation_handler_t&           func, const abstract_plugin& plugin, int32_t group = -1 );
          boost::signals2::connection add_pre_apply_transaction_handler      ( const apply_transaction_handler_t&         func, const abstract_plugin& plugin, int32_t group = -1 );
