@@ -1,6 +1,7 @@
 require 'fileutils'
 require 'tmpdir'
 require 'uri'
+require 'open-uri'
 require 'json'
 require 'bigdecimal'
 require 'shellwords'
@@ -66,8 +67,8 @@ def host
   ENV['XGT_HOST'] || 'http://localhost:8751'
 end
 
-def seed_hosts
-  Array((ENV['XGT_SEED_HOST'] || "").split(","))
+def override_seeds
+  Array((ENV['XGT_OVERRIDE_SEEDS'] || "").split(","))
 end
 
 def instance_index
@@ -247,6 +248,16 @@ end
 
 task :build_release => [:clean, :configure, :make, :strip]
 
+desc 'Rests miner from latest available block log'
+task :reset_miner do
+  puts "Downloading updated block log"
+  data_dir = "../xgt-chainstate-#{instance_index}"
+  File.open(File.join(data_dir, "blockchain/block_log"), 'w') do |file|
+    file << URI.open( 'http://mainnet.xgtcrypto.com/block_log.latest').read
+  end
+  Rake::Task["run_replay"].invoke
+end
+
 desc 'Runs a basic example instance locally'
 task :run do
   data_dir = "../xgt-chainstate-#{instance_index}"
@@ -291,13 +302,64 @@ task :run do
 
       enable-stale-production = #{mining_disabled? ? 'false' : 'true'}
     )))
-    if seed_hosts && seed_hosts.any?
-      f.puts "p2p-seed-node = #{seed_hosts.join(" ")}"
+    if override_seeds && override_seeds.any?
+      f.puts "p2p-seed-node = #{override_seeds.join(" ")}"
     end
   end
   $stderr.puts(File.read("#{data_dir}/config.ini"))
 
   sh %(cd #{data_dir} && ../xgt-build/programs/xgtd/xgtd --data-dir=.)
+end
+
+desc 'Runs a basic example instance locally with --replay-blockchain flag'
+task :run_replay do
+  data_dir = "../xgt-chainstate-#{instance_index}"
+
+  if flush_chainstate?
+    sh "rm -rf #{data_dir}"
+  end
+  sh "mkdir -p #{data_dir}"
+
+  # TODO: Needs revisiting
+  their_host = if host
+    uri = URI.parse(host)
+    %(#{uri.host}:#{uri.port})
+  else
+    nil
+  end
+
+  my_host = '0.0.0.0'
+  File.open(File.join(data_dir, 'config.ini'), 'w') do |f|
+    f.puts(unindent(%(
+      log-console-appender = {"appender":"stderr","stream":"std_error"}
+      log-file-appender = {"appender":"logfile","file":"logfile.log"}
+      log-logger = {"name":"default","level":"debug","appender":"stderr"}
+      log-logger = {"name":"default","level":"debug","appender":"logfile"}
+      #log-logger = {"name":"sync","level":"debug","appender":"stderr"}
+      #log-logger = {"name":"sync","level":"debug","appender":"logfile"}
+      log-logger = {"name":"p2p","level":"info","appender":"stderr"}
+      log-logger = {"name":"p2p","level":"info","appender":"logfile"}
+
+      backtrace = yes
+
+      p2p-endpoint = #{my_host}:#{2001 + instance_index}
+      webserver-http-endpoint = #{my_host}:#{8751 + instance_index * 2}
+
+      miner = ["#{wallet}","#{wif}"]
+      mining-threads = #{mining_threads}
+      witness = "#{wallet}"
+      private-key = #{recovery_private_key}
+      mining-reward-key = #{witness_private_key}
+
+      enable-stale-production = #{mining_disabled? ? 'false' : 'true'}
+    )))
+    if override_seeds && override_seeds.any?
+      f.puts "p2p-seed-node = #{override_seeds.join(" ")}"
+    end
+  end
+  $stderr.puts(File.read("#{data_dir}/config.ini"))
+
+  sh %(cd #{data_dir} && ../xgt-build/programs/xgtd/xgtd --data-dir=. --replay-blockchain)
 end
 
 desc 'Get approximate C++ LoC'
