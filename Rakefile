@@ -53,23 +53,23 @@ def mining_error(message)
 end
 
 def wallet
-  'XGT0000000000000000000000000000000000000000'
+  ENV['XGT_WALLET'] || mining_error("Wallet not specificed, please specify a wallet with 'XGT_WALLET'")
 end
 
 def wif
-  '5JQMNhd5L9ML99ZoH2FaZ1PUHrYb4Jw7U3CgA73V8rgBfoipkxt'
+  ENV['XGT_WIF'] || mining_error("XGT_WIF not specified")
 end
 
 def recovery_private_key
-  '5JQMNhd5L9ML99ZoH2FaZ1PUHrYb4Jw7U3CgA73V8rgBfoipkxt'
+  ENV['XGT_RECOVERY_PRIVATE_KEY'] || mining_error("XGT_RECOVERY_PRIVATE_KEY not specified")
 end
 
 def witness_private_key
-  '5JQMNhd5L9ML99ZoH2FaZ1PUHrYb4Jw7U3CgA73V8rgBfoipkxt'
+  ENV['XGT_WITNESS_PRIVATE_KEY'] || mining_error("XGT_WITNESS_PRIVATE_KEY not specified")
 end
 
 def host
-  ENV['XGT_HOST'] || 'http://localhost:8755'
+  ENV['XGT_HOST'] || 'http://localhost:8751'
 end
 
 def seed_hosts
@@ -78,6 +78,10 @@ end
 
 def instance_index
   ENV['XGT_INSTANCE_INDEX'].to_i
+end
+
+def port_offset
+  ENV['XGT_PORT_OFFSET'].to_i
 end
 
 def config
@@ -121,6 +125,11 @@ end
 desc 'Runs CMake to prepare the project'
 task :configure => "../xgt-build" do
   sh %( cmake -G Ninja -B ../xgt-build -S . -D CMAKE_BUILD_TYPE=debug )
+end
+
+desc 'Runs CMake to prepare the project for testnet'
+task :configure_testnet => "../xgt-build" do
+  sh %( cmake -G Ninja -B ../xgt-build -S . -D CMAKE_BUILD_TYPE=debug -D BUILD_XGT_TESTNET=ON )
 end
 
 task :test do
@@ -286,8 +295,8 @@ task :run do
 
       shared-file-size = 12G
 
-      p2p-endpoint = #{my_host}:#{2001 + instance_index}
-      webserver-http-endpoint = #{my_host}:#{8751 + instance_index * 2}
+      p2p-endpoint = #{my_host}:#{2001 + port_offset + instance_index}
+      webserver-http-endpoint = #{my_host}:#{8751 + port_offset + instance_index * 2}
 
       miner = ["#{wallet}","#{wif}"]
       mining-threads = #{mining_threads}

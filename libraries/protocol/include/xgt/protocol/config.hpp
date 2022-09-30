@@ -28,8 +28,9 @@
 #endif
 
 #ifdef IS_TEST_NET
-#define XGT_INIT_PRIVATE_KEY (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))
-#define XGT_INIT_PUBLIC_KEY_STR (std::string( xgt::protocol::public_key_type(XGT_INIT_PRIVATE_KEY.get_public_key()) ))
+// #define XGT_INIT_PRIVATE_KEY (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))
+// #define XGT_INIT_PUBLIC_KEY_STR (std::string( xgt::protocol::public_key_type(XGT_INIT_PRIVATE_KEY.get_public_key()) ))
+#define XGT_INIT_PUBLIC_KEY_STR             "XGT5zYjtBDvJCQmmUSUwdh7kW2xLVhZB2moLERGHR3GW4vPpfLPrt"
 #else
 #define XGT_INIT_PUBLIC_KEY_STR             "XGT7dDoJbrmueAw431pPbjLDoRhqFCC5Xs5o6f1cZLepWEpkcy3Tc"
 #endif
