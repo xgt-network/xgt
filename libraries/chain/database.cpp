@@ -599,6 +599,15 @@ void database::foreach_operation(std::function<bool(const signed_block_header&,c
    );
 }
 
+const contract_storage_object& database::get_contract_storage( const contract_hash_type& contract_hash, const wallet_name_type& caller ) const
+{ try {
+   return get< contract_storage_object, by_contract_and_caller >( boost::make_tuple( contract_hash, caller ) );
+} FC_CAPTURE_AND_RETHROW( (contract_hash)(caller) ) }
+
+const contract_storage_object* database::find_contract_storage( const contract_hash_type& contract_hash, const wallet_name_type& caller ) const
+{
+   return find< contract_storage_object, by_contract_and_caller >( boost::make_tuple( contract_hash, caller ) );
+}
 
 const witness_object& database::get_witness( const wallet_name_type& name ) const
 { try {
@@ -610,14 +619,44 @@ const witness_object* database::find_witness( const wallet_name_type& name ) con
    return find< witness_object, by_name >( name );
 }
 
+const contract_object& database::get_contract( const contract_hash_type& hash )const
+{ try {
+   return get< contract_object, by_contract_hash >( hash );
+} FC_CAPTURE_AND_RETHROW( (hash) ) }
+
+const contract_object& database::get_contract_by_wallet( const wallet_name_type& wallet )const
+{ try {
+   return get< contract_object, by_wallet >( wallet );
+} FC_CAPTURE_AND_RETHROW( (wallet) ) }
+
+const contract_object* database::find_contract( const contract_hash_type& hash )const
+{
+   return find< contract_object, by_contract_hash >( hash );
+}
+
+const contract_object* database::find_contract_by_wallet( const wallet_name_type& wallet )const
+{
+   return find< contract_object, by_wallet >( wallet );
+}
+
 const wallet_object& database::get_account( const wallet_name_type& name )const
 { try {
    return get< wallet_object, by_name >( name );
 } FC_CAPTURE_AND_RETHROW( (name) ) }
 
+const wallet_object& database::get_account_by_en_address( const en_address_type& en_address )const
+{ try {
+   return get< wallet_object, by_en_address >( en_address );
+} FC_CAPTURE_AND_RETHROW( (en_address) ) }
+
 const wallet_object* database::find_account( const wallet_name_type& name )const
 {
    return find< wallet_object, by_name >( name );
+}
+
+const wallet_object* database::find_account_by_en_address( const en_address_type& en_address )const
+{
+   return find< wallet_object, by_en_address >( en_address );
 }
 
 const comment_object& database::get_comment( const wallet_name_type& author, const shared_string& permlink )const
@@ -1348,10 +1387,12 @@ void database::init_genesis( uint64_t init_supply )
       create< wallet_object >( [&]( wallet_object& a )
       {
          a.name = XGT_MINER_WALLET;
+         a.en_address = fc::ripemd160::hex_digest(XGT_MINER_WALLET);
       } );
       create< account_authority_object >( [&]( account_authority_object& auth )
       {
          auth.account = XGT_MINER_WALLET;
+         auth.en_address = fc::ripemd160::hex_digest(XGT_MINER_WALLET);
          auth.recovery.weight_threshold = 1;
          auth.money.weight_threshold = 1;
       });
@@ -1359,6 +1400,7 @@ void database::init_genesis( uint64_t init_supply )
       create< wallet_object >( [&]( wallet_object& a )
       {
          a.name = XGT_INIT_MINER_NAME;
+         a.en_address = fc::ripemd160::hex_digest(XGT_INIT_MINER_NAME);
          a.memo_key = init_public_key;
          a.balance  = asset( init_supply, XGT_SYMBOL );
       } );
@@ -1366,6 +1408,7 @@ void database::init_genesis( uint64_t init_supply )
       create< account_authority_object >( [&]( account_authority_object& auth )
       {
          auth.account = XGT_INIT_MINER_NAME;
+         auth.en_address = fc::ripemd160::hex_digest(XGT_INIT_MINER_NAME);
          auth.recovery.add_authority( init_public_key, 1 );
          auth.recovery.weight_threshold = 1;
          auth.money   = auth.recovery;
@@ -1381,10 +1424,12 @@ void database::init_genesis( uint64_t init_supply )
       create< wallet_object >( [&]( wallet_object& a )
       {
          a.name = XGT_NULL_WALLET;
+         a.en_address = fc::ripemd160::hex_digest(XGT_NULL_WALLET);
       } );
       create< account_authority_object >( [&]( account_authority_object& auth )
       {
          auth.account = XGT_NULL_WALLET;
+         auth.en_address = fc::ripemd160::hex_digest(XGT_NULL_WALLET);
          auth.recovery.weight_threshold = 1;
          auth.money.weight_threshold = 1;
       });
@@ -1392,15 +1437,18 @@ void database::init_genesis( uint64_t init_supply )
       create< wallet_object >( [&]( wallet_object& a )
       {
          a.name = XGT_TREASURY_WALLET;
+         a.en_address = fc::ripemd160::hex_digest(XGT_TREASURY_WALLET);
       } );
 
       create< wallet_object >( [&]( wallet_object& a )
       {
          a.name = XGT_TEMP_WALLET;
+         a.en_address = fc::ripemd160::hex_digest(XGT_TEMP_WALLET);
       } );
       create< account_authority_object >( [&]( account_authority_object& auth )
       {
          auth.account = XGT_TEMP_WALLET;
+         auth.en_address = fc::ripemd160::hex_digest(XGT_TEMP_WALLET);
          auth.recovery.weight_threshold = 0;
          auth.money.weight_threshold = 0;
       });
@@ -1420,6 +1468,7 @@ void database::init_genesis( uint64_t init_supply )
          p.reverse_auction_seconds = XGT_REVERSE_AUCTION_WINDOW_SECONDS;
          p.next_maintenance_time = XGT_GENESIS_TIME;
          p.last_budget_time = XGT_GENESIS_TIME;
+         p.energy_multiplier = 1;
       } );
 
       for( int i = 0; i < 0x10000; i++ )

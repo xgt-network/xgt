@@ -16,6 +16,7 @@ namespace xgt { namespace protocol {
       asset             fee;
       wallet_name_type  creator;
       wallet_name_type  new_wallet_name;
+      string            en_address;
       authority         recovery;
       authority         money;
       authority         social;
@@ -591,6 +592,7 @@ namespace xgt { namespace protocol {
    struct contract_create_operation : public base_operation
    {
       wallet_name_type owner;
+      wallet_name_type wallet;
       vector<char> code;
 
       void validate()const;
@@ -605,7 +607,8 @@ namespace xgt { namespace protocol {
    {
       wallet_name_type caller;
       contract_hash_type contract_hash;
-      vector< vector<char> > args;
+      uint64_t value;
+      vector<char> args;
 
       void validate()const;
       uint64_t energy_cost()const { return 0; }
@@ -662,5 +665,5 @@ FC_REFLECT( xgt::protocol::request_wallet_recovery_operation, (recovery_account)
 FC_REFLECT( xgt::protocol::recover_wallet_operation, (account_to_recover)(new_recovery_authority)(recent_recovery_authority)(extensions) );
 FC_REFLECT( xgt::protocol::change_recovery_wallet_operation, (account_to_recover)(new_recovery_account)(extensions) );
 
-FC_REFLECT( xgt::protocol::contract_create_operation, (owner)(code) );
-FC_REFLECT( xgt::protocol::contract_invoke_operation, (caller)(contract_hash)(args) );
+FC_REFLECT( xgt::protocol::contract_create_operation, (owner)(wallet)(code) );
+FC_REFLECT( xgt::protocol::contract_invoke_operation, (caller)(contract_hash)(value)(args) );

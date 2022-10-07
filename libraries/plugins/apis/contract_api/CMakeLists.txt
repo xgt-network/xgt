@@ -1,10 +1,17 @@
-file( GLOB HEADERS "include/xgt/plugins/contract_api/*.hpp" )
-set( SOURCES contract_api.cpp contract_api_plugin.cpp )
+file( GLOB HEADERS "include/xgt/plugins/contract_api/*.hpp" "include/keccak256.h" )
+set( SOURCES contract_api.cpp contract_api_plugin.cpp keccak256.c )
 
 add_library( contract_api_plugin ${SOURCES} ${HEADERS} )
 
-target_link_libraries( contract_api_plugin chain_plugin json_rpc_plugin )
-target_include_directories( contract_api_plugin PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" )
+target_link_libraries( contract_api_plugin
+                       chain_plugin
+                       json_rpc_plugin
+                       xgtvm
+                     )
+target_include_directories( contract_api_plugin
+                            PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include"
+                                   "${CMAKE_CURRENT_SOURCE_DIR}/../../../vendor/xgtvm/libraries"
+                          )
 
 if( CLANG_TIDY_EXE )
    set_target_properties(
