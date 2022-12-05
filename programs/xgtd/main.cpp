@@ -10,6 +10,7 @@
 
 // API plugins
 #include <xgt/plugins/block_api/block_api_plugin.hpp>
+#include <xgt/plugins/contract_api/contract_api_plugin.hpp>
 #include <xgt/plugins/chain_api/chain_api_plugin.hpp>
 #include <xgt/plugins/database_api/database_api_plugin.hpp>
 #include <xgt/plugins/transaction_api/transaction_api_plugin.hpp>
@@ -27,7 +28,6 @@
 #include <fc/exception/exception.hpp>
 #include <fc/thread/thread.hpp>
 #include <fc/interprocess/signals.hpp>
-#include <fc/git_revision.hpp>
 #include <fc/stacktrace.hpp>
 
 #include <boost/exception/diagnostic_information.hpp>
@@ -45,9 +45,9 @@ using std::vector;
 string& version_string()
 {
    static string v_str =
+      "xgt_version: " + fc::string( xgt::utilities::git_revision_description ) + "\n" +
       "xgt_blockchain_version: " + fc::string( XGT_BLOCKCHAIN_VERSION ) + "\n" +
-      "xgt_git_revision:       " + fc::string( xgt::utilities::git_revision_sha ) + "\n" +
-      "fc_git_revision:          " + fc::string( fc::git_revision_sha ) + "\n";
+      "xgt_git_revision:       " + fc::string( xgt::utilities::git_revision_sha ) + "\n";
    return v_str;
 }
 
@@ -96,6 +96,7 @@ int main( int argc, char** argv )
 
          // APIs:
          xgt::plugins::block_api::block_api_plugin,
+         xgt::plugins::contract::contract_api_plugin,
          xgt::plugins::chain::chain_api_plugin,
          xgt::plugins::database_api::database_api_plugin,
          xgt::plugins::transaction_api::transaction_api_plugin,
