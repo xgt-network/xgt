@@ -12,14 +12,8 @@
 #define XGT_BLOCKCHAIN_VERSION              ( version(0, 0, 0) )
 
 #define XGT_ADDRESS_PREFIX                  "XGT"
-
-#ifdef IS_TEST_NET
-#define XGT_CHAIN_ID                        fc::sha256::hash("testnet")
-#else
-#define XGT_CHAIN_ID                        fc::sha256::hash("xgt")
-#endif
-
-#define XGT_WALLET_NAME_LENGTH              40 /// NOTE: If you change this, change XGT_INIT_MINER_NAME also.
+#define XGT_CHAIN_ID                        fc::sha256::hash("xgt") /// All zeroes
+#define XGT_WALLET_NAME_LENGTH             40 /// NOTE: If you change this, change XGT_INIT_MINER_NAME also.
 
 #ifdef IS_TEST_NET
 #define XGT_NETWORK_TYPE                    "testnet"
@@ -28,9 +22,8 @@
 #endif
 
 #ifdef IS_TEST_NET
-// #define XGT_INIT_PRIVATE_KEY (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))
-// #define XGT_INIT_PUBLIC_KEY_STR (std::string( xgt::protocol::public_key_type(XGT_INIT_PRIVATE_KEY.get_public_key()) ))
-#define XGT_INIT_PUBLIC_KEY_STR             "XGT5zYjtBDvJCQmmUSUwdh7kW2xLVhZB2moLERGHR3GW4vPpfLPrt"
+#define XGT_INIT_PRIVATE_KEY (fc::ecc::private_key::regenerate(fc::sha256::hash(std::string("init_key"))))
+#define XGT_INIT_PUBLIC_KEY_STR (std::string( xgt::protocol::public_key_type(XGT_INIT_PRIVATE_KEY.get_public_key()) ))
 #else
 #define XGT_INIT_PUBLIC_KEY_STR             "XGT7dDoJbrmueAw431pPbjLDoRhqFCC5Xs5o6f1cZLepWEpkcy3Tc"
 #endif
@@ -106,7 +99,6 @@
 #define XGT_MAX_TIME_UNTIL_EXPIRATION       (60*60) // seconds,  aka: 1 hour
 #define XGT_MAX_MEMO_SIZE                   2048
 #define XGT_VOTING_ENERGY_REGENERATION_SECONDS (1*60*60*24) // 1 day
-#define XGT_ENERGY_REGENERATION_SECONDS (1*60*60*24) // 1 day
 #define XGT_MAX_VOTE_CHANGES                5
 #define XGT_REVERSE_AUCTION_WINDOW_SECONDS (60*5) /// 5 minutes
 #define XGT_MIN_VOTE_INTERVAL_SEC           3

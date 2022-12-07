@@ -6,55 +6,37 @@
 
 #include <xgt/protocol/types.hpp>
 
-namespace xgt {
-   namespace schema {
-      namespace detail {
+namespace xgt { namespace schema { namespace detail {
 
-         //////////////////////////////////////////////
-         // wallet_name_type                         //
-         //////////////////////////////////////////////
+//////////////////////////////////////////////
+// wallet_name_type                         //
+//////////////////////////////////////////////
 
-         struct schema_wallet_name_type_impl : public abstract_schema
-         {
-            XGT_SCHEMA_CLASS_BODY( schema_wallet_name_type_impl )
-         };
+struct schema_wallet_name_type_impl
+   : public abstract_schema
+{
+   XGT_SCHEMA_CLASS_BODY( schema_wallet_name_type_impl )
+};
 
-      }
-
-      template<> struct schema_reflect< xgt::protocol::wallet_name_type >
-      {
-         typedef detail::schema_wallet_name_type_impl schema_impl_type;
-      };
-
-   }
 }
+
+template<>
+struct schema_reflect< xgt::protocol::wallet_name_type >
+{
+   typedef detail::schema_wallet_name_type_impl schema_impl_type;
+};
+
+} }
 
 namespace fc {
 
-   template<> struct get_typename< xgt::protocol::wallet_name_type >
+template<>
+struct get_typename< xgt::protocol::wallet_name_type >
+{
+   static const char* name()
    {
-      static const char* name()
-      {
-         return "xgt::protocol::wallet_name_type";
-      }
-   };
-
-}
-
-namespace xgt {
-   namespace schema {
-      namespace detail {
-
-         //////////////////////////////////////////////
-         // en_address_type                          //
-         //////////////////////////////////////////////
-
-         struct schema_en_address_type_impl : public abstract_schema
-         {
-            XGT_SCHEMA_CLASS_BODY( schema_en_address_type_impl )
-         };
-
-      }
-
+      return "xgt::protocol::wallet_name_type";
    }
+};
+
 }
