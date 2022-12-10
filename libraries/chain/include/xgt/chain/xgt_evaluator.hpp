@@ -30,6 +30,8 @@ XGT_DEFINE_EVALUATOR( xtt_set_setup_parameters )
 XGT_DEFINE_EVALUATOR( xtt_set_runtime_parameters )
 XGT_DEFINE_EVALUATOR( xtt_create )
 XGT_DEFINE_EVALUATOR( xtt_contribute )
+XGT_DEFINE_EVALUATOR( contract_deploy )
+XGT_DEFINE_EVALUATOR( contract_call )
 XGT_DEFINE_EVALUATOR( contract_create )
 XGT_DEFINE_EVALUATOR( contract_invoke )
 

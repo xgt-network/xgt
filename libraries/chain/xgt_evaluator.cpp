@@ -1016,6 +1016,17 @@ fc::ripemd160 generate_random_ripmd160()
    return fc::ripemd160::hash(buf, buflen);
 }
 
+void contract_deploy_evaluator::do_apply( const contract_deploy_operation& op )
+{
+   wlog("!!!!!! contract_deploy owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
+   _db.create< contract_object >( [&](contract_object& c)
+   {
+      //c.contract_hash = generate_random_ripmd160();
+      c.owner = op.owner;
+      c.code = op.code;
+   });
+}
+
 void contract_create_evaluator::do_apply( const contract_create_operation& op )
 {
    wlog("!!!!!! contract_create owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
@@ -1025,6 +1036,33 @@ void contract_create_evaluator::do_apply( const contract_create_operation& op )
       c.owner = op.owner;
       c.code = op.code;
    });
+}
+
+void contract_call_evaluator::do_apply( const contract_call_operation& op )
+{
+   wlog("contract_call ${w}", ("w",op.contract_hash));
+   /*const contract_hash_type contract_hash = op.contract_hash;
+   const auto& c = _db.get_contract(contract_hash);
+
+   const machine_context& ctx = {
+      true, // bool is_running
+      0x5c477758 // uint64_t block_timestamp
+   };
+   const vector<machine_word>& code = {0};
+   machine m(ctx, code);
+   m.step(); */
+   // // const auto& args = op.args;
+   // // const auto& caller = op.caller;
+   // // TODO: Invoke VM
+
+   // // Generate receipt
+   // _db.create< contract_receipt_object >( [&](contract_receipt_object& cr)
+   // {
+   //    // cr.id = std::static_cast<contract_receipt_id_type>(generate_random_ripmd160());
+   //    cr.contract_id = op.contract;
+   //    cr.caller = op.caller;
+   //    cr.args = op.args;
+   // });
 }
 
 void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )

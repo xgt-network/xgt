@@ -581,7 +581,7 @@ namespace :contracts do
       'extensions' => [],
       'operations' => [
         {
-          'type' => 'contract_create_operation',
+          'type' => 'contract_deploy_operation',
           'value' => {
             'owner' => wallet,
             'code' => "600260030100",

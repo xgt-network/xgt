@@ -30,7 +30,7 @@ def create_contract!(owner, keys, code, private_key = wif)
     'extensions' => [],
     'operations' => [
       {
-        'type' => 'contract_create_operation',
+        'type' => 'contract_deploy_operation',
         'value' => {
           'owner' => owner,
           'wallet' => keys['wallet_name'],
@@ -55,7 +55,7 @@ def invoke_contract!(contract_hash, invoker, value, args)
     'extensions' => [],
     'operations' => [
       {
-        'type' => 'contract_invoke_operation',
+        'type' => 'contract_call_operation',
         'value' => {
           'contract_hash' => contract_hash,
           'caller' => invoker,
