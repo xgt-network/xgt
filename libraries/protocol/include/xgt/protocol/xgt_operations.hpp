@@ -600,7 +600,7 @@ namespace xgt { namespace protocol {
 
       void validate()const;
       uint64_t energy_cost()const { return 0; }
-      bool is_contract_create()const { return true; }
+      bool is_contract_deploy()const { return true; }
       void get_required_recovery_authorities( flat_set<wallet_name_type>& a )const{ a.insert( owner ); }
       void get_required_money_authorities( flat_set<wallet_name_type>& a )const{ a.insert( owner ); }
    };
@@ -613,7 +613,7 @@ namespace xgt { namespace protocol {
 
       void validate()const;
       uint64_t energy_cost()const { return 0; }
-      bool is_contract_invoke()const { return true; }
+      bool is_contract_call()const { return true; }
    };
 
    struct contract_create_operation : public base_operation

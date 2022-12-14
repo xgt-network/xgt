@@ -20,6 +20,8 @@ namespace xgt { namespace protocol {
       bool is_wallet_update()const { return false; }
       bool is_contract_create()const { return false; }
       bool is_contract_invoke()const { return false; }
+      bool is_contract_deploy()const { return false; }
+      bool is_contract_call()const { return false; }
       bool is_pow()const { return false; }
       void validate()const {}
       uint64_t energy_cost()const { return 0; }
