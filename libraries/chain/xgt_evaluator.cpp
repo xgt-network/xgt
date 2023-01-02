@@ -1016,17 +1016,6 @@ fc::ripemd160 generate_random_ripmd160()
    return fc::ripemd160::hash(buf, buflen);
 }
 
-void contract_deploy_evaluator::do_apply( const contract_deploy_operation& op )
-{
-   wlog("!!!!!! contract_deploy owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
-   _db.create< contract_object >( [&](contract_object& c)
-   {
-      //c.contract_hash = generate_random_ripmd160();
-      c.owner = op.owner;
-      c.code = op.code;
-   });
-}
-
 void contract_create_evaluator::do_apply( const contract_create_operation& op )
 {
    wlog("!!!!!! contract_create owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
@@ -1038,9 +1027,9 @@ void contract_create_evaluator::do_apply( const contract_create_operation& op )
    });
 }
 
-void contract_call_evaluator::do_apply( const contract_call_operation& op )
+void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
 {
-   wlog("contract_call ${w}", ("w",op.contract_hash));
+   wlog("contract_invoke ${w}", ("w",op.contract_hash));
    /*const contract_hash_type contract_hash = op.contract_hash;
    const auto& c = _db.get_contract(contract_hash);
 
@@ -1065,9 +1054,21 @@ void contract_call_evaluator::do_apply( const contract_call_operation& op )
    // });
 }
 
-void contract_invoke_evaluator::do_apply( const contract_invoke_operation& op )
+void contract_deploy_evaluator::do_apply( const contract_deploy_operation& op )
 {
-   wlog("contract_invoke ${w}", ("w",op.contract_hash));
+   wlog("!!!!!! contract_deploy owner ${w} code size ${x}", ("w",op.owner)("x",op.code.size()));
+   _db.create< contract_object >( [&](contract_object& c)
+   {
+      //c.contract_hash = generate_random_ripmd160();
+      c.owner = op.owner;
+      c.wallet = op.wallet;
+      c.code = op.code;
+   });
+}
+
+void contract_call_evaluator::do_apply( const contract_call_operation& op )
+{
+   wlog("contract_call ${w}", ("w",op.contract_hash));
    /*const contract_hash_type contract_hash = op.contract_hash;
    const auto& c = _db.get_contract(contract_hash);
 

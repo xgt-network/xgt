@@ -316,21 +316,21 @@ namespace xgt { namespace protocol {
       validate_wallet_name( new_recovery_account );
    }
 
-   void contract_deploy_operation::validate()const
-   { try {
-      validate_wallet_name( owner );
-   } FC_CAPTURE_AND_RETHROW( (*this) ) }
-
    void contract_create_operation::validate()const
    { try {
       validate_wallet_name( owner );
    } FC_CAPTURE_AND_RETHROW( (*this) ) }
 
-   void contract_call_operation::validate()const
+   void contract_invoke_operation::validate()const
    {
    }
 
-   void contract_invoke_operation::validate()const
+   void contract_deploy_operation::validate()const
+   { try {
+      validate_wallet_name( owner );
+   } FC_CAPTURE_AND_RETHROW( (*this) ) }
+
+   void contract_call_operation::validate()const
    {
    }
 

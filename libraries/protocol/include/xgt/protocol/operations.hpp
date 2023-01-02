@@ -53,10 +53,10 @@ namespace xgt { namespace protocol {
             hardfork_operation,
             clear_null_wallet_balance_operation,
 
-            contract_deploy_operation,
-            contract_call_operation,
             contract_create_operation,
-            contract_invoke_operation
+            contract_invoke_operation,
+            contract_deploy_operation,
+            contract_call_operation
          > operation;
 
    /*void operation_get_required_authorities( const operation& op,

@@ -1285,10 +1285,10 @@ void database::initialize_evaluators()
    _my->_evaluator_registry.register_evaluator< xtt_set_runtime_parameters_evaluator     >();
    _my->_evaluator_registry.register_evaluator< xtt_create_evaluator                     >();
    _my->_evaluator_registry.register_evaluator< xtt_contribute_evaluator                 >();
-   _my->_evaluator_registry.register_evaluator< contract_deploy_evaluator                >();
-   _my->_evaluator_registry.register_evaluator< contract_call_evaluator                  >();
    _my->_evaluator_registry.register_evaluator< contract_create_evaluator                >();
    _my->_evaluator_registry.register_evaluator< contract_invoke_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< contract_deploy_evaluator                >();
+   _my->_evaluator_registry.register_evaluator< contract_call_evaluator                  >();
 
    _my->_req_action_evaluator_registry.register_evaluator< example_required_evaluator    >();
    _my->_opt_action_evaluator_registry.register_evaluator< example_optional_evaluator    >();

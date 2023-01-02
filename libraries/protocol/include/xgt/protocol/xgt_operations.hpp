@@ -588,37 +588,35 @@ namespace xgt { namespace protocol {
       uint64_t energy_cost()const { return 0; }
    };
 
-   // TODO add contract_deploy_operation and contract_call_operation to replace legacy contract create and invoke
-   // make sure endowments to contracts are supported
-   // requires json dictionary or similar
-   // requires asset indicator (nai)
-
-   struct contract_deploy_operation : public base_operation
+   struct contract_create_operation : public base_operation
    {
       wallet_name_type owner;
+      wallet_name_type wallet;
       vector<char> code;
 
       void validate()const;
       uint64_t energy_cost()const { return 0; }
-      bool is_contract_deploy()const { return true; }
+      bool is_contract_create()const { return true; }
       void get_required_recovery_authorities( flat_set<wallet_name_type>& a )const{ a.insert( owner ); }
       void get_required_money_authorities( flat_set<wallet_name_type>& a )const{ a.insert( owner ); }
    };
 
-   struct contract_call_operation : public base_operation
+   struct contract_invoke_operation : public base_operation
    {
       wallet_name_type caller;
       contract_hash_type contract_hash;
+      uint64_t value;
       vector< vector<char> > args;
 
       void validate()const;
       uint64_t energy_cost()const { return 0; }
-      bool is_contract_call()const { return true; }
+      bool is_contract_invoke()const { return true; }
    };
 
-   struct contract_create_operation : public base_operation
+   struct contract_deploy_operation : public base_operation
    {
       wallet_name_type owner;
+      wallet_name_type wallet;
       vector<char> code;
 
       void validate()const;
@@ -629,10 +627,11 @@ namespace xgt { namespace protocol {
    };
 
 
-   struct contract_invoke_operation : public base_operation
+   struct contract_call_operation : public base_operation
    {
       wallet_name_type caller;
       contract_hash_type contract_hash;
+      uint64_t value;
       vector< vector<char> > args;
 
       void validate()const;
@@ -692,5 +691,6 @@ FC_REFLECT( xgt::protocol::change_recovery_wallet_operation, (account_to_recover
 
 FC_REFLECT( xgt::protocol::contract_create_operation, (owner)(code) );
 FC_REFLECT( xgt::protocol::contract_invoke_operation, (caller)(contract_hash)(args) );
-FC_REFLECT( xgt::protocol::contract_deploy_operation, (owner)(code) );
-FC_REFLECT( xgt::protocol::contract_call_operation, (caller)(contract_hash)(args) );
+
+FC_REFLECT( xgt::protocol::contract_deploy_operation, (owner)(wallet)(code) );
+FC_REFLECT( xgt::protocol::contract_call_operation, (caller)(contract_hash)(value)(args) );

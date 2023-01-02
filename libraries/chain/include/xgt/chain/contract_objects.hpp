@@ -25,6 +25,7 @@ namespace xgt { namespace chain {
 
       contract_id_type id;
       wallet_name_type owner;
+      wallet_name_type wallet;
       contract_hash_type contract_hash;
       vector<char> code;
    };
@@ -88,6 +89,7 @@ namespace xgt { namespace chain {
 
       contract_hash_type contract_hash;
       wallet_name_type caller;
+      uint64_t value;
       vector< vector<char> > args;
       // uint64_t energy_used; // TODO: Verify this
    };
@@ -131,6 +133,7 @@ namespace xgt { namespace chain {
 
 FC_REFLECT( xgt::chain::contract_object,
       (owner)
+      (wallet)
       (code)
       )
 CHAINBASE_SET_INDEX_TYPE( xgt::chain::contract_object, xgt::chain::contract_index )
@@ -147,6 +150,7 @@ CHAINBASE_SET_INDEX_TYPE( xgt::chain::contract_object, xgt::chain::contract_inde
 FC_REFLECT( xgt::chain::contract_receipt_object,
       (contract_hash)
       (caller)
+      (value)
       (args)
       // (energy_used)
       )
