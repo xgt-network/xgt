@@ -103,6 +103,70 @@ def rpc
   Xgt::Ruby::Rpc.new(host)
 end
 
+def generate_keys
+  master = Xgt::Ruby::Auth.random_wif
+  ks = { 'master' => master }
+  %w(recovery money social memo).each do |role|
+    private_key = Xgt::Ruby::Auth.generate_wif(wallet, master, 'recovery')
+    public_key = Xgt::Ruby::Auth.wif_to_public_key(private_key, address_prefix)
+    ks["#{role}_private"] = private_key
+    ks["#{role}_public"] = public_key
+  end
+
+  response = rpc.call('wallet_by_key_api.generate_wallet_name', {
+    'recovery_keys' => [ks['recovery_public']]
+  })
+  wallet_name = response['wallet_name']
+  ks['wallet_name'] = wallet_name
+
+  ks
+end
+
+def create_wallet!(keys)
+  name = keys['wallet_name']
+
+  txn = {
+    'extensions' => [],
+    'operations' => [
+      {
+        'type' => 'wallet_create_operation',
+        'value' => {
+          'fee' => {
+            'amount' => '0',
+            'precision' =>  8,
+            'nai' => '@@000000021'
+          },
+          'creator' => wallet,
+          'recovery' => {
+            'weight_threshold' => 1,
+            'account_auths' => [],
+            'key_auths' => [[keys['recovery_public'], 1]]
+          },
+          'money' => {
+            'weight_threshold' => 1,
+            'account_auths' => [],
+            'key_auths' => [[keys['money_public'], 1]]
+          },
+          'social' => {
+            'weight_threshold' => 1,
+            'account_auths' => [],
+            'key_auths' => [[keys['social_public'], 1]]
+          },
+          'memo_key' => keys['memo_public'],
+          'json_metadata' => '',
+          'extensions' => []
+        }
+      }
+    ]
+  }
+
+  $stderr.puts(%(Creator is "#{wallet}" with wif "#{wif}"...))
+  $stderr.puts(%(Creating wallet with master key "#{keys['master']}"...))
+  signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
+  rpc.call('transaction_api.broadcast_transaction', [signed])
+  name
+end
+
 desc 'Removes build artifacts'
 task :clean do
   rm_rf "../xgt-build"
