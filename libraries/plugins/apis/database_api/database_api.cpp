@@ -139,9 +139,9 @@ DEFINE_API_IMPL( database_api_impl, get_version )
 {
    return get_version_return
    (
+      fc::string( xgt::utilities::git_revision_description ),
       fc::string( XGT_BLOCKCHAIN_VERSION ),
       fc::string( xgt::utilities::git_revision_sha ),
-      fc::string( fc::git_revision_sha ),
       _db.get_chain_id()
    );
 }

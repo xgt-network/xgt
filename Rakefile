@@ -6,6 +6,7 @@ require 'json'
 require 'bigdecimal'
 require 'shellwords'
 require 'rake/testtask'
+import 'tasks/contracts.rake'
 autoload :Xgt, 'xgt/ruby'
 autoload :Etc, 'etc'
 
@@ -572,32 +573,4 @@ namespace :catalyst do
 
   desc 'Regenerate keys and do everything else'
   task :really_all => [:generate_keys, :create_wallet, :register]
-end
-
-namespace :contracts do
-  desc 'Generate a sample contract'
-  task :generate do
-    txn = {
-      'extensions' => [],
-      'operations' => [
-        {
-          'type' => 'contract_deploy_operation',
-          'value' => {
-            'owner' => wallet,
-            'code' => "600260030100",
-          }
-        }
-      ]
-    }
-    signed = Xgt::Ruby::Auth.sign_transaction(rpc, txn, [wif], chain_id)
-    $stderr.puts(%(Registering contract... #{signed.to_json}))
-    response = rpc.call('transaction_api.broadcast_transaction', [signed])
-    $stderr.puts(%(Received response contract... #{response}))
-  end
-
-  desc 'View sample contracts'
-  task :list do
-    response = rpc.call('contract_api.list_owner_contracts', { 'owner' => wallet }) || {}
-    p response
-  end
 end

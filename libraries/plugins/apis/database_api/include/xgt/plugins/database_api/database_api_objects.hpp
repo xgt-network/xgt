@@ -106,6 +106,7 @@ struct api_wallet_object
    api_wallet_object( const wallet_object& a, const database& db ) :
       id( a.id ),
       name( a.name ),
+      en_address( a.en_address ),
       memo_key( a.memo_key ),
       last_account_update( a.last_account_update ),
       created( a.created ),
@@ -150,6 +151,7 @@ struct api_wallet_object
    wallet_id_type    id;
 
    wallet_name_type  name;
+   en_address_type   en_address;
    authority         recovery;
    authority         money;
    authority         social;
@@ -370,7 +372,7 @@ FC_REFLECT( xgt::plugins::database_api::api_comment_vote_object,
           )
 
 FC_REFLECT( xgt::plugins::database_api::api_wallet_object,
-             (id)(name)(recovery)(money)(social)(memo_key)(json_metadata)(social_json_metadata)(last_recovery_update)(last_account_update)
+             (id)(name)(en_address)(recovery)(money)(social)(memo_key)(json_metadata)(social_json_metadata)(last_recovery_update)(last_account_update)
              (created)(mined)
              (recovery_account)(last_account_recovery)(reset_account)
              (comment_count)(lifetime_vote_count)(post_count)(can_vote)(energybar)

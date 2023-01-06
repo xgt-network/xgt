@@ -7,6 +7,10 @@
 #include <xgt/chain/database.hpp>
 #include <xgt/chain/index.hpp>
 
+#include "keccak256.h"
+
+#include <machine.hpp>
+
 namespace xgt { namespace plugins { namespace contract {
 
 namespace detail {
@@ -26,8 +30,27 @@ class contract_api_impl
 
 DEFINE_API_IMPL( contract_api_impl, get_contract )
 {
+   ilog( "contract_api_impl::get_contract ${c}", ("c",args.contract_hash) );
+
+   //// TODO: Temporary
+   //machine::message msg = {};
+   //ilog( "machine::message msg.flags ${f}", ("f",msg.flags) );
+
+   //// TODO: Temporary
+   //std::string message = "testing";
+   //unsigned char output[32];
+   //SHA3_CTX ctx;
+   //keccak_init(&ctx);
+   //keccak_update(&ctx, (unsigned char*)message.c_str(), message.size());
+   //keccak_final(&ctx, output);
+
+   fc::ripemd160 contract_hash(args.contract_hash);
+   auto& contract = _db.get_contract(contract_hash);
    get_contract_return result;
-   result.example = true;
+   result.contract.id = contract.id;
+   result.contract.owner = contract.owner;
+   result.contract.contract_hash = contract.contract_hash;
+   result.contract.code = contract.code;
    return result;
 }
 
@@ -35,15 +58,37 @@ DEFINE_API_IMPL( contract_api_impl, list_owner_contracts )
 {
    list_owner_contracts_return result;
 
-   const auto& idx = _db.get_index< chain::contract_index, chain::by_owner >();
+   const auto& idx = _db.get_index< chain::contract_index, chain::by_owner_and_contract_hash >();
    auto itr = idx.lower_bound( args.owner );
    auto end = idx.end();
    wlog("!!!!!! LIST_OWNER_CONTRACTS");
    while( itr != end )
    {
-      if (itr->owner != args.owner) break;
-      wlog("!!!!!! LIST_OWNER_CONTRACTS ${w}", ("w",itr->owner));
-      result.contracts.push_back(*itr);
+      auto& c = *itr;
+      if (c.owner != args.owner) break;
+      wlog("!!!!!! LIST_OWNER_CONTRACTS ${w}", ("w",c.owner));
+
+      const std::string& wallet_name_ref = std::string(c.wallet);
+
+      std::string prefix( XGT_ADDRESS_PREFIX );
+
+      const size_t prefix_len = prefix.size();
+      auto b58 = wallet_name_ref.substr( prefix_len );
+      auto r160 = fc::ripemd160::hash(b58);
+
+      std::stringstream ss;
+      ss << std::hex << r160.str();
+      std::string en_address;
+      ss >> en_address;
+
+      api_contract_object ac;
+      ac.id = c.id;
+      ac.owner = c.owner;
+      ac.contract_hash = c.contract_hash;
+      ac.wallet = c.wallet;
+      ac.code = c.code;
+      ac.en_address = en_address;
+      result.contracts.push_back(ac);
       ++itr;
    }
 

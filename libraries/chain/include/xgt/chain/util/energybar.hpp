@@ -100,11 +100,17 @@ struct energybar
 template< typename PropType, typename AccountType >
 void update_energybar( const PropType& gpo, AccountType& account, int32_t energy_regen_seconds, bool downvote_energy = false, int64_t new_energy = 0 )
 {
+   try
+   {
+      energybar_params params( static_cast<int64_t>(account.balance.amount.value), energy_regen_seconds );
+      account.energybar.regenerate_energy( params, gpo.time );
+      account.energybar.use_energy( -new_energy );
+   } FC_CAPTURE_LOG_AND_RETHROW( (account)(account.balance.amount) )
 }
 
 } } } // xgt::chain::util
 
 FC_REFLECT( xgt::chain::util::energybar,
-   (current_energy)
-   (last_update_time)
-   )
+      (current_energy)
+      (last_update_time)
+      )

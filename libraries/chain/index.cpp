@@ -8,6 +8,7 @@
 #include <xgt/chain/pending_optional_action_object.hpp>
 #include <xgt/chain/xtt_objects.hpp>
 #include <xgt/chain/xgt_objects.hpp>
+#include <xgt/chain/contract_objects.hpp>
 #include <xgt/chain/transaction_object.hpp>
 
 namespace xgt { namespace chain {
@@ -41,6 +42,8 @@ void initialize_core_indexes( database& db )
    XGT_ADD_CORE_INDEX(db, xtt_ico_index);
    XGT_ADD_CORE_INDEX(db, xtt_ico_tier_index);
    XGT_ADD_CORE_INDEX(db, contract_index);
+   XGT_ADD_CORE_INDEX(db, contract_log_index);
+   XGT_ADD_CORE_INDEX(db, contract_storage_index);
 }
 
 index_info::index_info() {}
