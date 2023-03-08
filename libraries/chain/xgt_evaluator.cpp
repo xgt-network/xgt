@@ -1371,21 +1371,23 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
 {
    wlog("contract_invoke another contract ${w}", ("w",contract_hash));
 
-   std::stringstream ss;
    const auto& c = _db.get_contract(contract_hash);
    const wallet_object& destination_wallet = _db.get_account(c.wallet);
 
+   std::stringstream ss;
    ss << std::hex << std::string(destination_wallet.en_address);
    uint256_t destination_en_address;
    ss >> destination_en_address;
    ss.str("");
+   ss.clear();
 
-   const wallet_object& wallet = _db.get_account(caller);
+   const wallet_object& caller_wallet = _db.get_account(caller);
 
-   ss << std::hex << std::string(wallet.en_address);
+   ss << std::hex << std::string(caller_wallet.en_address);
    uint256_t caller_en_address;
    ss >> caller_en_address;
    ss.str("");
+   ss.clear();
 
    machine::message msg = {
       0,
@@ -1427,24 +1429,24 @@ std::vector<machine::word> contract_invoke(chain::database& _db, wallet_name_typ
    machine::machine m(ctx, code, msg, adapter);
 
    std::string line;
-   while (m.is_running())
-   {
-      std::cerr << "step\n" << std::endl;
-      std::cerr << m.to_json() << std::endl;
-      m.step();
-      auto energy_callback = energy_cost[m.get_current_opcode()];
-      // Calculate energy cost and add to total
-      energy_cost_incurred += energy_callback(m);
-      // Print out any logging that was generated
-      while ( std::getline(m.get_logger(), line) )
-         std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
-   }
-   while ( std::getline(m.get_logger(), line) )
-      std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
-   std::cout << m.to_json() << std::endl;
+   // while (m.is_running())
+   // {
+   //    std::cerr << "step\n" << std::endl;
+   //    std::cerr << m.to_json() << std::endl;
+   //    m.step();
+   //    auto energy_callback = energy_cost[m.get_current_opcode()];
+   //    // Calculate energy cost and add to total
+   //    energy_cost_incurred += energy_callback(m);
+   //    // Print out any logging that was generated
+   //    while ( std::getline(m.get_logger(), line) )
+   //       std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
+   // }
+   // while ( std::getline(m.get_logger(), line) )
+   //    std::cerr << "\e[36m" << "LOG: " << line << "\e[0m" << std::endl;
+   // std::cout << m.to_json() << std::endl;
 
    uint32_t energy_regen_period = XGT_ENERGY_REGENERATION_SECONDS; // TODO: Hardcode this for now (should be a constant I think)
-   _db.modify(wallet, [&](wallet_object& w)
+   _db.modify(caller_wallet, [&](wallet_object& w)
    {
       util::update_energybar( _db.get_dynamic_global_properties(), w, energy_regen_period, true );
       w.energybar.use_energy( energy_cost_incurred );
@@ -1490,6 +1492,8 @@ void contract_deploy_evaluator::do_apply( const contract_deploy_operation& op )
       c.owner = op.owner;
       c.code = op.code;
    });
+
+   // const auto contract_hash = make_contract_hash(op.owner, op.code);
 
    auto storage = map< fc::sha256, fc::sha256 >();
    _db.create< contract_storage_object >([&](contract_storage_object& cs) {
@@ -1615,9 +1619,13 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
     if (caller_contract_wallet.balance.amount.value >= value) {
       fc::ripemd160 new_contract_hash = generate_random_ripemd160();
 
-      std::string new_wallet_name = generate_en_address(std::string(sender_address), caller_contract_wallet.nonce);
+      std::string caller_en_address = caller_contract_wallet.en_address;
+      std::string new_wallet_en_address = generate_en_address(caller_en_address, caller_contract_wallet.nonce);
 
-      wallet_create(_db, 1, new_wallet_name);
+      wallet_create(_db, caller_contract_wallet.nonce, new_wallet_en_address);
+
+      const auto& new_wallet_name = _db.get_account_by_en_address(new_wallet_en_address).name;
+
       chain::contract_object base_contract = _db.create< contract_object >( [&](contract_object& c) {
           c.contract_hash = new_contract_hash;
           c.owner = sender_address;
@@ -1653,6 +1661,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
       std::vector<char> result(base_contract_return.begin(), base_contract_return.end());
 
       cs = _db.find_contract_storage(new_contract_hash, sender_address);
+
       _db.modify< contract_storage_object >(*cs, [&](contract_storage_object& cs) {
          cs.data = storage;
       });
@@ -1662,7 +1671,7 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
          co.code = result;
       });
 
-      const wallet_object& deployed_contract_wallet = _db.get_account(deployed_contract.wallet);
+      const wallet_object& deployed_contract_wallet = std::string(deployed_contract.wallet).rfind("XGT", 0) == 0 ? _db.get_account(deployed_contract.wallet) : _db.get_account_by_en_address(deployed_contract.wallet);
       ss << std::hex << std::string(deployed_contract_wallet.en_address);
       uint256_t new_contract_wallet_address;
       ss >> new_contract_wallet_address;
@@ -1687,22 +1696,38 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
      // TODO Implement call depth limit
      std::stringstream ss;
 
+     std::cout << "1.1" << std::endl;
+
+     std::cout << address << std::endl;
+
      const en_address_type r160 = uint256_t_to_ripemd160(address);
      const wallet_object* ext_wallet = _db.find_account_by_en_address(r160);
      wallet_name_type ext_wallet_name;
 
+     std::cout << "1.2" << std::endl;
+
      if (ext_wallet != nullptr) {
+        std::cout << "2.1" << std::endl;
         ext_wallet_name = ext_wallet->name;
+        std::cout << "2.11" << std::endl;
      } else {
         // TODO Check energy before creating contract
         ss << std::hex << contract_create(args, value);
+        std::cout << "2.2" << std::endl;
         const en_address_type new_r160 = ss.str();
+        std::cout << "2.3" << std::endl;
         const wallet_object* new_wallet = _db.find_account_by_en_address(new_r160);
+        std::cout << "2.4" << std::endl;
         ext_wallet_name = new_wallet->name;
+        std::cout << "2.5" << std::endl;
      }
+
+     std::cout << "1.3" << std::endl;
 
      const wallet_name_type sender_address = _db.get_contract(contract_hash).wallet;
      const auto& caller_contract_wallet = _db.get_account(sender_address);
+
+     std::cout << "1.4" << std::endl;
 
      if (value != 0) {
         if (caller_contract_wallet.balance.amount.value >= value) {
@@ -1715,6 +1740,8 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
         }
      }
      const contract_object* ext_contract = _db.find_contract_by_wallet(ext_wallet_name);
+
+     std::cout << "1.5" << std::endl;
 
      std::vector<machine::word> contract_return = {};
 
@@ -1748,6 +1775,9 @@ machine::chain_adapter make_chain_adapter(chain::database& _db, wallet_name_type
            });
         }
      }
+
+     std::cout << "1.6" << std::endl;
+
      return std::make_pair(machine::word(1), contract_return);
   };
 
@@ -2129,6 +2159,9 @@ void contract_call_evaluator::do_apply( const contract_call_operation& op )
 
    std::vector<unsigned char> unsigned_args;
    std::copy(op.args.begin(), op.args.end(), std::back_inserter(unsigned_args));
+   std::cout << "5.1" << std::endl;
+   std::cout << std::string(c.owner) << std::endl;
+   std::cout << std::string(op.caller) << std::endl;
    auto result = contract_invoke(_db, c.owner, op.caller, contract_hash, op.value, energy, unsigned_args, storage);
 
    if (cs != nullptr) {
